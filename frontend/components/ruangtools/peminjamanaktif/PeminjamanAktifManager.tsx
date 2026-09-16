@@ -1,0 +1,222 @@
+"use client";
+// import node module libraries
+import { useEffect, useMemo, useState } from "react";
+import {
+  Row,
+  Col,
+  Card,
+  CardBody,
+  Alert,
+  Spinner,
+  InputGroup,
+  Form,
+  Button,
+} from "react-bootstrap";
+import {
+  IconSearch,
+  IconX,
+  IconClipboardList,
+  IconMoodEmpty,
+} from "@tabler/icons-react";
+// import custom types
+import { PeminjamanAktifItemType } from "types/DataToolsTypes";
+
+// import services (langsung ke API, data ini tidak perlu dibagi ke halaman lain)
+import { getPeminjamanAktif } from "services/peminjamanService";
+
+// import custom components
+import TanstackTable from "components/table/TanstackTable";
+import Flex from "components/common/Flex";
+import DasherBreadcrumb from "components/common/DasherBreadcrumb";
+import { getPeminjamanAktifColumns } from "components/ruangtools/peminjamanaktif/ColumnDefination";
+import RiwayatFilterBar from "components/ruangtools/riwayat/common/RiwayatFilterBar";
+import {
+  DateFilterValue,
+  dateInFilter,
+  parseRowDate,
+} from "components/ruangtools/common/dateUtils";
+import { exportToExcel, exportToPDF, ExportColumn, getFilteredExportFileName } from "components/ruangtools/riwayat/common/exportUtils";
+
+const PeminjamanAktifManager = () => {
+  const [items, setItems] = useState<PeminjamanAktifItemType[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // ---- Toolbar: pencarian (murni UI, tidak menyentuh API/data) ----
+  const [searchTerm, setSearchTerm] = useState("");
+  const [tanggalFilter, setTanggalFilter] = useState<DateFilterValue | null>(null);
+  const [namaFilter, setNamaFilter] = useState("");
+
+  const EXPORT_COLUMNS: ExportColumn[] = [
+    { header: "Tanggal", key: "tanggal" }, { header: "Kode Barang", key: "kodeBarang" },
+    { header: "Nama Barang", key: "namaBarang" }, { header: "Jumlah", key: "jumlah" },
+    { header: "Nama Peminjam", key: "namaPeminjam" }, { header: "Divisi", key: "divisi" },
+    { header: "Area Kerja", key: "areaKerja" },
+  ];
+
+  // Data turunan untuk tampilan; sumber data (items) tidak diubah.
+  const filteredItems = useMemo(() => {
+    const keyword = searchTerm.trim().toLowerCase();
+    return items.filter((item) => {
+      const date = parseRowDate(item.tanggal);
+      const cocokTanggal = !tanggalFilter || !date || dateInFilter(date, tanggalFilter);
+      const cocokNama = namaFilter === "" || item.namaPeminjam === namaFilter;
+      const cocokKeyword =
+        item.kodeBarang.toLowerCase().includes(keyword) ||
+        item.namaBarang.toLowerCase().includes(keyword) ||
+        item.namaPeminjam.toLowerCase().includes(keyword) ||
+        item.namaPekerjaan.toLowerCase().includes(keyword) ||
+        item.areaKerja.toLowerCase().includes(keyword);
+      return cocokTanggal && cocokNama && (keyword === "" || cocokKeyword);
+    });
+  }, [items, searchTerm, tanggalFilter, namaFilter]);
+
+  const namaOptions = useMemo(() => Array.from(new Set(items.map((item) => item.namaPeminjam))).sort(), [items]);
+  const exportRows = useMemo(() => filteredItems.map((item) => ({ ...item })), [filteredItems]);
+  const getExportName = () => getFilteredExportFileName("Peminjaman_Aktif", namaFilter);
+  const handleExportPdf = () => exportToPDF(exportRows, EXPORT_COLUMNS, getExportName(), "Peminjaman Aktif");
+  const handleExportExcel = () => exportToExcel(exportRows, EXPORT_COLUMNS, getExportName(), "Peminjaman Aktif");
+
+  const loadData = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await getPeminjamanAktif();
+      setItems(data);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Gagal memuat data peminjaman aktif";
+      setError(message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+    useEffect(() => {
+    loadData();
+  }, []);
+
+  const columns = useMemo(
+    () => getPeminjamanAktifColumns(),
+    []
+  );
+
+    return (
+    <div className="peminjamanaktif-page">
+
+      {/* ---- Page Header ---- */}
+      <Row>
+        <Col>
+          <Flex
+            justifyContent="between"
+            alignItems="center"
+            className="mb-4 w-100"
+            breakpoint="md"
+          >
+            <div>
+              <h1 className="mb-2 h2">Peminjaman Aktif</h1>
+              <p className="text-secondary mb-0">
+                Menampilkan seluruh alat yang masih dipinjam dan belum dikembalikan.
+              </p>
+              <DasherBreadcrumb />
+            </div>
+          </Flex>
+        </Col>
+      </Row>
+
+      <Card className="card-lg mb-6">
+        {/* ---- Toolbar: Search ---- */}
+        <div className="riwayat-toolbar border-bottom">
+          <div className="riwayat-toolbar-row">
+            <InputGroup className="riwayat-search">
+                <InputGroup.Text>
+                  <IconSearch size={18} />
+                </InputGroup.Text>
+                <Form.Control
+                  type="search"
+                  placeholder="Cari kode, nama barang, atau informasi lainnya..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  aria-label="Cari peminjaman aktif"
+                />
+                {searchTerm && (
+                  <Button
+                    variant="link"
+                    className="riwayat-search-clear"
+                    onClick={() => setSearchTerm("")}
+                    aria-label="Bersihkan pencarian"
+                  >
+                    <IconX size={16} />
+                  </Button>
+                )}
+            </InputGroup>
+            <span className="riwayat-info text-secondary small">
+                Menampilkan{" "}
+                <span className="fw-semibold text-body">{filteredItems.length}</span>{" "}
+                dari {items.length} data
+            </span>
+          </div>
+          <RiwayatFilterBar
+            tanggalFilter={tanggalFilter}
+            onTanggalFilterChange={setTanggalFilter}
+            namaFilter={namaFilter}
+            onNamaFilterChange={setNamaFilter}
+            namaOptions={namaOptions}
+            namaLabel="Peminjam"
+            onExportPDF={handleExportPdf}
+            onExportExcel={handleExportExcel}
+          />
+        </div>
+
+        <CardBody>
+          {error && <Alert variant="danger">{error}</Alert>}
+
+          {loading ? (
+            <div className="text-center py-6">
+              <Spinner animation="border" size="sm" className="me-2" />
+              Memuat data...
+            </div>
+          ) : items.length === 0 ? (
+            /* Empty state: tidak ada peminjaman aktif */
+            <div className="peminjamanaktif-empty text-center py-6">
+              <div className="peminjamanaktif-empty-icon mb-3">
+                <IconClipboardList size={32} />
+              </div>
+              <h5 className="mb-1">Tidak ada peminjaman aktif</h5>
+              <p className="text-secondary mb-0">
+                Semua alat sudah dikembalikan. Peminjaman baru akan muncul di sini.
+              </p>
+            </div>
+          ) : filteredItems.length === 0 ? (
+            /* Empty state: hasil pencarian kosong */
+            <div className="peminjamanaktif-empty text-center py-6">
+              <div className="peminjamanaktif-empty-icon mb-3">
+                <IconMoodEmpty size={32} />
+              </div>
+              <h5 className="mb-1">Tidak ada hasil</h5>
+              <p className="text-secondary mb-4">
+                Tidak ditemukan data yang cocok dengan pencarian.
+              </p>
+              <Button
+                variant="outline-secondary"
+                className="d-inline-flex align-items-center gap-2"
+                onClick={() => setSearchTerm("")}
+              >
+                <IconX size={18} />
+                Reset Pencarian
+              </Button>
+            </div>
+          ) : (
+            <TanstackTable
+              data={filteredItems}
+              columns={columns}
+              pagination
+            />
+          )}
+        </CardBody>
+      </Card>
+
+          </div>
+  );
+};
+
+export default PeminjamanAktifManager;
