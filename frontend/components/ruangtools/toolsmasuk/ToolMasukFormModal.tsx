@@ -5,8 +5,8 @@ import { Modal, Form, Row, Col, Button, Alert } from "react-bootstrap";
 import { IconTruckDelivery, IconPencil, IconPlus } from "@tabler/icons-react";
 
 // import custom types
-import { ToolItemType } from "types/DataToolsTypes";
-import { ToolMasukType, ToolMasukFormValues } from "types/DataToolsTypes";
+import { AlatukurItemType } from "types/DataAlatukurTypes";
+import { AlatukurMasukType, AlatukurMasukFormValues } from "types/DataAlatukurTypes";
 
 // Tampilan "16 Juli 2026, 14:32" dari timestamp ISO
 const formatTanggalJam = (iso: string): string => {
@@ -31,9 +31,9 @@ const toDatetimeLocalValue = (iso: string): string => {
   )}:${pad(date.getMinutes())}`;
 };
 
-const emptyForm = (): ToolMasukFormValues => ({
+const emptyForm = (): AlatukurMasukFormValues => ({
   tanggal: new Date().toISOString(),
-  tool_id: "",
+  alat ukur_id: "",
   kode_barang: "",
   nama_barang: "",
   merk: "",
@@ -45,46 +45,46 @@ const emptyForm = (): ToolMasukFormValues => ({
   id_card: "",
 });
 
-interface ToolMasukFormModalProps {
+interface AlatukurMasukFormModalProps {
   show: boolean;
   onClose: () => void;
-  onSubmit: (values: ToolMasukFormValues & { peminta_id?: string }) => void;
-  initialData?: ToolMasukType | null;
-  toolOptions: ToolItemType[];
+  onSubmit: (values: AlatukurMasukFormValues & { peminta_id?: string }) => void;
+  initialData?: AlatukurMasukType | null;
+  alat ukurOptions: AlatukurItemType[];
   error?: string | null;
 }
 
-const ToolMasukFormModal = ({
+const AlatukurMasukFormModal = ({
   show,
   onClose,
   onSubmit,
   initialData,
-  toolOptions = [],
+  alat ukurOptions = [],
   error = null,
-}: ToolMasukFormModalProps) => {
-  const [toolSearchText, setToolSearchText] = useState("");
-  const [form, setForm] = useState<ToolMasukFormValues>(emptyForm());
+}: AlatukurMasukFormModalProps) => {
+  const [alat UkurearchText, setAlatukurearchText] = useState("");
+  const [form, setForm] = useState<AlatukurMasukFormValues>(emptyForm());
   const [isSubmitting, setIsSubmitting] = useState(false); // Pengaman double submit dari scanner
   const isEditMode = Boolean(initialData);
 
   useEffect(() => {
     if (show) {
       setForm(initialData ? { ...initialData, id_card: "" } : emptyForm());
-      setToolSearchText("");
+      setAlatukurearchText("");
       setIsSubmitting(false);
     }
   }, [show, initialData]);
 
   // Pilih alat dari dropdown -> auto-isi atribut
-    const [selectedTool, setSelectedTool] = useState<ToolItemType | null>(null);
+    const [selectedAlatukur, setSelectedAlatukur] = useState<AlatukurItemType | null>(null);
 
   // Pilih alat dari dropdown -> auto-isi atribut
-  const handleSelectTool = (toolId: string) => {
-    const selected = toolOptions.find((t) => t.id === toolId);
-    setSelectedTool(selected || null);
+  const handleSelectAlatukur = (alat ukurId: string) => {
+    const selected = alat ukurOptions.find((t) => t.id === alat ukurId);
+    setSelectedAlatukur(selected || null);
     setForm((prev) => ({
       ...prev,
-      tool_id: toolId,
+      alat ukur_id: alat ukurId,
       kode_barang: selected?.kodeBarang || "",
       nama_barang: selected?.namaBarang || "",
       merk: selected?.merk || "",
@@ -94,7 +94,7 @@ const ToolMasukFormModal = ({
     }));
   };
 
-  const isMesinStokPenuh = selectedTool?.kategori === "mesin" && selectedTool.stok >= 1;
+  const isMesinStokPenuh = selectedAlatukur?.kategori === "mesin" && selectedAlatukur.stok >= 1;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -113,14 +113,14 @@ const ToolMasukFormModal = ({
   };
 
   return (
-    <Modal show={show} onHide={onClose} centered size="lg" className="toolsmasuk-modal">
+    <Modal show={show} onHide={onClose} centered size="lg" className="alat ukurmasuk-modal">
       <Form onSubmit={handleSubmit}>
         <Modal.Header closeButton>
           <Modal.Title as="h5" className="d-flex align-items-center gap-2">
-            <span className="toolsmasuk-title-icon">
+            <span className="alat ukurmasuk-title-icon">
               {isEditMode ? <IconPencil size={20} /> : <IconTruckDelivery size={20} />}
             </span>
-            {isEditMode ? "Edit Tools Masuk" : "Tambah Tools Masuk"}
+            {isEditMode ? "Edit Alatukur Masuk" : "Tambah Alatukur Masuk"}
           </Modal.Title>
         </Modal.Header>
         <Modal.Body>
@@ -132,7 +132,7 @@ const ToolMasukFormModal = ({
           )}
 
           {isEditMode && (
-            <div className="toolsmasuk-hero mb-4">
+            <div className="alat ukurmasuk-hero mb-4">
               <div className="text-secondary small">Sedang mengubah catatan</div>
               <div className="fw-semibold">
                 {initialData?.nama_barang}{" "}
@@ -141,7 +141,7 @@ const ToolMasukFormModal = ({
             </div>
           )}
 
-          <div className="toolsmasuk-section">
+          <div className="alat ukurmasuk-section">
             <div className="text-secondary small text-uppercase fw-semibold mb-3">
               Informasi Alat Masuk
             </div>
@@ -180,27 +180,27 @@ const ToolMasukFormModal = ({
                 <Form.Label>Kode Barang</Form.Label>
                 <Form.Control
                   required
-                  list="tool-options"
+                  list="alat ukur-options"
                   placeholder="Ketik atau pilih kode barang..."
                   disabled={isEditMode}
                   value={
-                    form.tool_id
+                    form.alat ukur_id
                       ? `${form.kode_barang} — ${form.nama_barang}`
-                      : toolSearchText
+                      : alat UkurearchText
                   }
                   onChange={(e) => {
                     const typed = e.target.value;
-                    setToolSearchText(typed);
+                    setAlatukurearchText(typed);
 
-                    const match = toolOptions.find(
+                    const match = alat ukurOptions.find(
                       (t) => `${t.kodeBarang} — ${t.namaBarang}` === typed
                     );
                     if (match) {
-                      handleSelectTool(match.id);
+                      handleSelectAlatukur(match.id);
                     } else {
                       setForm((prev) => ({
                         ...prev,
-                        tool_id: "",
+                        alat ukur_id: "",
                         kode_barang: "",
                         nama_barang: "",
                         merk: "",
@@ -211,8 +211,8 @@ const ToolMasukFormModal = ({
                     }
                   }}
                 />
-                <datalist id="tool-options">
-                  {toolOptions.map((t) => (
+                <datalist id="alat ukur-options">
+                  {alat ukurOptions.map((t) => (
                     <option key={t.id} value={`${t.kodeBarang} — ${t.namaBarang}`} />
                   ))}
                 </datalist>
@@ -306,7 +306,7 @@ const ToolMasukFormModal = ({
           <Button
             variant="primary"
             type="submit"
-            disabled={!form.tool_id || form.jumlah_masuk <= 0 || !form.id_card || isSubmitting || isMesinStokPenuh}
+            disabled={!form.alat ukur_id || form.jumlah_masuk <= 0 || !form.id_card || isSubmitting || isMesinStokPenuh}
             className="d-inline-flex align-items-center gap-2"
           >
             {isEditMode ? <IconPencil size={18} /> : <IconPlus size={18} />}
@@ -318,4 +318,4 @@ const ToolMasukFormModal = ({
   );
 };
 
-export default ToolMasukFormModal;
+export default AlatukurMasukFormModal;

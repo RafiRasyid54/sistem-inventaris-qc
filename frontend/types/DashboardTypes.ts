@@ -1,5 +1,5 @@
 export interface DashboardSummary {
-  total_tools: number;
+  total_alat ukur: number;
   total_consumables: number;
   total_peminta: number;
   sedang_dipinjam: number;

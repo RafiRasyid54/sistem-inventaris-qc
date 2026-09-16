@@ -1,53 +1,53 @@
 // import node module libraries
-import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
+import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/alat ukurkit";
 import { v4 as uuid } from "uuid";
 
 // import custom types
 import {
-  ToolItemType,
-  ToolFormValues,
+  AlatukurItemType,
+  AlatukurFormValues,
   CartItemType,
   LoanFormValues,
   TransaksiPeminjamanType,
   PengembalianItemInput,
   KerusakanHistoryType,
-} from "types/DataToolsTypes";
+} from "types/DataAlatukurTypes";
 
 // import API services (sudah terhubung ke Laravel)
 import {
-  getTools,
-  createTool as createToolApi,
-  updateTool as updateToolApi,
-  deleteTool as deleteToolApi,
-} from "services/toolService";
+  getAlatukur,
+  createAlatukur as createAlatukurApi,
+  updateAlatukur as updateAlatukurApi,
+  deleteAlatukur as deleteAlatukurApi,
+} from "services/alat Ukurervice";
 import { submitPeminjaman } from "services/peminjamanService";
 
-interface InventoryToolsState {
-  tools: ToolItemType[];
+interface InventoryAlatukurState {
+  alat ukur: AlatukurItemType[];
   transaksiList: TransaksiPeminjamanType[];
   kerusakanHistory: KerusakanHistoryType[];
-  loadingTools: boolean;
-  toolsError: string | null;
+  loadingAlatukur: boolean;
+  alat ukurError: string | null;
   checkoutError: string | null;
 }
 
-const initialState: InventoryToolsState = {
-  tools: [],
+const initialState: InventoryAlatukurState = {
+  alat ukur: [],
   transaksiList: [],
   kerusakanHistory: [],
-  loadingTools: false,
-  toolsError: null,
+  loadingAlatukur: false,
+  alat ukurError: null,
   checkoutError: null,
 };
 
 // ================= THUNKS (manggil Laravel API) =================
 
-// Ambil semua data tools dari backend. Panggil ini sekali di halaman utama (mount).
-export const fetchTools = createAsyncThunk(
-  "inventoryTools/fetchTools",
+// Ambil semua data alat ukur dari backend. Panggil ini sekali di halaman utama (mount).
+export const fetchAlatukur = createAsyncThunk(
+  "inventoryAlatukur/fetchAlatukur",
   async (_: void, { rejectWithValue }) => {
     try {
-      return await getTools();
+      return await getAlatukur();
     } catch (err) {
       const message = err instanceof Error ? err.message : "Gagal memuat data alat";
       return rejectWithValue(message);
@@ -55,11 +55,11 @@ export const fetchTools = createAsyncThunk(
   }
 );
 
-export const addToolThunk = createAsyncThunk(
-  "inventoryTools/addTool",
-  async (values: ToolFormValues, { rejectWithValue }) => {
+export const addAlatukurThunk = createAsyncThunk(
+  "inventoryAlatukur/addAlatukur",
+  async (values: AlatukurFormValues, { rejectWithValue }) => {
     try {
-      return await createToolApi(values);
+      return await createAlatukurApi(values);
     } catch (err) {
       const message = err instanceof Error ? err.message : "Gagal menambah data alat";
       return rejectWithValue(message);
@@ -67,14 +67,14 @@ export const addToolThunk = createAsyncThunk(
   }
 );
 
-export const updateToolThunk = createAsyncThunk(
-  "inventoryTools/updateTool",
+export const updateAlatukurThunk = createAsyncThunk(
+  "inventoryAlatukur/updateAlatukur",
   async (
-    { id, values }: { id: string; values: ToolFormValues },
+    { id, values }: { id: string; values: AlatukurFormValues },
     { rejectWithValue }
   ) => {
     try {
-      return await updateToolApi(id, values);
+      return await updateAlatukurApi(id, values);
     } catch (err) {
       const message = err instanceof Error ? err.message : "Gagal menyimpan perubahan alat";
       return rejectWithValue(message);
@@ -82,11 +82,11 @@ export const updateToolThunk = createAsyncThunk(
   }
 );
 
-export const deleteToolThunk = createAsyncThunk(
-  "inventoryTools/deleteTool",
+export const deleteAlatukurThunk = createAsyncThunk(
+  "inventoryAlatukur/deleteAlatukur",
   async (id: string, { rejectWithValue }) => {
     try {
-      await deleteToolApi(id);
+      await deleteAlatukurApi(id);
       return id;
     } catch (err) {
       const message = err instanceof Error ? err.message : "Gagal menghapus data alat";
@@ -96,9 +96,9 @@ export const deleteToolThunk = createAsyncThunk(
 );
 
 // Checkout keranjang peminjaman -> kirim tiap item ke POST /api/peminjaman,
-// lalu refetch tools supaya kolom "dipinjam"/"tersedia" akurat sesuai server.
+// lalu refetch alat ukur supaya kolom "dipinjam"/"tersedia" akurat sesuai server.
 export const checkoutPeminjamanThunk = createAsyncThunk(
-  "inventoryTools/checkoutPeminjaman",
+  "inventoryAlatukur/checkoutPeminjaman",
   async (
     {
       loanForm,
@@ -121,19 +121,19 @@ export const checkoutPeminjamanThunk = createAsyncThunk(
         loanForm.keterangan
       );
 
-      // ambil ulang data tools terbaru dari server (dipinjam/tersedia sudah akurat)
-      const freshTools = await getTools();
+      // ambil ulang data alat ukur terbaru dari server (dipinjam/tersedia sudah akurat)
+      const freshAlatukur = await getAlatukur();
 
       // bangun entri transaksi lokal untuk ditampilkan langsung di UI
-      const state = getState() as { inventoryTools: InventoryToolsState };
+      const state = getState() as { inventoryAlatukur: InventoryAlatukurState };
       const items = cartItems.map((c) => {
-        const tool = state.inventoryTools.tools.find((t) => t.id === c.toolId);
+        const alat ukur = state.inventoryAlatukur.alat ukur.find((t) => t.id === c.alat ukurId);
         return {
-          toolId: c.toolId,
+          alat ukurId: c.alat ukurId,
           kodeBarang: c.kodeBarang,
           namaBarang: c.namaBarang,
           jumlah: c.jumlah,
-          kondisiSaatDipinjam: tool?.kondisi || "Baik",
+          kondisiSaatDipinjam: alat ukur?.kondisi || "Baik",
         };
       });
 
@@ -147,7 +147,7 @@ export const checkoutPeminjamanThunk = createAsyncThunk(
         status: "Sedang Dipinjam",
       };
 
-      return { freshTools, transaksi };
+      return { freshAlatukur, transaksi };
     } catch (err) {
       const message = err instanceof Error ? err.message : "Gagal membuat peminjaman";
       return rejectWithValue(message);
@@ -155,8 +155,8 @@ export const checkoutPeminjamanThunk = createAsyncThunk(
   }
 );
 
-const inventoryToolsSlice = createSlice({
-  name: "inventoryTools",
+const inventoryAlatukurSlice = createSlice({
+  name: "inventoryAlatukur",
   initialState,
   reducers: {
     // ---- Pengembalian & riwayat kerusakan: MASIH DUMMY, backend belum ada ----
@@ -173,16 +173,16 @@ const inventoryToolsSlice = createSlice({
       if (!transaksi) return;
 
       returns.forEach((ret) => {
-        const tool = state.tools.find((t) => t.id === ret.toolId);
-        if (!tool) return;
+        const alat ukur = state.alat ukur.find((t) => t.id === ret.alat ukurId);
+        if (!alat ukur) return;
 
-        tool.dipinjam = Math.max(tool.dipinjam - ret.jumlah, 0);
+        alat ukur.dipinjam = Math.max(alat ukur.dipinjam - ret.jumlah, 0);
 
         if (ret.kondisi === "Baik") {
           // tidak ada aksi tambahan -> tersedia otomatis bertambah
         } else {
-          tool.stok = Math.max(tool.stok - ret.jumlah, 0);
-          tool.kondisi = ret.kondisi;
+          alat ukur.stok = Math.max(alat ukur.stok - ret.jumlah, 0);
+          alat ukur.kondisi = ret.kondisi;
 
           state.kerusakanHistory.unshift({
             id: uuid(),
@@ -206,35 +206,35 @@ const inventoryToolsSlice = createSlice({
     },
   },
   extraReducers: (builder) => {
-    // ---- fetchTools ----
+    // ---- fetchAlatukur ----
     builder
-      .addCase(fetchTools.pending, (state) => {
-        state.loadingTools = true;
-        state.toolsError = null;
+      .addCase(fetchAlatukur.pending, (state) => {
+        state.loadingAlatukur = true;
+        state.alat ukurError = null;
       })
-      .addCase(fetchTools.fulfilled, (state, action) => {
-        state.loadingTools = false;
-        state.tools = action.payload;
+      .addCase(fetchAlatukur.fulfilled, (state, action) => {
+        state.loadingAlatukur = false;
+        state.alat ukur = action.payload;
       })
-      .addCase(fetchTools.rejected, (state, action) => {
-        state.loadingTools = false;
-        state.toolsError = (action.payload as string) || "Gagal memuat data alat";
+      .addCase(fetchAlatukur.rejected, (state, action) => {
+        state.loadingAlatukur = false;
+        state.alat ukurError = (action.payload as string) || "Gagal memuat data alat";
       });
 
-    // ---- addToolThunk ----
-    builder.addCase(addToolThunk.fulfilled, (state, action) => {
-      state.tools.unshift(action.payload);
+    // ---- addAlatukurThunk ----
+    builder.addCase(addAlatukurThunk.fulfilled, (state, action) => {
+      state.alat ukur.unshift(action.payload);
     });
 
-    // ---- updateToolThunk ----
-    builder.addCase(updateToolThunk.fulfilled, (state, action) => {
-      const idx = state.tools.findIndex((t) => t.id === action.payload.id);
-      if (idx !== -1) state.tools[idx] = action.payload;
+    // ---- updateAlatukurThunk ----
+    builder.addCase(updateAlatukurThunk.fulfilled, (state, action) => {
+      const idx = state.alat ukur.findIndex((t) => t.id === action.payload.id);
+      if (idx !== -1) state.alat ukur[idx] = action.payload;
     });
 
-    // ---- deleteToolThunk ----
-    builder.addCase(deleteToolThunk.fulfilled, (state, action) => {
-      state.tools = state.tools.filter((t) => t.id !== action.payload);
+    // ---- deleteAlatukurThunk ----
+    builder.addCase(deleteAlatukurThunk.fulfilled, (state, action) => {
+      state.alat ukur = state.alat ukur.filter((t) => t.id !== action.payload);
     });
 
     // ---- checkoutPeminjamanThunk ----
@@ -243,7 +243,7 @@ const inventoryToolsSlice = createSlice({
         state.checkoutError = null;
       })
       .addCase(checkoutPeminjamanThunk.fulfilled, (state, action) => {
-        state.tools = action.payload.freshTools;
+        state.alat ukur = action.payload.freshAlatukur;
         state.transaksiList.unshift(action.payload.transaksi);
       })
       .addCase(checkoutPeminjamanThunk.rejected, (state, action) => {
@@ -252,6 +252,6 @@ const inventoryToolsSlice = createSlice({
   },
 });
 
-export const { prosesPengembalian } = inventoryToolsSlice.actions;
+export const { prosesPengembalian } = inventoryAlatukurSlice.actions;
 
-export default inventoryToolsSlice.reducer;
+export default inventoryAlatukurSlice.reducer;

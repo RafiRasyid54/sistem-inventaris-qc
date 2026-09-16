@@ -11,7 +11,7 @@ export default function UnreturnedAlertModal() {
   const router = useRouter();
 
   useEffect(() => {
-    const checkUserAndUnreturnedTools = async () => {
+    const checkUserAndUnreturnedAlatukur = async () => {
       try {
         const userRes: any = await api('/user');
         const userRole = userRes?.role || userRes?.data?.role;
@@ -32,7 +32,7 @@ export default function UnreturnedAlertModal() {
       }
     };
 
-    checkUserAndUnreturnedTools();
+    checkUserAndUnreturnedAlatukur();
   }, []);
 
   return (

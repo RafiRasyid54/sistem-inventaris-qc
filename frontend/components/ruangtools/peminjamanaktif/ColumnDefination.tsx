@@ -3,7 +3,7 @@ import { ColumnDef } from "@tanstack/react-table";
 import { Badge } from "react-bootstrap";
 
 // import custom types
-import { PeminjamanAktifItemType } from "types/DataToolsTypes";
+import { PeminjamanAktifItemType } from "types/DataAlatukurTypes";
 
 // Ubah timestamp mentah dari database (ISO string, mis. "2026-07-15T01:27:41.000000Z")
 // jadi format tanggal + jam yang enak dibaca (mis. "15 Jul 2026, 08:27")

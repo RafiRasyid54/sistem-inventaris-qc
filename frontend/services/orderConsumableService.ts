@@ -1,6 +1,6 @@
 import apiFetch from "/lib/api";
 
-// Service untuk Order Consumable — mirror dari orderToolsService,
+// Service untuk Order Consumable — mirror dari orderAlatukurService,
 // dengan endpoint /order-consumable dan sumber data dari /consumable (Data Consumable).
 export const getOrderConsumables = async (status?: string) => {
   const query = status && status !== 'semua' ? `?status_pembelian=${encodeURIComponent(status)}` : '';
@@ -18,7 +18,7 @@ export const updateOrderConsumableStatus = async (id: number, status: string, ta
   });
 };
 
-// Daftar pegawai/pengusul (sama seperti Order Tools)
+// Daftar pegawai/pengusul (sama seperti Order Alatukur)
 export const getPemintaListForConsumable = async () => {
   const json = await apiFetch<any>("/peminta");
   return json.data || json;

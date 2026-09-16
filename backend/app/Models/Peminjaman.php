@@ -4,73 +4,51 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Support\Str;
 
 class Peminjaman extends Model
 {
     use HasFactory;
 
-    protected $table = 'peminjaman'; // ← tambahkan baris ini
+    protected $table = 'peminjaman';
 
-    public $incrementing = false;
-    protected $keyType = 'string';
-
+    // Kolom-kolom inti untuk scan < 1 menit
     protected $fillable = [
-        'tanggal',
-        'tool_id',
-        'peminta_id',
-        'jumlah',
-        'area_pekerjaan',
-        'nama_pekerjaan',
-        'spesifikasi',
-        'keterangan',
+        'alat_ukur_id',
+        'peminta_id', // ID pekerja dari kartu RFID
+        'pekerjaan_id', 
+        'dicatat_oleh', // ID admin yang login
+        'tanggal_pinjam',
         'tanggal_kembali',
-        'dicatat_oleh',
+        'keterangan',
+        'catatan_pengembalian'
     ];
 
+    protected $casts = [
+        'tanggal_pinjam' => 'datetime',
+        'tanggal_kembali' => 'datetime',
+    ];
 
-    protected function casts(): array
+    // Relasi Balik: Transaksi ini meminjam alat apa?
+    public function alatUkur()
     {
-        return [
-            'tanggal' => 'datetime',
-            'tanggal_kembali' => 'datetime', // sebelumnya 'date'
-        ];
+        return $this->belongsTo(AlatUkur::class, 'alat_ukur_id');
     }
 
-    protected static function boot()
+    // Relasi Balik: Siapa pekerja yang pinjam?
+    public function peminta()
     {
-        parent::boot();
-
-        static::creating(function ($model) {
-            if (empty($model->id)) {
-                $model->id = (string) \Illuminate\Support\Str::uuid();
-            }
-        });
+        return $this->belongsTo(Peminta::class, 'peminta_id');
     }
 
-    public function tool(): BelongsTo
+    // Relasi Balik: Dipinjam untuk proyek/tugas apa?
+    public function pekerjaan()
     {
-        return $this->belongsTo(Tool::class);
+        return $this->belongsTo(Pekerjaan::class, 'pekerjaan_id');
     }
 
-    public function peminta(): BelongsTo
-    {
-        return $this->belongsTo(Peminta::class);
-    }
-
-    public function dicatatOleh(): BelongsTo
+    // Relasi Balik: Admin siapa yang jaga saat itu?
+    public function dicatatOleh()
     {
         return $this->belongsTo(User::class, 'dicatat_oleh');
-    }
-
-    public function sudahKembali(): bool
-    {
-        return ! is_null($this->tanggal_kembali);
-    }
-
-    public function scopeBelumKembali($query)
-    {
-        return $query->whereNull('tanggal_kembali');
     }
 }

@@ -3,255 +3,181 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\ConsumableKeluar;
-use App\Models\Consumable;
-use App\Models\LaporanKerusakanTools;
+use App\Models\AlatUkur;
 use App\Models\Peminjaman;
 use App\Models\Peminta;
-use App\Models\Tool;
+use App\Models\Pekerjaan;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Carbon\Carbon;
 
 class DashboardController extends Controller
 {
-    // GET /api/dashboard/summary
+    /**
+     * 1. GET /api/dashboard/summary
+     * Menampilkan angka ringkasan utama di bagian atas Dashboard.
+     */
     public function summary()
     {
-        // 1. Hitung status Order Tools
-        $orderTools = DB::table('order_tools')
-            ->select('status_pembelian', DB::raw('count(*) as total'))
-            ->groupBy('status_pembelian')
-            ->pluck('total', 'status_pembelian')
-            ->toArray();
+        // Menghitung alat yang batas kalibrasinya kurang dari 30 hari lagi (atau sudah lewat)
+        $kalibrasiMendekati = AlatUkur::where('tanggal_kalibrasi_selanjutnya', '<=', Carbon::now()->addDays(30))
+                                      ->orWhereNull('tanggal_kalibrasi_selanjutnya')
+                                      ->count();
 
-        // 2. Hitung status Order Consumable
-        $orderConsumables = DB::table('order_consumables')
-            ->select('status_pembelian', DB::raw('count(*) as total'))
-            ->groupBy('status_pembelian')
-            ->pluck('total', 'status_pembelian')
-            ->toArray();
-
-        // 3. Petakan kuncinya menggunakan huruf kecil sesuai value di database
-        $orderToolsStatus = [
-            'belum_dibeli' => $orderTools['belum dibeli'] ?? 0,
-            'on_progres'   => $orderTools['on progres'] ?? 0,
-            'sudah_dibeli' => $orderTools['sudah dibeli'] ?? 0,
-            'ditolak'      => $orderTools['ditolak'] ?? 0,
-        ];
-
-        $orderConsumableStatus = [
-            'belum_dibeli' => $orderConsumables['belum dibeli'] ?? 0,
-            'on_progres'   => $orderConsumables['on progres'] ?? 0,
-            'sudah_dibeli' => $orderConsumables['sudah dibeli'] ?? 0,
-            'ditolak'      => $orderConsumables['ditolak'] ?? 0,
-        ];
-
-        // 4. Return semua datanya sekaligus
         return response()->json([
-            'total_tools' => Tool::count(),
-            'total_consumables' => Consumable::count(),
-            'total_peminta' => Peminta::where('aktif', true)->count(),
-            'sedang_dipinjam' => Peminjaman::whereNull('tanggal_kembali')->sum('jumlah'),
-
-            // --- DATA UNTUK KARTU ORDER DI DASHBOARD ---
-            'order_tools_status' => $orderToolsStatus,
-            'order_consumable_status' => $orderConsumableStatus,
+            'status' => 'success',
+            'data' => [
+                'total_alat_ukur' => AlatUkur::count(),
+                'sedang_dipinjam' => Peminjaman::whereNull('tanggal_kembali')->count(),
+                'total_peminta_aktif' => Peminta::where('aktif', true)->count(),
+                'total_pekerjaan_aktif' => Pekerjaan::where('is_active', true)->count(),
+                'peringatan_kalibrasi' => $kalibrasiMendekati, // Angka merah untuk peringatan QC
+            ]
         ]);
     }
 
-    // GET /api/dashboard/stok-menipis
-    public function stokMenipis()
+    /**
+     * 2. GET /api/dashboard/kalibrasi-mendekati
+     * Pengganti "stok menipis". Menampilkan daftar alat yang butuh kalibrasi secepatnya.
+     */
+    public function kalibrasiMendekati()
     {
-        $data = Consumable::where('stok_tersedia', '<', 5)
-            ->orderBy('stok_tersedia', 'asc')
-            ->limit(5)
-            ->get(['id', 'kode_barang', 'nama', 'stok_tersedia']);
+        $data = AlatUkur::where('tanggal_kalibrasi_selanjutnya', '<=', Carbon::now()->addDays(30))
+                    ->orderBy('tanggal_kalibrasi_selanjutnya', 'asc')
+                    ->limit(5)
+                    ->get(['id', 'kode_alat', 'nama_alat', 'sn', 'tanggal_kalibrasi_selanjutnya']);
 
-        return response()->json($data);
+        return response()->json([
+            'status' => 'success',
+            'data' => $data
+        ]);
     }
 
-    // GET /api/dashboard/telat-kembali
+    /**
+     * 3. GET /api/dashboard/telat-kembali
+     * Menampilkan daftar alat yang belum dikembalikan lebih dari 3 hari.
+     */
     public function telatKembali()
     {
-        $batasHari = 30;
+        $batasHari = 3; // Ubah sesuai kebijakan perusahaan (misal telat jika lebih dari 3 hari)
 
-        $data = Peminjaman::with(['tool', 'peminta'])
+        $data = Peminjaman::with(['alatUkur', 'peminta'])
             ->whereNull('tanggal_kembali')
-            ->where('tanggal', '<', now()->subDays($batasHari))
-            ->orderBy('tanggal', 'asc')
+            ->where('tanggal_pinjam', '<', Carbon::now()->subDays($batasHari))
+            ->orderBy('tanggal_pinjam', 'asc')
             ->get()
             ->map(function ($p) {
                 return [
                     'id' => $p->id,
-                    'kode_barang' => $p->tool->kode_barang ?? '-',
-                    'nama_barang' => $p->tool->nama_barang ?? '-',
-                    'nama_peminjam' => $p->peminta->nama ?? '-',
-                    'tanggal_pinjam' => $p->tanggal,
-                    'hari_terlambat' => (int) floor(abs(now()->diffInDays($p->tanggal))),
+                    'kode_alat' => $p->alatUkur->kode_alat ?? '-',
+                    'nama_alat' => $p->alatUkur->nama_alat ?? '-',
+                    'nama_peminjam' => $p->peminta->nama_peminta ?? '-',
+                    'tanggal_pinjam' => $p->tanggal_pinjam,
+                    'hari_terlambat' => (int) floor(abs(Carbon::now()->diffInDays($p->tanggal_pinjam))),
                 ];
             });
-
-        return response()->json($data);
-    }
-
-    // GET /api/dashboard/alat-terpopuler
-    public function alatTerpopuler()
-    {
-        $data = Peminjaman::select('tool_id', DB::raw('COUNT(*) as total_transaksi'), DB::raw('SUM(jumlah) as total_unit'))
-            ->groupBy('tool_id')
-            ->orderByDesc('total_transaksi')
-            ->limit(5)
-            ->with('tool:id,kode_barang,nama_barang,merk,ukuran')
-            ->get()
-            ->map(function ($row) {
-                return [
-                    'kode_barang' => $row->tool->kode_barang ?? '-',
-                    'nama_barang' => $row->tool->nama_barang ?? '-',
-                    'merk' => $row->tool->merk ?? null,
-                    'ukuran' => $row->tool->ukuran ?? null,
-                    'total_transaksi' => $row->total_transaksi,
-                    'total_unit' => $row->total_unit,
-                ];
-            });
-
-        return response()->json($data);
-    }
-
-    // GET /api/dashboard/consumable-terpopuler
-    public function consumableTerpopuler()
-    {
-        $data = ConsumableKeluar::select('consumable_id', DB::raw('SUM(jumlah_keluar) as total_diambil'))
-            ->groupBy('consumable_id')
-            ->orderByDesc('total_diambil')
-            ->limit(5)
-            ->with('consumable:id,kode_barang,nama,merk,ukuran')
-            ->get()
-            ->map(function ($row) {
-                return [
-                    'kode_barang' => $row->consumable->kode_barang ?? '-',
-                    'nama' => $row->consumable->nama ?? '-',
-                    'merk' => $row->consumable->merk ?? null,
-                    'ukuran' => $row->consumable->ukuran ?? null,
-                    'total_diambil' => $row->total_diambil,
-                ];
-            });
-
-        return response()->json($data);
-    }
-
-    // GET /api/dashboard/kerusakan-summary
-    public function kerusakanSummary()
-    {
-        $bulanIni = LaporanKerusakanTools::whereMonth('tanggal', now()->month)
-            ->whereYear('tanggal', now()->year)
-            ->sum('jumlah');
-
-        $totalSemua = LaporanKerusakanTools::sum('jumlah');
-
-        $sedangDiperbaiki = LaporanKerusakanTools::where('status', 'bisa_diperbaiki')->sum('jumlah');
-        $sudahDiperbaiki = LaporanKerusakanTools::where('status', 'selesai_diperbaiki')->sum('jumlah');
-        $rusakPermanen = LaporanKerusakanTools::where('status', 'rusak_permanen')->sum('jumlah');
 
         return response()->json([
-            'bulan_ini' => $bulanIni,
-            'total_semua' => $totalSemua,
-            'sedang_diperbaiki' => $sedangDiperbaiki,
-            'sudah_diperbaiki' => $sudahDiperbaiki,
-            'rusak_permanen' => $rusakPermanen,
+            'status' => 'success',
+            'data' => $data
         ]);
     }
 
-    // GET /api/dashboard/aktivitas-terbaru
-    public function aktivitasTerbaru()
+    /**
+     * 4. GET /api/dashboard/alat-terpopuler
+     * Menampilkan alat yang paling sering dipinjam.
+     */
+    public function alatTerpopuler()
     {
-        $peminjaman = Peminjaman::with(['tool', 'peminta'])
-            ->latest('tanggal')
-            ->limit(10)
+        $data = Peminjaman::select('alat_ukur_id', DB::raw('COUNT(*) as total_transaksi'))
+            ->groupBy('alat_ukur_id')
+            ->orderByDesc('total_transaksi')
+            ->limit(5)
+            ->with('alatUkur:id,kode_alat,nama_alat,merk,sn')
             ->get()
-            ->map(function ($p) {
+            ->map(function ($row) {
                 return [
-                    'jenis' => 'peminjaman',
-                    'deskripsi' => "{$p->peminta->nama} meminjam {$p->tool->nama_barang}",
-                    'waktu' => $p->tanggal,
+                    'kode_alat' => $row->alatUkur->kode_alat ?? '-',
+                    'nama_alat' => $row->alatUkur->nama_alat ?? '-',
+                    'merk' => $row->alatUkur->merk ?? '-',
+                    'sn' => $row->alatUkur->sn ?? '-',
+                    'total_dipinjam' => $row->total_transaksi, // Karena 1 resi = 1 alat fisik
                 ];
             });
 
-        $pengembalian = Peminjaman::with(['tool', 'peminta'])
-            ->whereNotNull('tanggal_kembali')
-            ->latest('tanggal_kembali')
-            ->limit(10)
+        return response()->json([
+            'status' => 'success',
+            'data' => $data
+        ]);
+    }
+
+    /**
+     * 5. GET /api/dashboard/aktivitas-terbaru
+     * Menggabungkan log peminjaman dan pengembalian terbaru secara real-time.
+     */
+    public function aktivitasTerbaru()
+    {
+        // 5 Peminjaman terakhir
+        $peminjaman = Peminjaman::with(['alatUkur', 'peminta'])
+            ->latest('tanggal_pinjam')
+            ->limit(5)
             ->get()
             ->map(function ($p) {
+                $namaAlat = $p->alatUkur->nama_alat ?? 'Alat';
+                $namaPeminta = $p->peminta->nama_peminta ?? 'Seseorang';
                 return [
-                    'jenis' => 'pengembalian',
-                    'deskripsi' => "{$p->peminta->nama} mengembalikan {$p->tool->nama_barang}",
+                    'jenis' => 'Peminjaman',
+                    'deskripsi' => "{$namaPeminta} meminjam {$namaAlat}",
+                    'waktu' => $p->tanggal_pinjam,
+                ];
+            });
+
+        // 5 Pengembalian terakhir
+        $pengembalian = Peminjaman::with(['alatUkur', 'peminta'])
+            ->whereNotNull('tanggal_kembali')
+            ->latest('tanggal_kembali')
+            ->limit(5)
+            ->get()
+            ->map(function ($p) {
+                $namaAlat = $p->alatUkur->nama_alat ?? 'Alat';
+                $namaPeminta = $p->peminta->nama_peminta ?? 'Seseorang';
+                return [
+                    'jenis' => 'Pengembalian',
+                    'deskripsi' => "{$namaPeminta} mengembalikan {$namaAlat}",
                     'waktu' => $p->tanggal_kembali,
                 ];
             });
 
-        $consumableKeluar = ConsumableKeluar::with(['consumable', 'peminta'])
-            ->latest('tanggal')
-            ->limit(10)
-            ->get()
-            ->map(function ($c) {
-                return [
-                    'jenis' => 'consumable_keluar',
-                    'deskripsi' => "{$c->peminta->nama} mengambil {$c->jumlah_keluar} {$c->consumable->nama}",
-                    'waktu' => $c->tanggal,
-                ];
-            });
-
-        $kerusakan = LaporanKerusakanTools::with('tool')
-            ->latest('tanggal')
-            ->limit(10)
-            ->get()
-            ->map(function ($k) {
-                return [
-                    'jenis' => 'kerusakan',
-                    'deskripsi' => "{$k->jumlah} unit {$k->tool->nama_barang} dilaporkan rusak",
-                    'waktu' => $k->tanggal,
-                ];
-            });
-
-        $gabungan = $peminjaman
-            ->concat($pengembalian)
-            ->concat($consumableKeluar)
-            ->concat($kerusakan)
+        // Gabungkan dan urutkan berdasarkan waktu paling baru
+        $gabungan = $peminjaman->concat($pengembalian)
             ->sortByDesc('waktu')
-            ->take(10)
+            ->take(8)
             ->values();
 
-        return response()->json($gabungan);
+        return response()->json([
+            'status' => 'success',
+            'data' => $gabungan
+        ]);
     }
 
-    // GET /api/dashboard/tren-peminjaman
+    /**
+     * 6. GET /api/dashboard/tren-peminjaman
+     * Grafik tren peminjaman alat selama 30 hari terakhir.
+     */
     public function trenPeminjaman()
     {
         $data = Peminjaman::select(
-                DB::raw('DATE(tanggal) as tanggal'),
+                DB::raw('DATE(tanggal_pinjam) as tanggal'),
                 DB::raw('COUNT(*) as total')
             )
-            ->where('tanggal', '>=', now()->subDays(30))
-            ->groupBy(DB::raw('DATE(tanggal)'))
+            ->where('tanggal_pinjam', '>=', Carbon::now()->subDays(30))
+            ->groupBy(DB::raw('DATE(tanggal_pinjam)'))
             ->orderBy('tanggal', 'asc')
             ->get();
 
-        return response()->json($data);
-    }
-
-    // GET /api/dashboard/tren-consumable
-    public function trenConsumable()
-    {
-        // Mengambil data tren pengeluaran consumable selama 30 hari terakhir
-        $data = ConsumableKeluar::select(
-                DB::raw('DATE(tanggal) as tanggal'),
-                DB::raw('SUM(jumlah_keluar) as total')
-            )
-            ->where('tanggal', '>=', now()->subDays(30))
-            ->groupBy(DB::raw('DATE(tanggal)'))
-            ->orderBy('tanggal', 'asc')
-            ->get();
-
-        return response()->json($data);
+        return response()->json([
+            'status' => 'success',
+            'data' => $data
+        ]);
     }
 }

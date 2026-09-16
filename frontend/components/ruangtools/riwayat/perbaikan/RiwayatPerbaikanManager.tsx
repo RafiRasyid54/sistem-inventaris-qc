@@ -11,27 +11,27 @@ import {
   Form,
   Button,
 } from "react-bootstrap";
-import { IconTools, IconSearch, IconX } from "@tabler/icons-react";
+import { IconAlatukur, IconSearch, IconX } from "@tabler/icons-react";
 
 import { LaporanKerusakanType } from "types/LaporanKerusakanTypes";
 
 import TanstackTable from "components/table/TanstackTable";
 import Flex from "components/common/Flex";
 import DasherBreadcrumb from "components/common/DasherBreadcrumb";
-import RiwayatFilterBar from "components/ruangtools/riwayat/common/RiwayatFilterBar";
+import RiwayatFilterBar from "components/ruangalat ukur/riwayat/common/RiwayatFilterBar";
 import {
   DateFilterValue,
   dateInFilter,
   parseRowDate,
-} from "components/ruangtools/common/dateUtils";
+} from "components/ruangalat ukur/common/dateUtils";
 import {
   exportToExcel,
   exportToPDF,
   ExportColumn,
   getFilteredExportFileName,
-} from "components/ruangtools/riwayat/common/exportUtils";
-import { getRiwayatPerbaikanColumns } from "components/ruangtools/riwayat/perbaikan/ColumnDefination";
-import DetailLaporanModal from "components/ruangtools/laporan/kerusakan/DetailLaporanModal";
+} from "components/ruangalat ukur/riwayat/common/exportUtils";
+import { getRiwayatPerbaikanColumns } from "components/ruangalat ukur/riwayat/perbaikan/ColumnDefination";
+import DetailLaporanModal from "components/ruangalat ukur/laporan/kerusakan/DetailLaporanModal";
 
 import { getLaporanKerusakan } from "services/laporanKerusakanService";
 
@@ -141,8 +141,8 @@ const RiwayatPerbaikanManager = () => {
       </Row>
 
       <Card className="card-lg mb-6">
-        <div className="riwayat-toolbar border-bottom">
-          <div className="riwayat-toolbar-row">
+        <div className="riwayat-alat ukurbar border-bottom">
+          <div className="riwayat-alat ukurbar-row">
             <InputGroup className="riwayat-search">
               <InputGroup.Text>
                 <IconSearch size={18} />
@@ -196,7 +196,7 @@ const RiwayatPerbaikanManager = () => {
           ) : riwayatList.length === 0 ? (
             <div className="riwayat-empty text-center py-6">
               <div className="riwayat-empty-icon mb-3">
-                <IconTools size={32} />
+                <IconAlatukur size={32} />
               </div>
               <h5 className="mb-1">Belum ada riwayat perbaikan</h5>
               <p className="text-secondary mb-0">
@@ -206,7 +206,7 @@ const RiwayatPerbaikanManager = () => {
           ) : filteredList.length === 0 ? (
             <div className="riwayat-empty text-center py-6">
               <div className="riwayat-empty-icon mb-3">
-                <IconTools size={32} />
+                <IconAlatukur size={32} />
               </div>
               <h5 className="mb-1">Tidak ada data yang cocok</h5>
               <p className="text-secondary mb-0">

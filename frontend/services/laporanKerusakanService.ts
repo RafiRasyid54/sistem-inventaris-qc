@@ -20,7 +20,7 @@ function formatTanggalJam(isoString: string): string {
 interface LaporanKerusakanApiResponse {
   id: string;
   tanggal: string;
-  tool_id: string;
+  alat ukur_id: string;
   peminjaman_id: string | null;
   jumlah: number;
   keterangan: string | null;
@@ -29,7 +29,7 @@ interface LaporanKerusakanApiResponse {
   tingkat_kerusakan: "ringan" | "berat" | null;
   perbaikan_ke: number | null;
   dilaporkan_oleh: string;
-    tool: {
+    alat ukur: {
     kode_barang: string;
     nama_barang: string;
     merk: string | null;
@@ -50,7 +50,7 @@ interface LaporanKerusakanApiResponse {
 
 interface CreateLaporanKerusakanPayload {
   tanggal: string;
-  tool_id: string;
+  alat ukur_id: string;
   peminjaman_id: string;
   jumlah: number;
   keterangan: string;
@@ -62,12 +62,12 @@ function mapLaporanFromApi(item: LaporanKerusakanApiResponse): LaporanKerusakanT
   return {
     id: item.id,
     tanggal_pengembalian: formatTanggalJam(item.tanggal),
-    kode_barang: item.tool?.kode_barang ?? "-",
-    nama_barang: item.tool?.nama_barang ?? "-",
-    merk: item.tool?.merk ?? "-",
-    tipe: item.tool?.type ?? "-",
-    warna: item.tool?.warna ?? "-",
-    ukuran: item.tool?.ukuran ?? "-",
+    kode_barang: item.alat ukur?.kode_barang ?? "-",
+    nama_barang: item.alat ukur?.nama_barang ?? "-",
+    merk: item.alat ukur?.merk ?? "-",
+    tipe: item.alat ukur?.type ?? "-",
+    warna: item.alat ukur?.warna ?? "-",
+    ukuran: item.alat ukur?.ukuran ?? "-",
     jumlah_rusak: item.jumlah,
     nama_peminjam: item.peminjaman?.peminta?.nama ?? "-",
     divisi: item.peminjaman?.peminta?.divisi ?? "-",
@@ -78,7 +78,7 @@ function mapLaporanFromApi(item: LaporanKerusakanApiResponse): LaporanKerusakanT
     catatan_perbaikan: item.catatan_perbaikan ?? undefined,
     tingkat_kerusakan: item.tingkat_kerusakan ?? undefined,
     perbaikan_ke: item.perbaikan_ke ?? undefined,
-    kategori_alat: (item.tool?.kategori as "mesin" | "alat_biasa" | undefined) ?? "alat_biasa",
+    kategori_alat: (item.alat ukur?.kategori as "mesin" | "alat_biasa" | undefined) ?? "alat_biasa",
   };
 }
 

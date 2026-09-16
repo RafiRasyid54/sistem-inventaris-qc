@@ -2,16 +2,16 @@
 import React, { useState, useEffect } from 'react';
 import { Modal, Form, Button, Row, Col, InputGroup } from 'react-bootstrap';
 import { IconTrash, IconPlus } from '@tabler/icons-react';
-import { getPemintaListForTools, getToolsList, createOrderTools } from '/services/orderToolsService';
+import { getPemintaListForAlatukur, getAlatukurList, createOrderAlatukur } from '/services/orderAlatukurService';
 
-interface OrderToolsFormModalProps {
+interface OrderAlatukurFormModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
 }
 
 interface OrderItem {
-  tool_id: string;
+  alat ukur_id: string;
   kode_barang: string;
   nama_barang: string;
   merek: string;
@@ -23,7 +23,7 @@ interface OrderItem {
 }
 
 const getEmptyItem = (): OrderItem => ({
-  tool_id: '',
+  alat ukur_id: '',
   kode_barang: '',
   nama_barang: '',
   merek: '',
@@ -34,9 +34,9 @@ const getEmptyItem = (): OrderItem => ({
   satuan: '',
 });
 
-export default function OrderToolsFormModal({ isOpen, onClose, onSuccess }: OrderToolsFormModalProps) {
+export default function OrderAlatukurFormModal({ isOpen, onClose, onSuccess }: OrderAlatukurFormModalProps) {
   const [peminjamList, setPeminjamList] = useState<any[]>([]);
-  const [toolsList, setToolsList] = useState<any[]>([]);
+  const [alat ukurList, setAlatukurList] = useState<any[]>([]);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
   const [pemintaId, setPemintaId] = useState<string>('');
@@ -46,14 +46,14 @@ export default function OrderToolsFormModal({ isOpen, onClose, onSuccess }: Orde
 
   useEffect(() => {
     if (isOpen) {
-      getPemintaListForTools().then((res: any) => {
+      getPemintaListForAlatukur().then((res: any) => {
         const data = res?.data?.data || res?.data || res || [];
         setPeminjamList(Array.isArray(data) ? data : []);
       }).catch(console.error);
 
-      getToolsList().then((res: any) => {
+      getAlatukurList().then((res: any) => {
         const data = res?.data?.data || res?.data || res || [];
-        setToolsList(Array.isArray(data) ? data : []);
+        setAlatukurList(Array.isArray(data) ? data : []);
       }).catch(console.error);
 
       setPemintaId('');
@@ -69,14 +69,14 @@ export default function OrderToolsFormModal({ isOpen, onClose, onSuccess }: Orde
     setItems(newItems);
   };
 
-  const handleSelectTool = (index: number, toolId: string) => {
-    const selected = toolsList.find((t) => t.id.toString() === toolId);
+  const handleSelectAlatukur = (index: number, alat ukurId: string) => {
+    const selected = alat ukurList.find((t) => t.id.toString() === alat ukurId);
 
     if (selected) {
       const newItems = [...items];
       newItems[index] = {
         ...newItems[index],
-        tool_id: toolId,
+        alat ukur_id: alat ukurId,
         kode_barang: selected.kode_barang || selected.kodeBarang || '',
         nama_barang: selected.nama_barang || selected.namaBarang || selected.nama || '',
         merek: selected.merk || selected.merek || '',
@@ -115,7 +115,7 @@ export default function OrderToolsFormModal({ isOpen, onClose, onSuccess }: Orde
 
         const payload = {
           peminta_id: pemintaId,
-          tool_id: item.tool_id ? Number(item.tool_id) : null,
+          alat ukur_id: item.alat ukur_id ? Number(item.alat ukur_id) : null,
           kode_barang: item.kode_barang || null,
           nama_barang: item.nama_barang,
           merek: item.merek || null,
@@ -129,7 +129,7 @@ export default function OrderToolsFormModal({ isOpen, onClose, onSuccess }: Orde
           tanggal_pengajuan: localISOTime,
         };
 
-        return createOrderTools(payload);
+        return createOrderAlatukur(payload);
       });
 
       await Promise.all(promises);
@@ -146,11 +146,11 @@ export default function OrderToolsFormModal({ isOpen, onClose, onSuccess }: Orde
   return (
     <Modal show={isOpen} onHide={onClose} centered backdrop="static" size="lg" scrollable>
       <Modal.Header closeButton className="bg-light">
-        <Modal.Title className="h5 mb-0">Buat Order Tools</Modal.Title>
+        <Modal.Title className="h5 mb-0">Buat Order Alatukur</Modal.Title>
       </Modal.Header>
 
       <Modal.Body className="p-4">
-        <Form id="formOrderTools" onSubmit={handleSubmit}>
+        <Form id="formOrderAlatukur" onSubmit={handleSubmit}>
 
           {/* BAGIAN 1: PENGUSUL & PEKERJAAN (GLOBAL) */}
           <div className="mb-4">
@@ -193,10 +193,10 @@ export default function OrderToolsFormModal({ isOpen, onClose, onSuccess }: Orde
           {items.map((item, index) => {
             const currentSearchText = searchTexts[index] !== undefined
               ? searchTexts[index]
-              : (item.tool_id ? `${item.kode_barang} — ${item.nama_barang}` : item.nama_barang);
+              : (item.alat ukur_id ? `${item.kode_barang} — ${item.nama_barang}` : item.nama_barang);
 
-            // Field auto-fill disabled saat tool sudah dipilih dari database
-            const isLocked = Boolean(item.tool_id);
+            // Field auto-fill disabled saat alat ukur sudah dipilih dari database
+            const isLocked = Boolean(item.alat ukur_id);
 
             return (
               <div key={index} className="p-3 mb-3 border rounded bg-white position-relative shadow-sm">
@@ -216,24 +216,24 @@ export default function OrderToolsFormModal({ isOpen, onClose, onSuccess }: Orde
                         Kode Barang <span className="text-danger">*</span>
                       </Form.Label>
                       <Form.Control
-                        list={`tools-options-${index}`}
+                        list={`alat ukur-options-${index}`}
                         placeholder="Ketik atau pilih kode/nama barang..."
                         value={currentSearchText}
                         onChange={(e) => {
                           const typed = e.target.value;
                           setSearchTexts((prev) => ({ ...prev, [index]: typed }));
 
-                          const match = toolsList.find(
+                          const match = alat ukurList.find(
                             (t) => `${t.kode_barang || t.kodeBarang} — ${t.nama_barang || t.namaBarang || t.nama}` === typed
                           );
 
                           if (match) {
-                            handleSelectTool(index, match.id.toString());
+                            handleSelectAlatukur(index, match.id.toString());
                           } else {
                             const newItems = [...items];
                             newItems[index] = {
                               ...newItems[index],
-                              tool_id: '',
+                              alat ukur_id: '',
                               kode_barang: '',
                               nama_barang: typed,
                               merek: '',
@@ -246,8 +246,8 @@ export default function OrderToolsFormModal({ isOpen, onClose, onSuccess }: Orde
                           }
                         }}
                       />
-                      <datalist id={`tools-options-${index}`}>
-                        {toolsList.map((t) => {
+                      <datalist id={`alat ukur-options-${index}`}>
+                        {alat ukurList.map((t) => {
                           const kode = t.kode_barang || t.kodeBarang;
                           const nama = t.nama_barang || t.namaBarang || t.nama;
                           return <option key={t.id} value={`${kode} — ${nama}`} />;
@@ -373,7 +373,7 @@ export default function OrderToolsFormModal({ isOpen, onClose, onSuccess }: Orde
 
       <Modal.Footer className="bg-light">
         <Button variant="outline-secondary" onClick={onClose} disabled={isSubmitting}>Batal</Button>
-        <Button variant="primary" type="submit" form="formOrderTools" disabled={isSubmitting}>
+        <Button variant="primary" type="submit" form="formOrderAlatukur" disabled={isSubmitting}>
           {isSubmitting ? 'Menyimpan...' : 'Simpan Semua Order'}
         </Button>
       </Modal.Footer>

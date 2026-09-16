@@ -2,13 +2,13 @@
 // import node module libraries
 import { useEffect, useState } from "react";
 import { Modal, Form, Row, Col, Button } from "react-bootstrap";
-import { IconTool, IconPencil, IconPlus } from "@tabler/icons-react";
+import { IconAlatukur, IconPencil, IconPlus } from "@tabler/icons-react";
 
 // import custom types
-import { ToolFormValues, ToolItemType} from "types/DataToolsTypes";
+import { AlatukurFormValues, AlatukurItemType} from "types/DataAlatukurTypes";
 
 
-const emptyForm: ToolFormValues = {
+const emptyForm: AlatukurFormValues = {
   kodeBarang: "",
   namaBarang: "",
   merk: "",
@@ -21,22 +21,22 @@ const emptyForm: ToolFormValues = {
   kategori: "alat_biasa",
 };
 
-interface ToolFormModalProps {
+interface AlatukurFormModalProps {
   show: boolean;
   onClose: () => void;
-  onSubmit: (values: ToolFormValues) => void;
-  initialData?: ToolItemType | null; // ada isinya = mode Edit, kosong = mode Tambah
+  onSubmit: (values: AlatukurFormValues) => void;
+  initialData?: AlatukurItemType | null; // ada isinya = mode Edit, kosong = mode Tambah
   suggestedKodeBarang?: string; // kode barang otomatis untuk mode Tambah
 }
 
-const ToolFormModal = ({
+const AlatukurFormModal = ({
   show,
   onClose,
   onSubmit,
   initialData,
   suggestedKodeBarang,
-}: ToolFormModalProps) => {
-  const [form, setForm] = useState<ToolFormValues>(emptyForm);
+}: AlatukurFormModalProps) => {
+  const [form, setForm] = useState<AlatukurFormValues>(emptyForm);
   const isEditMode = Boolean(initialData);
 
   useEffect(() => {
@@ -52,7 +52,7 @@ const ToolFormModal = ({
   
 
   const handleChange = (
-    field: keyof ToolFormValues,
+    field: keyof AlatukurFormValues,
     value: string | number
   ) => {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -64,19 +64,19 @@ const ToolFormModal = ({
   };
 
   return (
-    <Modal show={show} onHide={onClose} centered size="lg" className="tool-form-modal">
+    <Modal show={show} onHide={onClose} centered size="lg" className="alat ukur-form-modal">
       <Form onSubmit={handleSubmit}>
         <Modal.Header closeButton>
           <Modal.Title as="h5" className="d-flex align-items-center gap-2">
-            <span className="tool-form-title-icon">
-              {isEditMode ? <IconPencil size={20} /> : <IconTool size={20} />}
+            <span className="alat ukur-form-title-icon">
+              {isEditMode ? <IconPencil size={20} /> : <IconAlatukur size={20} />}
             </span>
             {isEditMode ? "Edit Data Alat" : "Tambah Data Alat"}
           </Modal.Title>
         </Modal.Header>
         <Modal.Body>
           {isEditMode && (
-            <div className="tool-form-hero mb-4">
+            <div className="alat ukur-form-hero mb-4">
               <div className="text-secondary small">Sedang mengubah data</div>
               <div className="fw-semibold">
                 {initialData?.namaBarang}{" "}
@@ -85,7 +85,7 @@ const ToolFormModal = ({
             </div>
           )}
 
-          <div className="tool-form-section">
+          <div className="alat ukur-form-section">
             <div className="text-secondary small text-uppercase fw-semibold mb-3">
               Informasi Alat
             </div>
@@ -211,4 +211,4 @@ const ToolFormModal = ({
   );
 };
         
-export default ToolFormModal;
+export default AlatukurFormModal;

@@ -2,10 +2,10 @@
 import { Metadata } from "next";
 
 // import custom components
-import PeminjamanAktifManager from "components/ruangtools/peminjamanaktif/PeminjamanAktifManager";
+import PeminjamanAktifManager from "components/ruangalat ukur/peminjamanaktif/PeminjamanAktifManager";
 
 export const metadata: Metadata = {
-  title: "Peminjaman Aktif | Ruang Tools - Admin Panel",
+  title: "Peminjaman Aktif | Ruang Alatukur - Admin Panel",
   description:
     "Menampilkan seluruh alat yang masih dipinjam dan belum dikembalikan",
 };

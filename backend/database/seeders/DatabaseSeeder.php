@@ -9,18 +9,12 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         $this->call([
-            RolePermissionSeeder::class, // <-- Wajib paling atas agar role & permission siap
-            UserSeeder::class,          // <-- Baru buat user dan assign role-nya di sini
+            RolePermissionSeeder::class,
+            UserSeeder::class, // Komentari dulu sementara
             PemintaSeeder::class,
-            ToolSeeder::class,
-            ConsumableSeeder::class,
-            ToolsMasukSeeder::class,
-            ConsumableMasukSeeder::class,
-            PeminjamanSeeder::class,
-            ConsumableKeluarSeeder::class,
+            AlatUkurSeeder::class,
             PekerjaanSeeder::class,
-            MesinProduksiSeeder::class,
-            LogAktivitasMesinSeeder::class,
+            PeminjamanSeeder::class,
         ]);
     }
 }

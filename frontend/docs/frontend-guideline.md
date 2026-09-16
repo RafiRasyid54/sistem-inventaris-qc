@@ -1,12 +1,12 @@
 # Frontend Guideline
-# Sistem Manajemen Inventaris Ruang Tools
+# Sistem Manajemen Inventaris Ruang Alatukur
 ## Workshop Mekanik PT PLN (Persero)
 
 ---
 
 # 1. Tujuan
 
-Dokumen ini menjadi pedoman pengembangan Frontend Sistem Manajemen Inventaris Ruang Tools menggunakan **Next.js App Router** dan **TypeScript**.
+Dokumen ini menjadi pedoman pengembangan Frontend Sistem Manajemen Inventaris Ruang Alatukur menggunakan **Next.js App Router** dan **TypeScript**.
 
 Seluruh kode yang dikembangkan harus mengikuti standar yang telah ditetapkan agar mudah dipelihara, konsisten, scalable, dan mudah dipahami oleh seluruh anggota tim.
 
@@ -117,11 +117,11 @@ not-found.tsx
 Gunakan camelCase.
 
 ```ts
-const totalTools
+const totalAlatukur
 
 const totalBorrowed
 
-const selectedTool
+const selectedAlatukur
 ```
 
 ---
@@ -131,7 +131,7 @@ const selectedTool
 Gunakan camelCase.
 
 ```ts
-getTools()
+getAlatukur()
 
 updateInventory()
 
@@ -145,7 +145,7 @@ deleteBorrow()
 Gunakan PascalCase.
 
 ```ts
-interface Tool {}
+interface Alatukur {}
 
 interface Borrow {}
 
@@ -159,7 +159,7 @@ interface User {}
 Gunakan PascalCase.
 
 ```ts
-enum ToolStatus {}
+enum Alatukurtatus {}
 
 enum BorrowStatus {}
 ```
@@ -215,7 +215,7 @@ import Button from "@/components/ui/button";
 
 import { useAuth } from "@/hooks/useAuth";
 
-import { Tool } from "@/types/tool";
+import { Alatukur } from "@/types/alat ukur";
 ```
 
 ---
@@ -555,7 +555,7 @@ Gunakan format berikut.
 ```
 feat: tambah halaman dashboard
 
-feat: tambah data tools
+feat: tambah data alat ukur
 
 fix: perbaiki pagination
 
@@ -583,4 +583,4 @@ docs: update inventaris.md
 
 # 23. Penutup
 
-Dokumen ini menjadi standar pengembangan frontend Sistem Manajemen Inventaris Ruang Tools. Seluruh anggota tim diharapkan mengikuti pedoman ini agar kode yang dihasilkan konsisten, mudah dipelihara, dan siap dikembangkan di masa mendatang.
+Dokumen ini menjadi standar pengembangan frontend Sistem Manajemen Inventaris Ruang Alatukur. Seluruh anggota tim diharapkan mengikuti pedoman ini agar kode yang dihasilkan konsisten, mudah dipelihara, dan siap dikembangkan di masa mendatang.

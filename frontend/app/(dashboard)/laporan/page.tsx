@@ -2,10 +2,10 @@
 import { Metadata } from "next";
 
 // import custom components
-import LaporanKerusakanManager from "components/ruangtools/laporan/kerusakan/LaporanKerusakanManager";
+import LaporanKerusakanManager from "components/ruangalat ukur/laporan/kerusakan/LaporanKerusakanManager";
 
 export const metadata: Metadata = {
-  title: "Laporan Kerusakan Alat | Ruang Tools - Admin Panel",
+  title: "Laporan Kerusakan Alat | Ruang Alatukur - Admin Panel",
   description:
     "Menampilkan seluruh data alat yang mengalami kerusakan berdasarkan hasil pengembalian dari proses peminjaman",
 };

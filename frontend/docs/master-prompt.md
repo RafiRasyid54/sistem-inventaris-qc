@@ -1,8 +1,8 @@
-# Sistem Manajemen Inventaris Ruang Tools PT PLN
+# Sistem Manajemen Inventaris Ruang Alatukur PT PLN
 
 ## Deskripsi Project
 
-Project ini merupakan Website Sistem Manajemen Inventaris Ruang Tools Workshop Mekanik PT PLN.
+Project ini merupakan Website Sistem Manajemen Inventaris Ruang Alatukur Workshop Mekanik PT PLN.
 
 Project hanya berfokus pada FRONTEND.
 
@@ -23,7 +23,7 @@ Backend sudah dipisahkan dan bukan bagian dari project ini.
 
 ## Tujuan
 
-Membangun panel admin modern yang digunakan oleh Staff Ruang Tools untuk mengelola inventaris, transaksi peminjaman, barang consumable, laporan, dan monitoring inventaris.
+Membangun panel admin modern yang digunakan oleh Staff Ruang Alatukur untuk mengelola inventaris, transaksi peminjaman, barang consumable, laporan, dan monitoring inventaris.
 
 ---
 

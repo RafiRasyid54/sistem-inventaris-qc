@@ -4,8 +4,9 @@ namespace Database\Seeders;
 
 use App\Models\Peminjaman;
 use App\Models\Peminta;
-use App\Models\Tool;
+use App\Models\AlatUkur;
 use App\Models\User;
+use App\Models\Pekerjaan;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Carbon;
 
@@ -13,49 +14,44 @@ class PeminjamanSeeder extends Seeder
 {
     public function run(): void
     {
+        // Ambil master data yang sudah kita buat di Seeder sebelumnya
         $pekerja = Peminta::where('role', 'user')->get();
-        $petugas = User::first();
+        $petugas = User::first(); // Ambil admin yang sedang jaga
+        $pekerjaanList = Pekerjaan::all();
+        $alatUkurList = AlatUkur::all();
 
-        if ($pekerja->isEmpty() || ! $petugas) {
-            $this->command?->warn('Butuh data peminta & user terlebih dahulu.');
+        // Pastikan master datanya tidak kosong
+        if ($pekerja->isEmpty() || !$petugas || $pekerjaanList->isEmpty() || $alatUkurList->isEmpty()) {
+            $this->command?->warn('Gagal: Butuh data Peminta, User, Pekerjaan, dan Alat Ukur terlebih dahulu.');
             return;
         }
 
-        $data = [
-            ['kode_barang' => 'T-101', 'jumlah' => 1, 'area' => 'Gardu Induk A', 'pekerjaan' => 'Perbaikan panel listrik', 'hari_pinjam' => 10, 'hari_kembali' => 9],
-            ['kode_barang' => 'T-103', 'jumlah' => 2, 'area' => 'Bengkel Mekanikal', 'pekerjaan' => 'Perakitan rak alat', 'hari_pinjam' => 8, 'hari_kembali' => 8],
-            ['kode_barang' => 'T-105', 'jumlah' => 1, 'area' => 'Gardu Induk B', 'pekerjaan' => 'Pengecekan arus trafo', 'hari_pinjam' => 6, 'hari_kembali' => 6],
-            ['kode_barang' => 'T-201', 'jumlah' => 1, 'area' => 'Bengkel Mekanikal', 'pekerjaan' => 'Pemotongan plat besi', 'hari_pinjam' => 4, 'hari_kembali' => 3],
-            ['kode_barang' => 'T-104', 'jumlah' => 1, 'area' => 'Gardu Induk A', 'pekerjaan' => 'Pengeboran dudukan panel', 'hari_pinjam' => 2, 'hari_kembali' => null],
-            ['kode_barang' => 'T-202', 'jumlah' => 1, 'area' => 'Bengkel Mekanikal', 'pekerjaan' => 'Pengeboran plat besi', 'hari_pinjam' => 1, 'hari_kembali' => null],
-        ];
+        // --- SKENARIO 1: Alat sudah dipinjam dan SUDAH DIKEMBALIKAN ---
+        Peminjaman::firstOrCreate([
+            'alat_ukur_id' => $alatUkurList[0]->id,
+            'tanggal_pinjam' => Carbon::now()->subDays(3), // Pinjam 3 hari yang lalu
+        ], [
+            'peminta_id' => $pekerja[0]->id, // Budi/Rafi
+            'pekerjaan_id' => $pekerjaanList[0]->id, // Inspeksi Harian
+            'dicatat_oleh' => $petugas->id,
+            'tanggal_kembali' => Carbon::now()->subDays(1), // Dikembalikan kemarin
+            'keterangan' => 'Pinjam untuk inspeksi shift pagi',
+            'catatan_pengembalian' => 'Alat dikembalikan dalam kondisi baik dan bersih'
+        ]);
 
-        foreach ($data as $i => $item) {
-            $tool = Tool::where('kode_barang', $item['kode_barang'])->first();
-            if (! $tool) {
-                continue;
-            }
-
-            $peminta = $pekerja[$i % $pekerja->count()];
-
-            Peminjaman::firstOrCreate(
-                [
-                    'tool_id' => $tool->id,
-                    'nama_pekerjaan' => $item['pekerjaan'],
-                ],
-                [
-                    'tanggal' => Carbon::now()->subDays($item['hari_pinjam']),
-                    'peminta_id' => $peminta->id,
-                    'jumlah' => $item['jumlah'],
-                    'area_pekerjaan' => $item['area'],
-                    'spesifikasi' => null,
-                    'keterangan' => null,
-                    'tanggal_kembali' => $item['hari_kembali'] !== null
-                        ? Carbon::now()->subDays($item['hari_kembali'])
-                        : null,
-                    'dicatat_oleh' => $petugas->id,
-                ]
-            );
+        // --- SKENARIO 2: Alat SEDANG DIPINJAM (Belum kembali) ---
+        if (isset($alatUkurList[1]) && isset($pekerja[1]) && isset($pekerjaanList[1])) {
+            Peminjaman::firstOrCreate([
+                'alat_ukur_id' => $alatUkurList[1]->id,
+                'tanggal_pinjam' => Carbon::now()->subHours(5), // Dipinjam 5 jam yang lalu
+            ], [
+                'peminta_id' => $pekerja[1]->id,
+                'pekerjaan_id' => $pekerjaanList[1]->id,
+                'dicatat_oleh' => $petugas->id,
+                'tanggal_kembali' => null, // KOSONG = Sedang Dipinjam
+                'keterangan' => 'Sedang digunakan di line produksi mekanik',
+                'catatan_pengembalian' => null
+            ]);
         }
     }
 }

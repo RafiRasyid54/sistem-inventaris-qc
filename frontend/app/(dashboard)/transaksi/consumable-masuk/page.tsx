@@ -2,10 +2,10 @@
 import { Metadata } from "next";
 
 // import custom components
-import ConsumableMasukManager from "components/ruangtools/consumablemasuk/ConsumableMasukManager";
+import ConsumableMasukManager from "components/ruangalat ukur/consumablemasuk/ConsumableMasukManager";
 
 export const metadata: Metadata = {
-  title: "Consumable Masuk | Ruang Tools - Admin Panel",
+  title: "Consumable Masuk | Ruang Alatukur - Admin Panel",
   description: "Mencatat barang Consumable yang masuk",
 };
 

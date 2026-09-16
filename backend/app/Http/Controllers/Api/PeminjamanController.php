@@ -4,366 +4,162 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Peminjaman;
-use App\Models\Tool;
-use App\Models\Consumable;
+use App\Models\AlatUkur;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
-use Illuminate\Support\Str;
+use Carbon\Carbon;
 
 class PeminjamanController extends Controller
 {
-    // GET /api/peminjaman
+    /**
+     * 1. GET /api/peminjaman
+     * Tampilkan semua riwayat peminjaman (Aktif & Selesai)
+     */
     public function index()
     {
-        return response()->json(
-            Peminjaman::with(['tool', 'peminta', 'dicatatOleh'])
-                ->orderBy('tanggal', 'desc')
-                ->get()
-        );
-    }
-
-    public function scan(Request $request)
-    {
-        $request->validate([
-            'tools_id'      => 'nullable|uuid|required_without:consumable_id',
-            'consumable_id' => 'nullable|uuid|required_without:tools_id',
-            'jumlah'        => 'required|integer|min:1',
-        ]);
-
-        $userId = $request->user('sanctum')?->id ?? '00000000-0000-0000-0000-000000000000';
-        $jumlah = $request->jumlah;
-
-        $itemId = $request->filled('tools_id') ? $request->tools_id : $request->consumable_id;
-
-        $tool = Tool::find($itemId);
-        $consumable = $tool ? null : Consumable::find($itemId);
-
-        if (!$tool && !$consumable) {
-            return response()->json(['message' => 'Item tidak ditemukan di data Tools maupun Consumable.'], 404);
-        }
-
-        $isTool = (bool) $tool;
-        $column = $isTool ? 'tools_id' : 'consumable_id';
-
-        $existing = DB::table('temporary_cart')
-            ->where($column, $itemId)
-            ->first();
-
-        $totalDiminta = ($existing->qty ?? 0) + $jumlah;
-
-        if ($isTool) {
-            if ($tool->tersedia() < $totalDiminta) {
-                return response()->json([
-                    'message' => "Stok alat '{$tool->nama_barang}' tidak mencukupi! Tersedia maksimal: {$tool->tersedia()}",
-                ], 422);
-            }
-        } else {
-            if ($consumable->stok_tersedia < $totalDiminta) {
-                return response()->json([
-                    'message' => "Stok bahan '{$consumable->nama}' tidak mencukupi! Tersedia maksimal: {$consumable->stok_tersedia}",
-                ], 422);
-            }
-        }
-
-        return DB::transaction(function () use ($existing, $itemId, $userId, $column, $jumlah, $isTool, $tool, $consumable) {
-            if ($existing) {
-                DB::table('temporary_cart')->where('id', $existing->id)->update([
-                    'qty'        => $existing->qty + $jumlah,
-                    'updated_at' => now(),
-                ]);
-            } else {
-                DB::table('temporary_cart')->insert([
-                    'id'         => (string) Str::uuid(),
-                    'user_id'    => $userId,
-                    $column      => $itemId,
-                    'qty'        => $jumlah,
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ]);
-            }
-
-            $namaBarang = $isTool ? $tool->nama_barang : $consumable->nama;
-            $labelTipe  = $isTool ? 'Alat' : 'Bahan';
-
-            return response()->json(['message' => "Berhasil masuk keranjang: {$namaBarang} ({$labelTipe})"], 201);
-        });
-    }
-
-    // GET /api/peminjaman/antrean
-    public function antrean(Request $request)
-    {
-        $cartItems = DB::table('temporary_cart')
-            ->whereNotNull('tools_id')
+        $data = Peminjaman::with(['alatUkur', 'peminta', 'pekerjaan', 'dicatatOleh'])
+            ->orderBy('tanggal_pinjam', 'desc')
             ->get();
-
-        $data = $cartItems->map(function ($item) {
-            $tool = Tool::find($item->tools_id);
-
-            if ($tool) {
-                $item->nama_barang = $tool->nama_barang;
-                $item->kode_barang = $tool->kode_barang;
-                $item->max_jumlah  = $tool->tersedia();
-                $item->tipe_item   = 'tool';
-            } else {
-                $item->nama_barang = 'Item Dihapus';
-                $item->kode_barang = '-';
-                $item->max_jumlah  = 0;
-                $item->tipe_item   = 'tool';
-            }
-
-            return $item;
-        });
-
-        return response()->json(['data' => $data]);
-    }
-
-    // PATCH /api/peminjaman/cart/{id}
-    public function updateCartItem(Request $request, string $id)
-    {
-        $request->validate(['qty' => 'required|integer|min:1']);
-
-        $cart = DB::table('temporary_cart')->where('id', $id)->whereNotNull('tools_id')->first();
-        if (!$cart) return response()->json(['message' => 'Item tidak ditemukan'], 404);
-
-        $tool = Tool::find($cart->tools_id);
-        if (!$tool) return response()->json(['message' => 'Alat tidak ditemukan'], 404);
-
-        if ($request->qty > $tool->tersedia()) {
-            return response()->json([
-                'message' => 'Stok tidak mencukupi! Tersedia maksimal: ' . $tool->tersedia(),
-            ], 422);
-        }
-
-        DB::table('temporary_cart')
-            ->where('id', $id)
-            ->update(['qty' => $request->qty, 'updated_at' => now()]);
-
-        return response()->json(['message' => 'Jumlah diperbarui']);
-    }
-
-    // DELETE /api/peminjaman/cart/{id}
-    public function removeCartItem($id)
-    {
-        $affected = DB::table('temporary_cart')
-            ->where('id', $id)
-            ->whereNotNull('tools_id')
-            ->delete();
-
-        if (!$affected) {
-            $affected = DB::table('temporary_cart')
-                ->where('tools_id', $id)
-                ->whereNotNull('tools_id')
-                ->delete();
-        }
-
-        if (!$affected) return response()->json(['message' => 'Item tidak ditemukan'], 404);
-        return response()->json(['message' => 'Item berhasil dihapus dari antrean']);
-    }
-
-    // POST /api/peminjaman/proses (Dalam middleware auth)
-   public function prosesPeminjaman(Request $request)
-    {
-        $request->validate([
-            'peminta_id' => 'required|string|exists:peminta,id',
-            'dicatat_oleh' => 'required|uuid|exists:users,id',
-            'nama_pekerjaan' => 'required|string|max:255',
-            'area_pekerjaan' => 'nullable|string|max:255',
-            'spesifikasi' => 'nullable|string',
-            'keterangan' => 'nullable|string',
+        
+        return response()->json([
+            'status' => 'success',
+            'data' => $data
         ]);
-
-        $antrean = DB::table('temporary_cart')->whereNotNull('tools_id')->get();
-
-        if ($antrean->isEmpty()) {
-            return response()->json(['message' => 'Antrean kosong'], 400);
-        }
-
-        foreach ($antrean as $item) {
-            $tool = Tool::find($item->tools_id);
-            if (!$tool) {
-                return response()->json(['message' => 'Salah satu alat di keranjang sudah tidak ada'], 422);
-            }
-            if ($item->qty > $tool->tersedia()) {
-                return response()->json([
-                    'message' => "Stok {$tool->nama_barang} tidak mencukupi! Tersedia maksimal: {$tool->tersedia()}",
-                ], 422);
-            }
-        }
-
-        DB::transaction(function () use ($antrean, $request) {
-            foreach ($antrean as $item) {
-                Peminjaman::create([
-                    'id'             => (string) Str::uuid(),
-                    'tool_id'        => $item->tools_id,
-                    'peminta_id'     => $request->peminta_id,
-                    'dicatat_oleh'   => $request->dicatat_oleh,
-                    'tanggal'        => now(),
-                    'jumlah'         => $item->qty,
-                    'nama_pekerjaan' => $request->nama_pekerjaan,
-                    'area_pekerjaan' => $request->area_pekerjaan,
-                    'spesifikasi'    => $request->spesifikasi,
-                    'keterangan'     => $request->keterangan,
-                ]);
-            }
-
-            DB::table('temporary_cart')->whereNotNull('tools_id')->delete();
-        });
-
-        return response()->json(['message' => 'Transaksi berhasil diproses!'], 200);
     }
 
-    // GET /api/peminjaman/{id}
-    public function show(string $id)
-    {
-        $data = Peminjaman::with(['tool', 'peminta', 'dicatatOleh'])->find($id);
-
-        if (! $data) {
-            return response()->json(['message' => 'Data peminjaman tidak ditemukan'], 404);
-        }
-
-        return response()->json($data);
-    }
-
-    // POST /api/peminjaman
-    public function store(Request $request)
-    {
-        $validator = Validator::make($request->all(), [
-            'tanggal' => 'required|date',
-            'tool_id' => 'required|uuid|exists:tools,id',
-            // Diubah dari 'uuid' menjadi 'string'
-            'peminta_id' => 'required|string|exists:peminta,id',
-            'jumlah' => 'required|integer|min:1',
-            'nama_pekerjaan' => 'required|string|max:255',
-            'area_pekerjaan' => 'nullable|string|max:255',
-            'spesifikasi' => 'nullable|string',
-            'keterangan' => 'nullable|string',
-            'dicatat_oleh' => 'required|uuid|exists:users,id',
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json(['errors' => $validator->errors()], 422);
-        }
-
-        $data = $validator->validated();
-        $tool = Tool::findOrFail($data['tool_id']);
-
-        if ($tool->tersedia() < $data['jumlah']) {
-            return response()->json([
-                'message' => "Stok tidak cukup. Tersedia: {$tool->tersedia()}, diminta: {$data['jumlah']}",
-            ], 422);
-        }
-
-        $data['id'] = (string) Str::uuid();
-        $data['tanggal_kembali'] = null;
-
-        $peminjaman = Peminjaman::create($data);
-
-        return response()->json($peminjaman->load(['tool', 'peminta']), 201);
-    }
-
-    // PUT/PATCH /api/peminjaman/{id}
-    public function update(Request $request, string $id)
-    {
-        $peminjaman = Peminjaman::find($id);
-
-        if (! $peminjaman) {
-            return response()->json(['message' => 'Data peminjaman tidak ditemukan'], 404);
-        }
-
-        $validator = Validator::make($request->all(), [
-            'tanggal' => 'sometimes|required|date',
-            'area_pekerjaan' => 'nullable|string|max:255',
-            'spesifikasi' => 'nullable|string',
-            'keterangan' => 'nullable|string',
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json(['errors' => $validator->errors()], 422);
-        }
-
-        $peminjaman->update($validator->validated());
-
-        return response()->json($peminjaman);
-    }
-
-    // GET /api/peminjaman/belum-kembali
+    /**
+     * 2. GET /api/peminjaman/belum-kembali
+     * Tampilkan HANYA alat yang sedang dipinjam saat ini
+     */
     public function belumKembali()
     {
-        $data = Peminjaman::with(['tool', 'peminta', 'dicatatOleh'])
+        $data = Peminjaman::with(['alatUkur', 'peminta', 'pekerjaan', 'dicatatOleh'])
             ->whereNull('tanggal_kembali')
-            ->orderBy('tanggal', 'asc')
+            ->orderBy('tanggal_pinjam', 'asc')
             ->get();
 
         return response()->json([
+            'status' => 'success',
             'total' => $data->count(),
             'data' => $data
         ]);
     }
 
-    // PATCH /api/peminjaman/{id}/kembali
-    public function kembali(Request $request, string $id)
+    /**
+     * 3. POST /api/peminjaman/proses
+     * INI ADALAH CORE DARI SISTEM SCAN < 1 MENIT
+     */
+    public function prosesPeminjaman(Request $request)
     {
-        $peminjaman = Peminjaman::find($id);
-
-        if (! $peminjaman) {
-            return response()->json(['message' => 'Data peminjaman tidak ditemukan'], 404);
-        }
-
-        if ($peminjaman->sudahKembali()) {
-            return response()->json(['message' => 'Peminjaman ini sudah ditandai kembali sebelumnya'], 422);
-        }
-
+        // 1. Validasi Input dari Frontend (Hasil Scan)
         $validator = Validator::make($request->all(), [
-            'jumlah_dikembalikan' => 'nullable|integer|min:1|max:' . $peminjaman->jumlah,
+            'kode_alat' => 'required|string|exists:alat_ukur,kode_alat', // Dari scan fisik alat
+            'peminta_id' => 'required|exists:peminta,id', // Dari scan kartu RFID pekerja
+            'pekerjaan_id' => 'required|exists:pekerjaan,id', // Pilihan dropdown
+            'keterangan' => 'nullable|string',
         ]);
 
         if ($validator->fails()) {
             return response()->json(['errors' => $validator->errors()], 422);
         }
 
-        $jumlahDikembalikan = $validator->validated()['jumlah_dikembalikan'] ?? $peminjaman->jumlah;
+        // 2. Cari ID alat berdasarkan kode_alat hasil scan
+        $alat = AlatUkur::where('kode_alat', $request->kode_alat)->first();
 
-        $hasilRecord = DB::transaction(function () use ($peminjaman, $jumlahDikembalikan) {
-            if ($jumlahDikembalikan >= $peminjaman->jumlah) {
-                $peminjaman->update(['tanggal_kembali' => now()]);
-                return $peminjaman;
-            }
+        // 3. Keamanan: Pastikan alat ini tidak sedang dipinjam orang lain
+        $sedangDipinjam = Peminjaman::where('alat_ukur_id', $alat->id)
+            ->whereNull('tanggal_kembali')
+            ->first();
 
-            $peminjaman->decrement('jumlah', $jumlahDikembalikan);
+        if ($sedangDipinjam) {
+            return response()->json([
+                'status' => 'error',
+                'message' => "Gagal: Alat '{$alat->nama_alat}' saat ini sedang dipinjam dan belum dikembalikan!"
+            ], 400);
+        }
 
-            return Peminjaman::create([
-                'id' => (string) Str::uuid(),
-                'tool_id' => $peminjaman->tool_id,
-                'peminta_id' => $peminjaman->peminta_id,
-                'dicatat_oleh' => $peminjaman->dicatat_oleh,
-                'tanggal' => $peminjaman->tanggal,
-                'jumlah' => $jumlahDikembalikan,
-                'nama_pekerjaan' => $peminjaman->nama_pekerjaan,
-                'area_pekerjaan' => $peminjaman->area_pekerjaan,
-                'spesifikasi' => $peminjaman->spesifikasi,
-                'keterangan' => $peminjaman->keterangan,
-                'tanggal_kembali' => now(),
-            ]);
-        });
+        // 4. Eksekusi Simpan (Langsung tanpa keranjang sementara)
+        $peminjaman = Peminjaman::create([
+            'alat_ukur_id' => $alat->id,
+            'peminta_id' => $request->peminta_id,
+            'pekerjaan_id' => $request->pekerjaan_id,
+            'dicatat_oleh' => $request->user('sanctum')?->id ?? null, // Mencatat admin yang sedang login
+            'tanggal_pinjam' => Carbon::now(),
+            'tanggal_kembali' => null, // Karena baru dipinjam
+            'keterangan' => $request->keterangan,
+        ]);
 
         return response()->json([
-            'message' => 'Alat berhasil ditandai dikembalikan',
-            'data' => $hasilRecord->load('tool'),
-        ]);
+            'status' => 'success',
+            'message' => 'Alat berhasil dipinjam!',
+            'data' => $peminjaman->load(['alatUkur', 'peminta', 'pekerjaan'])
+        ], 201);
     }
 
-    // DELETE /api/peminjaman/{id}
-    public function destroy(string $id)
+    /**
+     * 4. PATCH /api/peminjaman/{id}/kembali
+     * Proses pengembalian alat ukur
+     */
+    public function kembali(Request $request, $id)
     {
         $peminjaman = Peminjaman::find($id);
 
-        if (! $peminjaman) {
-            return response()->json(['message' => 'Data peminjaman tidak ditemukan'], 404);
+        if (!$peminjaman) {
+            return response()->json(['message' => 'Data transaksi tidak ditemukan'], 404);
+        }
+
+        if ($peminjaman->tanggal_kembali != null) {
+            return response()->json(['message' => 'Alat ini sudah dikembalikan sebelumnya.'], 422);
+        }
+
+        // Tandai waktu kembali (detik itu juga)
+        $peminjaman->update([
+            'tanggal_kembali' => Carbon::now(),
+            'catatan_pengembalian' => $request->catatan_pengembalian ?? null
+        ]);
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Alat berhasil dikembalikan!',
+            'data' => $peminjaman->load('alatUkur')
+        ]);
+    }
+
+    /**
+     * 5. GET /api/peminjaman/{id}
+     * Tampilkan detail satu transaksi
+     */
+    public function show($id)
+    {
+        $data = Peminjaman::with(['alatUkur', 'peminta', 'pekerjaan', 'dicatatOleh'])->find($id);
+
+        if (!$data) {
+            return response()->json(['message' => 'Data tidak ditemukan'], 404);
+        }
+
+        return response()->json([
+            'status' => 'success',
+            'data' => $data
+        ]);
+    }
+
+    /**
+     * 6. DELETE /api/peminjaman/{id}
+     * Hapus riwayat (Opsional, khusus Super Admin)
+     */
+    public function destroy($id)
+    {
+        $peminjaman = Peminjaman::find($id);
+
+        if (!$peminjaman) {
+            return response()->json(['message' => 'Data tidak ditemukan'], 404);
         }
 
         $peminjaman->delete();
 
-        return response()->json(['message' => 'Data peminjaman berhasil dihapus']);
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Riwayat peminjaman berhasil dihapus'
+        ]);
     }
 }

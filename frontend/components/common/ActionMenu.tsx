@@ -76,7 +76,7 @@ const ActionMenu: React.FC<ActionMenuProps> = ({
     window.addEventListener("action-menu-open", closeOtherMenu);
 
     const tableScroller = document.querySelector(
-      ".datatools-page .table-responsive, .dataconsumable-page .table-responsive"
+      ".dataalat ukur-page .table-responsive, .dataconsumable-page .table-responsive"
     );
     tableScroller?.addEventListener("scroll", closeMenu, { passive: true });
 

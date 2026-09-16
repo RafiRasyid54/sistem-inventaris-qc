@@ -21,41 +21,41 @@ import {
 } from "@tabler/icons-react";
 
 import {
-  ToolItemType,
-  ToolMasukType,
-  ToolMasukFormValues,
-} from "types/DataToolsTypes";
+  AlatukurItemType,
+  AlatukurMasukType,
+  AlatukurMasukFormValues,
+} from "types/DataAlatukurTypes";
 
 import TanstackTable from "components/table/TanstackTable";
 import Flex from "components/common/Flex";
 import DasherBreadcrumb from "components/common/DasherBreadcrumb";
-import RiwayatFilterBar from "components/ruangtools/riwayat/common/RiwayatFilterBar";
+import RiwayatFilterBar from "components/ruangalat ukur/riwayat/common/RiwayatFilterBar";
 import {
   DateFilterValue,
   dateInFilter,
   parseRowDate,
-} from "components/ruangtools/common/dateUtils";
-import { exportToExcel, exportToPDF, ExportColumn, getFilteredExportFileName } from "components/ruangtools/riwayat/common/exportUtils";
-import { getToolMasukColumns } from "components/ruangtools/toolsmasuk/ColumnDefination";
-import ToolMasukFormModal from "components/ruangtools/toolsmasuk/ToolMasukFormModal";
-import DeleteConfirmModal from "components/ruangtools/toolsmasuk/DeleteConfirmModal";
+} from "components/ruangalat ukur/common/dateUtils";
+import { exportToExcel, exportToPDF, ExportColumn, getFilteredExportFileName } from "components/ruangalat ukur/riwayat/common/exportUtils";
+import { getAlatukurMasukColumns } from "components/ruangalat ukur/alat ukurmasuk/ColumnDefination";
+import AlatukurMasukFormModal from "components/ruangalat ukur/alat ukurmasuk/AlatukurMasukFormModal";
+import DeleteConfirmModal from "components/ruangalat ukur/alat ukurmasuk/DeleteConfirmModal";
 
-import { getTools } from "services/toolService";
+import { getAlatukur } from "services/alat Ukurervice";
 import {
-  getToolMasuk,
-  createToolMasuk,
-  updateToolMasuk,
-  deleteToolMasuk,
-} from "services/toolMasukService";
+  getAlatukurMasuk,
+  createAlatukurMasuk,
+  updateAlatukurMasuk,
+  deleteAlatukurMasuk,
+} from "services/alat ukurMasukService";
 
 // IMPORT INI UNTUK VALIDASI ROLE
 import { getPemintaAktif } from "services/pemintaService";
 
-const ToolMasukManager = () => {
-  const [tools, setTools] = useState<ToolItemType[]>([]);
-  const [loadingTools, setLoadingTools] = useState(true);
+const AlatukurMasukManager = () => {
+  const [alat ukur, setAlatukur] = useState<AlatukurItemType[]>([]);
+  const [loadingAlatukur, setLoadingAlatukur] = useState(true);
 
-  const [masukList, setMasukList] = useState<ToolMasukType[]>([]);
+  const [masukList, setMasukList] = useState<AlatukurMasukType[]>([]);
   const [loadingList, setLoadingList] = useState(true);
 
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -63,15 +63,15 @@ const ToolMasukManager = () => {
 
   const [formModalOpen, setFormModalOpen] = useState(false);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
-  const [activeItem, setActiveItem] = useState<ToolMasukType | null>(null);
+  const [activeItem, setActiveItem] = useState<AlatukurMasukType | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
-  // ---- Toolbar: pencarian (murni UI, tidak menyentuh API/data) ----
+  // ---- Alatukurbar: pencarian (murni UI, tidak menyentuh API/data) ----
   const [searchTerm, setSearchTerm] = useState("");
   const [tanggalFilter, setTanggalFilter] = useState<DateFilterValue | null>(null);
   const [namaFilter, setNamaFilter] = useState("");
 
-  const getNamaPencatat = (item: ToolMasukType) =>
+  const getNamaPencatat = (item: AlatukurMasukType) =>
     item.dicatatOleh?.name || "Tidak diketahui";
 
   const EXPORT_COLUMNS: ExportColumn[] = [
@@ -104,7 +104,7 @@ const ToolMasukManager = () => {
         const namaBarang = (item.nama_barang || "").toLowerCase();
         const merk = (item.merk || "").toLowerCase();
         const tipe = (item.tipe || "").toLowerCase();
-        // Menggunakan (item as any) untuk jaga-jaga jika warna/ukuran adalah properti bawaan dari relasi tabel tools
+        // Menggunakan (item as any) untuk jaga-jaga jika warna/ukuran adalah properti bawaan dari relasi tabel alat ukur
         const warna = ((item as any).warna || "").toLowerCase();
         const ukuran = ((item as any).ukuran || "").toLowerCase();
         const jumlahMasuk = String(item.jumlah_masuk ?? 0);
@@ -133,26 +133,26 @@ const ToolMasukManager = () => {
     ...item,
     nama_pencatat: getNamaPencatat(item),
   })), [filteredMasukList]);
-  const getExportName = () => getFilteredExportFileName("Tools_Masuk", namaFilter);
-  const handleExportPdf = () => exportToPDF(exportRows, EXPORT_COLUMNS, getExportName(), "Tools Masuk");
-  const handleExportExcel = () => exportToExcel(exportRows, EXPORT_COLUMNS, getExportName(), "Tools Masuk");
+  const getExportName = () => getFilteredExportFileName("Alatukur_Masuk", namaFilter);
+  const handleExportPdf = () => exportToPDF(exportRows, EXPORT_COLUMNS, getExportName(), "Alatukur Masuk");
+  const handleExportExcel = () => exportToExcel(exportRows, EXPORT_COLUMNS, getExportName(), "Alatukur Masuk");
 
-  const loadTools = async () => {
-    setLoadingTools(true);
+  const loadAlatukur = async () => {
+    setLoadingAlatukur(true);
     try {
-      const data = await getTools();
-      setTools(data);
+      const data = await getAlatukur();
+      setAlatukur(data);
     } catch {
       setErrorMsg("Gagal memuat data alat untuk pilihan Kode Barang.");
     } finally {
-      setLoadingTools(false);
+      setLoadingAlatukur(false);
     }
   };
 
   const loadMasukList = async () => {
     setLoadingList(true);
     try {
-      const data = await getToolMasuk();
+      const data = await getAlatukurMasuk();
       setMasukList(data);
     } catch {
       setErrorMsg("Gagal memuat riwayat alat masuk.");
@@ -162,7 +162,7 @@ const ToolMasukManager = () => {
   };
 
   useEffect(() => {
-    loadTools();
+    loadAlatukur();
     loadMasukList();
   }, []);
 
@@ -172,22 +172,22 @@ const ToolMasukManager = () => {
     setFormModalOpen(true);
   };
 
-  const openEditModal = (item: ToolMasukType) => {
+  const openEditModal = (item: AlatukurMasukType) => {
     setActiveItem(item);
     setFormError(null);
     setFormModalOpen(true);
   };
 
-  const openDeleteModal = (item: ToolMasukType) => {
+  const openDeleteModal = (item: AlatukurMasukType) => {
     setActiveItem(item);
     setDeleteModalOpen(true);
   };
 
-  const handleFormSubmit = async (values: ToolMasukFormValues & { peminta_id?: string }) => {
+  const handleFormSubmit = async (values: AlatukurMasukFormValues & { peminta_id?: string }) => {
     setFormError(null);
     try {
       if (activeItem) {
-        const updated = await updateToolMasuk(activeItem.id, {
+        const updated = await updateAlatukurMasuk(activeItem.id, {
           tanggal: values.tanggal,
           jumlah_masuk: values.jumlah_masuk,
           keterangan: values.keterangan,
@@ -195,7 +195,7 @@ const ToolMasukManager = () => {
         setMasukList((prev) =>
           prev.map((m) => (m.id === updated.id ? updated : m))
         );
-        await loadTools();
+        await loadAlatukur();
       } else {
         // 1. Pastikan id_card atau peminta_id terisi dari hasil tap kartu
         const idCardValue = values.peminta_id || values.id_card;
@@ -212,22 +212,22 @@ const ToolMasukManager = () => {
         }
 
         if (pegawaiTerkait.role !== "inventory man") {
-          throw new Error("Akses Ditolak! Hanya Inventory Man yang boleh menginput stok Tools Masuk.");
+          throw new Error("Akses Ditolak! Hanya Inventory Man yang boleh menginput stok Alatukur Masuk.");
         }
 
         // 3. Panggil fungsi create dengan memastikan peminta_id terkirim eksplisit
-        const created = await createToolMasuk({
+        const created = await createAlatukurMasuk({
           ...values,
           peminta_id: idCardValue,
         });
 
         setMasukList((prev) => [created, ...prev]);
 
-        // refresh Data Tools supaya stok yang tampil di halaman lain akurat
-        await loadTools();
+        // refresh Data Alatukur supaya stok yang tampil di halaman lain akurat
+        await loadAlatukur();
 
         setSuccessMessage(
-          `Berhasil menambah ${values.jumlah_masuk} unit "${values.nama_barang}" ke Data Tools.`
+          `Berhasil menambah ${values.jumlah_masuk} unit "${values.nama_barang}" ke Data Alatukur.`
         );
         setTimeout(() => setSuccessMessage(null), 5000);
       }
@@ -243,13 +243,13 @@ const ToolMasukManager = () => {
   const handleConfirmDelete = async () => {
     if (!activeItem) return;
     try {
-      await deleteToolMasuk(activeItem.id);
+      await deleteAlatukurMasuk(activeItem.id);
       setMasukList((prev) => prev.filter((m) => m.id !== activeItem.id));
-      // stok Data Tools otomatis disesuaikan balik oleh backend,
-      // refresh supaya halaman lain (Data Tools) tetap akurat
-      await loadTools();
+      // stok Data Alatukur otomatis disesuaikan balik oleh backend,
+      // refresh supaya halaman lain (Data Alatukur) tetap akurat
+      await loadAlatukur();
     } catch {
-      setErrorMsg("Gagal menghapus data tools masuk.");
+      setErrorMsg("Gagal menghapus data alat ukur masuk.");
     } finally {
       setDeleteModalOpen(false);
       setActiveItem(null);
@@ -258,7 +258,7 @@ const ToolMasukManager = () => {
 
   const columns = useMemo(
     () =>
-      getToolMasukColumns({
+      getAlatukurMasukColumns({
         onEdit: openEditModal,
         onDelete: openDeleteModal,
       }),
@@ -266,7 +266,7 @@ const ToolMasukManager = () => {
   );
 
   return (
-    <div className="toolsmasuk-page">
+    <div className="alat ukurmasuk-page">
       {successMessage && (
         <Alert
           variant="success"
@@ -294,7 +294,7 @@ const ToolMasukManager = () => {
             breakpoint="md"
           >
             <div>
-              <h1 className="mb-2 h2">Tools Masuk</h1>
+              <h1 className="mb-2 h2">Alatukur Masuk</h1>
               <p className="text-secondary mb-0">
                 Mencatat alat yang masuk.
               </p>
@@ -305,7 +305,7 @@ const ToolMasukManager = () => {
                 variant="primary"
                 className="d-flex align-items-center gap-2"
                 onClick={openAddModal}
-                disabled={loadingTools}
+                disabled={loadingAlatukur}
               >
                 <IconPlus size={18} />
                 Tambah
@@ -316,9 +316,9 @@ const ToolMasukManager = () => {
       </Row>
 
       <Card className="card-lg mb-6">
-        {/* ---- Toolbar: Search ---- */}
-        <div className="riwayat-toolbar border-bottom">
-          <div className="riwayat-toolbar-row">
+        {/* ---- Alatukurbar: Search ---- */}
+        <div className="riwayat-alat ukurbar border-bottom">
+          <div className="riwayat-alat ukurbar-row">
             <InputGroup className="riwayat-search">
               <InputGroup.Text>
                 <IconSearch size={18} />
@@ -328,7 +328,7 @@ const ToolMasukManager = () => {
                 placeholder="Cari kode, nama, atau informasi lainnya..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                aria-label="Cari tools masuk"
+                aria-label="Cari alat ukur masuk"
               />
               {searchTerm && (
                 <Button
@@ -367,8 +367,8 @@ const ToolMasukManager = () => {
             </div>
           ) : masukList.length === 0 ? (
             /* Empty state: belum ada catatan */
-            <div className="toolsmasuk-empty text-center py-6">
-              <div className="toolsmasuk-empty-icon mb-3">
+            <div className="alat ukurmasuk-empty text-center py-6">
+              <div className="alat ukurmasuk-empty-icon mb-3">
                 <IconTruckDelivery size={32} />
               </div>
               <h5 className="mb-1">Belum ada catatan alat masuk</h5>
@@ -379,7 +379,7 @@ const ToolMasukManager = () => {
                 variant="primary"
                 className="d-inline-flex align-items-center gap-2"
                 onClick={openAddModal}
-                disabled={loadingTools}
+                disabled={loadingAlatukur}
               >
                 <IconPlus size={18} />
                 Tambah
@@ -387,8 +387,8 @@ const ToolMasukManager = () => {
             </div>
           ) : filteredMasukList.length === 0 ? (
             /* Empty state: hasil pencarian kosong */
-            <div className="toolsmasuk-empty text-center py-6">
-              <div className="toolsmasuk-empty-icon mb-3">
+            <div className="alat ukurmasuk-empty text-center py-6">
+              <div className="alat ukurmasuk-empty-icon mb-3">
                 <IconMoodEmpty size={32} />
               </div>
               <h5 className="mb-1">Tidak ada hasil</h5>
@@ -414,7 +414,7 @@ const ToolMasukManager = () => {
         </CardBody>
       </Card>
 
-      <ToolMasukFormModal
+      <AlatukurMasukFormModal
         show={formModalOpen}
         onClose={() => {
           setFormModalOpen(false);
@@ -423,7 +423,7 @@ const ToolMasukManager = () => {
         }}
         onSubmit={handleFormSubmit}
         initialData={activeItem}
-        toolOptions={tools}
+        alat ukurOptions={alat ukur}
         error={formError}
       />
       <DeleteConfirmModal
@@ -433,7 +433,7 @@ const ToolMasukManager = () => {
         item={activeItem}
       />
 
-      {loadingTools && (
+      {loadingAlatukur && (
         <div
           className="position-fixed bottom-0 end-0 m-4 bg-white shadow rounded-3 px-3 py-2 d-flex align-items-center gap-2"
           style={{ zIndex: 1050 }}
@@ -446,4 +446,4 @@ const ToolMasukManager = () => {
   );
 };
 
-export default ToolMasukManager;
+export default AlatukurMasukManager;

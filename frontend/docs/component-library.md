@@ -46,7 +46,7 @@ EmptyState
 
 ConfirmDialog
 
-Tooltip
+Alatukurtip
 
 Toast
 

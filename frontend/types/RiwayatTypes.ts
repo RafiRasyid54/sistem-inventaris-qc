@@ -1,5 +1,5 @@
 // ------------------------------------------------------------------
-// Riwayat Peminjaman Tools
+// Riwayat Peminjaman Alatukur
 // ------------------------------------------------------------------
 export interface RiwayatPeminjamanType {
   id: string;

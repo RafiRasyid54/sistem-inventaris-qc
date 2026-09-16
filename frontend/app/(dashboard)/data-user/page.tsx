@@ -5,8 +5,8 @@ import { useEffect, useState } from "react";
 import { Tabs, Tab } from "react-bootstrap";
 
 // import custom components
-import DataUserManager from "components/ruangtools/datauser/DataUserManager";
-import PermissionMatrix from "components/ruangtools/datauser/PermissionMatrix";
+import DataUserManager from "components/ruangalat ukur/datauser/DataUserManager";
+import PermissionMatrix from "components/ruangalat ukur/datauser/PermissionMatrix";
 import api from "lib/api";
 
 export default function DataUserPage() {

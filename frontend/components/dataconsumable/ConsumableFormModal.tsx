@@ -55,7 +55,7 @@ interface ConsumableFormModalProps {
   existingCodes?: string[];
 }
 
-const ConsumableToolFormModal = ({
+const ConsumableAlatukurFormModal = ({
   show,
   onClose,
   onSubmit,
@@ -196,4 +196,4 @@ useEffect(() => {
   );
 };
 
-export default ConsumableToolFormModal;
+export default ConsumableAlatukurFormModal;

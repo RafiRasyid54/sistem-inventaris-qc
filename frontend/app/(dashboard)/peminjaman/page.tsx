@@ -142,10 +142,10 @@ export default function PeminjamanPage() {
                 <li key={index} className="flex justify-between items-center p-4 bg-slate-50 rounded-lg border border-slate-200">
                   <div>
                     <span className="font-semibold text-slate-800 block">
-                      {item.tools_id}
+                      {item.alat ukur_id}
                     </span>
-                    {item.nama_tools && (
-                      <span className="text-sm text-slate-500">{item.nama_tools}</span>
+                    {item.nama_alat ukur && (
+                      <span className="text-sm text-slate-500">{item.nama_alat ukur}</span>
                     )}
                   </div>
                   <div className="bg-white border border-slate-200 px-4 py-1 rounded-md font-bold text-blue-600">

@@ -5,13 +5,13 @@ import { IconDotsVertical, IconShoppingCartPlus } from "@tabler/icons-react";
 import QRCode from "qrcode"; 
 
 // import custom types
-import { ToolItemType, ToolCondition, CartItemType } from "types/DataToolsTypes";
+import { AlatukurItemType, AlatukurCondition, CartItemType } from "types/DataAlatukurTypes";
 
 // import custom components
 import ActionMenu from "components/common/ActionMenu";
 
 // warna badge sesuai kondisi alat
-const kondisiVariant = (kondisi: ToolCondition) => {
+const kondisiVariant = (kondisi: AlatukurCondition) => {
   switch (kondisi) {
     case "Baik":
       return { bg: "success-subtle", text: "success-emphasis" };
@@ -21,20 +21,20 @@ const kondisiVariant = (kondisi: ToolCondition) => {
 };
 
 interface ColumnHandlers {
-  onDetail: (tool: ToolItemType) => void;
-  onEdit: (tool: ToolItemType) => void;
-  onDelete: (tool: ToolItemType) => void;
-  onAddToCart: (tool: ToolItemType, event: React.MouseEvent<HTMLButtonElement>) => void;
+  onDetail: (alat ukur: AlatukurItemType) => void;
+  onEdit: (alat ukur: AlatukurItemType) => void;
+  onDelete: (alat ukur: AlatukurItemType) => void;
+  onAddToCart: (alat ukur: AlatukurItemType, event: React.MouseEvent<HTMLButtonElement>) => void;
   cartItems?: CartItemType[];
 }
 
-export const getDataToolsColumns = ({
+export const getDataAlatukurColumns = ({
   onDetail,
   onEdit,
   onDelete,
   onAddToCart,
   cartItems = [],
-}: ColumnHandlers): ColumnDef<ToolItemType>[] => [
+}: ColumnHandlers): ColumnDef<AlatukurItemType>[] => [
   {
     accessorKey: "kodeBarang",
     header: "Kode Barang",
@@ -92,14 +92,14 @@ export const getDataToolsColumns = ({
     id: "tersedia",
     header: "Tersedia",
     cell: ({ row }) => {
-      const tool = row.original;
+      const alat ukur = row.original;
       
       // Cari apakah alat ini sudah ada di cart dan berapa jumlahnya
-      const cartItem = cartItems.find((c) => c.toolId === tool.id);
+      const cartItem = cartItems.find((c) => c.alat ukurId === alat ukur.id);
       const qtyDiCart = cartItem ? cartItem.jumlah : 0;
 
       // Sisa stok riil = Total Stok - Sedang Dipinjam - Yang sudah masuk Cart
-      const sisaStokReal = tool.stok - tool.dipinjam - qtyDiCart;
+      const sisaStokReal = alat ukur.stok - alat ukur.dipinjam - qtyDiCart;
       const habis = sisaStokReal <= 0;
 
       return (
@@ -119,28 +119,28 @@ export const getDataToolsColumns = ({
     id: "aksi",
     header: "Aksi",
     cell: ({ row }) => {
-      const tool = row.original;
+      const alat ukur = row.original;
 
       // Cari jumlah di cart untuk alat ini
-      const cartItem = cartItems.find((c) => c.toolId === tool.id);
+      const cartItem = cartItems.find((c) => c.alat ukurId === alat ukur.id);
       const qtyDiCart = cartItem ? cartItem.jumlah : 0;
 
       // Hitung sisa stok aktual
-      const sisaStokReal = tool.stok - tool.dipinjam - qtyDiCart;
+      const sisaStokReal = alat ukur.stok - alat ukur.dipinjam - qtyDiCart;
       const habis = sisaStokReal <= 0;
 
       // <-- Fungsi untuk mendownload QR Code versi In-Memory Canvas (Trik Persegi Panjang) -->
       const handleDownloadQR = async () => {
         try {
-          const namaBarang = tool.namaBarang || "Tool";
-          const merkBarang = tool.merk || "Unknown";
-          const kodeBarang = tool.kodeBarang || "-"; // Ambil kode barang untuk teks visual
+          const namaBarang = alat ukur.namaBarang || "Alatukur";
+          const merkBarang = alat ukur.merk || "Unknown";
+          const kodeBarang = alat ukur.kodeBarang || "-"; // Ambil kode barang untuk teks visual
           
           // Format nama file: NamaBarang_Merk.png
           const fileName = `${namaBarang}_${merkBarang}`.replace(/[^a-zA-Z0-9_-]/g, "_") + ".png";
 
           // 1. Generate QR murni jadi Base64 (Isi data tetap ID)
-          const qrDataUrl = await QRCode.toDataURL(String(tool.id), {
+          const qrDataUrl = await QRCode.toDataURL(String(alat ukur.id), {
             width: 500,
             margin: 2,
             errorCorrectionLevel: 'H'
@@ -192,14 +192,14 @@ export const getDataToolsColumns = ({
       };
 
       return (
-        <div className="datatools-action-cell">
-          <div className="datatools-action-main">
+        <div className="dataalat ukur-action-cell">
+          <div className="dataalat ukur-action-main">
             <button
               type="button"
               className="btn btn-primary btn-sm d-flex align-items-center gap-1"
               disabled={habis} 
               title={habis ? "Stok habis (sudah masuk keranjang/dipinjam)" : "Tambah ke Peminjaman"}
-              onClick={(e) => onAddToCart(tool, e)}
+              onClick={(e) => onAddToCart(alat ukur, e)}
             >
               <IconShoppingCartPlus size={16} />
               <span className="d-none d-lg-inline">
@@ -207,7 +207,7 @@ export const getDataToolsColumns = ({
               </span>
             </button>
           </div>
-          <div className="datatools-action-menu">
+          <div className="dataalat ukur-action-menu">
             <ActionMenu
               toggleButton={<IconDotsVertical size={20} />}
               className="btn btn-ghost btn-icon btn-sm rounded-circle"
@@ -215,15 +215,15 @@ export const getDataToolsColumns = ({
               align="start"
               closeOnScroll
             >
-            <Dropdown.Item onClick={() => onDetail(tool)}>
+            <Dropdown.Item onClick={() => onDetail(alat ukur)}>
               Detail Alat
             </Dropdown.Item>
-            <Dropdown.Item onClick={() => onEdit(tool)}>
+            <Dropdown.Item onClick={() => onEdit(alat ukur)}>
               Edit Data
             </Dropdown.Item>
             <Dropdown.Item
               className="text-danger"
-              onClick={() => onDelete(tool)}
+              onClick={() => onDelete(alat ukur)}
             >
               Hapus Data
             </Dropdown.Item>

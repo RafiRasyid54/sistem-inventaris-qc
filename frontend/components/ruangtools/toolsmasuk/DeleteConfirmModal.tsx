@@ -4,13 +4,13 @@ import { Modal, Button } from "react-bootstrap";
 import { IconTrash, IconAlertTriangle } from "@tabler/icons-react";
 
 // import custom types
-import { ToolMasukType } from "types/DataToolsTypes";
+import { AlatukurMasukType } from "types/DataAlatukurTypes";
 
 interface DeleteConfirmModalProps {
   show: boolean;
   onClose: () => void;
   onConfirm: () => void;
-  item: ToolMasukType | null;
+  item: AlatukurMasukType | null;
 }
 
 const DeleteConfirmModal = ({
@@ -20,17 +20,17 @@ const DeleteConfirmModal = ({
   item,
 }: DeleteConfirmModalProps) => {
   return (
-    <Modal show={show} onHide={onClose} centered className="toolsmasuk-delete-modal">
+    <Modal show={show} onHide={onClose} centered className="alat ukurmasuk-delete-modal">
       <Modal.Header closeButton>
         <Modal.Title as="h5" className="d-flex align-items-center gap-2">
-          <span className="toolsmasuk-delete-title-icon">
+          <span className="alat ukurmasuk-delete-title-icon">
             <IconTrash size={20} />
           </span>
           Hapus Data
         </Modal.Title>
       </Modal.Header>
       <Modal.Body className="text-center">
-        <div className="toolsmasuk-delete-icon mb-3">
+        <div className="alat ukurmasuk-delete-icon mb-3">
           <IconAlertTriangle size={32} />
         </div>
         <h5 className="mb-2">Yakin ingin menghapus catatan ini?</h5>
@@ -38,7 +38,7 @@ const DeleteConfirmModal = ({
           Menghapus catatan ini akan menyesuaikan kembali stok terkait. Tindakan
           ini tidak bisa dibatalkan.
         </p>
-        <div className="toolsmasuk-delete-hero">
+        <div className="alat ukurmasuk-delete-hero">
           <div className="fw-semibold">{item?.nama_barang}</div>
           <div className="text-secondary small">
             Jumlah masuk:{" "}

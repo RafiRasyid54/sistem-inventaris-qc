@@ -1,15 +1,15 @@
 import apiFetch from "/lib/api";
 
-// Service untuk Order Tools — mirror dari orderConsumableService,
-// dengan endpoint /order-tools dan sumber data dari /tools (Data Tools).
-export const getOrderTools = async (status?: string) => {
+// Service untuk Order Alatukur — mirror dari orderConsumableService,
+// dengan endpoint /order-alat ukur dan sumber data dari /alat ukur (Data Alatukur).
+export const getOrderAlatukur = async (status?: string) => {
   const query = status && status !== 'semua' ? `?status_pembelian=${encodeURIComponent(status)}` : '';
-  const json = await apiFetch<any>(`/order-tools${query}`);
+  const json = await apiFetch<any>(`/order-alat ukur${query}`);
   return json.data || json;
 };
 
-export const updateOrderToolsStatus = async (id: number, status: string, tanggal_kedatangan?: string) => {
-  return await apiFetch<any>(`/order-tools/${id}/status`, {
+export const updateOrderAlatukurStatus = async (id: number, status: string, tanggal_kedatangan?: string) => {
+  return await apiFetch<any>(`/order-alat ukur/${id}/status`, {
     method: "PUT",
     body: JSON.stringify({
       status_pembelian: status,
@@ -19,33 +19,33 @@ export const updateOrderToolsStatus = async (id: number, status: string, tanggal
 };
 
 // Daftar pegawai/pengusul (sama seperti Order Consumable)
-export const getPemintaListForTools = async () => {
+export const getPemintaListForAlatukur = async () => {
   const json = await apiFetch<any>("/peminta");
   return json.data || json;
 };
 
-// Daftar alat dari Data Tools (bukan consumable)
-export const getToolsList = async () => {
-  const json = await apiFetch<any>("/tools");
+// Daftar alat dari Data Alatukur (bukan consumable)
+export const getAlatukurList = async () => {
+  const json = await apiFetch<any>("/alat ukur");
   return json.data || json;
 };
 
-export const createOrderTools = async (data: any) => {
-  return await apiFetch<any>("/order-tools", {
+export const createOrderAlatukur = async (data: any) => {
+  return await apiFetch<any>("/order-alat ukur", {
     method: "POST",
     body: JSON.stringify(data),
   });
 };
 
-export const updateOrderTools = async (id: number, data: any) => {
-  return await apiFetch<any>(`/order-tools/${id}`, {
+export const updateOrderAlatukur = async (id: number, data: any) => {
+  return await apiFetch<any>(`/order-alat ukur/${id}`, {
     method: "PUT",
     body: JSON.stringify(data),
   });
 };
 
-export const deleteOrderTools = async (id: number) => {
-  return await apiFetch<any>(`/order-tools/${id}`, {
+export const deleteOrderAlatukur = async (id: number) => {
+  return await apiFetch<any>(`/order-alat ukur/${id}`, {
     method: "DELETE",
   });
 };

@@ -1,9 +1,9 @@
 'use client';
 import React, { useState, useEffect } from 'react';
 import { Modal, Form, Button, Row, Col, InputGroup } from 'react-bootstrap';
-import { getPemintaListForTools, updateOrderTools } from '/services/orderToolsService';
+import { getPemintaListForAlatukur, updateOrderAlatukur } from '/services/orderAlatukurService';
 
-interface OrderToolsEditModalProps {
+interface OrderAlatukurEditModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
@@ -17,7 +17,7 @@ const STATUS_OPTIONS = [
   { value: 'ditolak', label: 'Ditolak' },
 ];
 
-export default function OrderToolsEditModal({ isOpen, onClose, onSuccess, orderData }: OrderToolsEditModalProps) {
+export default function OrderAlatukurEditModal({ isOpen, onClose, onSuccess, orderData }: OrderAlatukurEditModalProps) {
   const [peminjamList, setPeminjamList] = useState<any[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [form, setForm] = useState<any>({
@@ -36,7 +36,7 @@ export default function OrderToolsEditModal({ isOpen, onClose, onSuccess, orderD
 
   useEffect(() => {
     if (isOpen) {
-      getPemintaListForTools().then((res: any) => {
+      getPemintaListForAlatukur().then((res: any) => {
         const data = res?.data?.data || res?.data || res || [];
         setPeminjamList(Array.isArray(data) ? data : []);
       }).catch(console.error);
@@ -85,7 +85,7 @@ export default function OrderToolsEditModal({ isOpen, onClose, onSuccess, orderD
         payload.tanggal_kedatangan = form.tanggal_kedatangan;
       }
 
-      await updateOrderTools(orderData.id, payload);
+      await updateOrderAlatukur(orderData.id, payload);
       onSuccess();
       onClose();
     } catch (error) {
@@ -98,11 +98,11 @@ export default function OrderToolsEditModal({ isOpen, onClose, onSuccess, orderD
   return (
     <Modal show={isOpen} onHide={onClose} centered backdrop="static" size="lg" scrollable>
       <Modal.Header closeButton className="bg-light">
-        <Modal.Title className="h5 mb-0">Edit Order Tools</Modal.Title>
+        <Modal.Title className="h5 mb-0">Edit Order Alatukur</Modal.Title>
       </Modal.Header>
 
       <Modal.Body className="p-4">
-        <Form id="formEditOrderTools" onSubmit={handleSubmit}>
+        <Form id="formEditOrderAlatukur" onSubmit={handleSubmit}>
           <Row className="g-3">
             
             <Col md={6}>
@@ -251,7 +251,7 @@ export default function OrderToolsEditModal({ isOpen, onClose, onSuccess, orderD
 
       <Modal.Footer className="bg-light">
         <Button variant="outline-secondary" onClick={onClose} disabled={isSubmitting}>Batal</Button>
-        <Button variant="primary" type="submit" form="formEditOrderTools" disabled={isSubmitting}>
+        <Button variant="primary" type="submit" form="formEditOrderAlatukur" disabled={isSubmitting}>
           {isSubmitting ? 'Menyimpan...' : 'Simpan Perubahan'}
         </Button>
       </Modal.Footer>

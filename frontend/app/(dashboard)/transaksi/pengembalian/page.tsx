@@ -2,10 +2,10 @@
 import { Metadata } from "next";
 
 // import custom components
-import PengembalianManager from "components/ruangtools/pengembalian/PengembalianManager";
+import PengembalianManager from "components/ruangalat ukur/pengembalian/PengembalianManager";
 
 export const metadata: Metadata = {
-  title: "Pengembalian Alat | Ruang Tools - Admin Panel",
+  title: "Pengembalian Alat | Ruang Alatukur - Admin Panel",
   description: "Scan kartu peminjam dan kembalikan alat sekaligus",
 };
 

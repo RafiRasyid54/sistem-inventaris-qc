@@ -20,16 +20,16 @@ import {
   IconMoodEmpty,
 } from "@tabler/icons-react";
 
-import { PeminjamType } from "types/DataToolsTypes";
+import { PeminjamType } from "types/DataAlatukurTypes";
 
 import TanstackTable from "components/table/TanstackTable";
 import Flex from "components/common/Flex";
 import DasherBreadcrumb from "components/common/DasherBreadcrumb";
-import { getPeminjamColumns } from "components/ruangtools/datapeminjam/ColumnDefination";
-import PeminjamFormModal, { PeminjamFormValues } from "components/ruangtools/datapeminjam/PeminjamFormModal";
-import DeleteConfirmModal from "components/ruangtools/datapeminjam/DeleteConfirmModal";
+import { getPeminjamColumns } from "components/ruangalat ukur/datapeminjam/ColumnDefination";
+import PeminjamFormModal, { PeminjamFormValues } from "components/ruangalat ukur/datapeminjam/PeminjamFormModal";
+import DeleteConfirmModal from "components/ruangalat ukur/datapeminjam/DeleteConfirmModal";
 // reuse fungsi export yang sudah ada dari fitur Riwayat / Laporan Kerusakan
-import { exportToExcel, exportToPDF, ExportColumn } from "components/ruangtools/riwayat/common/exportUtils";
+import { exportToExcel, exportToPDF, ExportColumn } from "components/ruangalat ukur/riwayat/common/exportUtils";
 
 import {
   getPeminta,
@@ -72,7 +72,7 @@ const PeminjamManager = () => {
   const [togglingId, setTogglingId] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
-  // ---- Toolbar: pencarian (murni UI, tidak menyentuh API/data) ----
+  // ---- Alatukurbar: pencarian (murni UI, tidak menyentuh API/data) ----
   const [searchTerm, setSearchTerm] = useState("");
 
   // Data turunan untuk tampilan; sumber data (peminjamList) tidak diubah.
@@ -290,8 +290,8 @@ const PeminjamManager = () => {
       </Row>
 
       <Card className="card-lg mb-6">
-        {/* ---- Toolbar: Search + Info + Export ---- */}
-        <div className="datapeminjam-toolbar border-bottom">
+        {/* ---- Alatukurbar: Search + Info + Export ---- */}
+        <div className="datapeminjam-alat ukurbar border-bottom">
           <Row className="g-2 align-items-center">
             <Col lg={5} md={6}>
               <InputGroup className="datapeminjam-search">

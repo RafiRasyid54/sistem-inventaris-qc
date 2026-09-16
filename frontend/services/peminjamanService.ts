@@ -1,5 +1,5 @@
 import apiFetch from "lib/api";
-import { CartItemType, PeminjamanAktifItemType } from "types/DataToolsTypes";
+import { CartItemType, PeminjamanAktifItemType } from "types/DataAlatukurTypes";
 import { RiwayatPeminjamanType } from "types/RiwayatTypes";
 
 // --- INTERFACES ---
@@ -13,7 +13,7 @@ export interface PeminjamanIndexApiResponse {
   area_pekerjaan?: string;
   spesifikasi?: string;
   keterangan?: string;
-  tool?: {
+  alat ukur?: {
     id: string;
     kode_barang: string;
     nama_barang: string;
@@ -32,7 +32,7 @@ export interface PeminjamanIndexApiResponse {
 
 interface CreatePeminjamanPayload {
   tanggal: string;
-  tool_id: string;
+  alat ukur_id: string;
   peminta_id: string;
   jumlah: number;
   area_pekerjaan: string;
@@ -69,14 +69,14 @@ function buildNomorTransaksi(tanggalIso: string, pemintaNama: string): string {
 function mapPeminjamanFromApi(item: PeminjamanIndexApiResponse): PeminjamanAktifItemType {
   return {
     id: item.id,
-    toolId: item.tool?.id ?? "-",
+    alat ukurId: item.alat ukur?.id ?? "-",
     tanggal: formatTanggalJam(item.tanggal),
-    kodeBarang: item.tool?.kode_barang ?? "-",
-    namaBarang: item.tool?.nama_barang ?? "-",
-    merk: item.tool?.merk ?? "-",
-    tipe: item.tool?.type ?? "-",
-    warna: item.tool?.warna ?? "-",
-    ukuran: item.tool?.ukuran ?? "-",
+    kodeBarang: item.alat ukur?.kode_barang ?? "-",
+    namaBarang: item.alat ukur?.nama_barang ?? "-",
+    merk: item.alat ukur?.merk ?? "-",
+    tipe: item.alat ukur?.type ?? "-",
+    warna: item.alat ukur?.warna ?? "-",
+    ukuran: item.alat ukur?.ukuran ?? "-",
     jumlah: item.jumlah,
     
     // --- ADDED: Map peminjamId correctly so RFID check in modal works! ---
@@ -99,12 +99,12 @@ function mapRiwayatFromApi(item: PeminjamanIndexApiResponse): RiwayatPeminjamanT
     nomor_transaksi: buildNomorTransaksi(item.tanggal, namaPeminjam),
     tanggal_pinjam: formatTanggalJam(item.tanggal),
     tanggal_kembali: item.tanggal_kembali ? formatTanggalJam(item.tanggal_kembali) : "-",
-    kode_barang: item.tool?.kode_barang ?? "-",
-    nama_barang: item.tool?.nama_barang ?? "-",
-    merk: item.tool?.merk ?? "-",
-    tipe: item.tool?.type ?? "-",
-    warna: item.tool?.warna ?? "-",
-    ukuran: item.tool?.ukuran ?? "-",
+    kode_barang: item.alat ukur?.kode_barang ?? "-",
+    nama_barang: item.alat ukur?.nama_barang ?? "-",
+    merk: item.alat ukur?.merk ?? "-",
+    tipe: item.alat ukur?.type ?? "-",
+    warna: item.alat ukur?.warna ?? "-",
+    ukuran: item.alat ukur?.ukuran ?? "-",
     jumlah: item.jumlah,
     namaPeminjam: namaPeminjam,
     nama_peminjam: namaPeminjam,
@@ -133,7 +133,7 @@ export async function submitPeminjaman(
   for (const item of cartItems) {
     const payload: CreatePeminjamanPayload = {
       tanggal,
-      tool_id: item.toolId,
+      alat ukur_id: item.alat ukurId,
       peminta_id: pemintaId,
       jumlah: item.jumlah,
       area_pekerjaan: areaKerja,
@@ -178,17 +178,17 @@ export async function tandaiDikembalikan(id: string, jumlahDikembalikan?: number
 
 export interface AntreanItemResponse {
   id: string | number;
-  tools_id: string;
+  alat ukur_id: string;
   nama_barang: string;
   kode_barang: string;
   qty: number;
   max_jumlah: number;
 }
 
-export async function scanTool(toolId: string, jumlah = 1): Promise<{ message: string; qty: number }> {
+export async function scanAlatukur(alat ukurId: string, jumlah = 1): Promise<{ message: string; qty: number }> {
   return apiFetch("/peminjaman/scan", {
     method: "POST",
-    body: JSON.stringify({ tools_id: toolId, jumlah }),
+    body: JSON.stringify({ alat ukur_id: alat ukurId, jumlah }),
   });
 }
 

@@ -1,12 +1,12 @@
 # Requirement Frontend
-# Sistem Manajemen Inventaris Ruang Tools
+# Sistem Manajemen Inventaris Ruang Alatukur
 ## Workshop Mekanik PT PLN (Persero)
 
 ---
 
 # 1. Project Overview
 
-Sistem Manajemen Inventaris Ruang Tools merupakan aplikasi berbasis website yang dirancang untuk membantu Staff Ruang Tools dalam mengelola inventaris peralatan, barang consumable, data peminjam, transaksi peminjaman dan pengembalian, riwayat transaksi, serta laporan inventaris.
+Sistem Manajemen Inventaris Ruang Alatukur merupakan aplikasi berbasis website yang dirancang untuk membantu Staff Ruang Alatukur dalam mengelola inventaris peralatan, barang consumable, data peminjam, transaksi peminjaman dan pengembalian, riwayat transaksi, serta laporan inventaris.
 
 Frontend dikembangkan menggunakan **Next.js App Router** dan **TypeScript** dengan pendekatan **Component-Based Architecture** sehingga setiap halaman bersifat reusable, scalable, dan mudah dikembangkan.
 
@@ -231,13 +231,13 @@ Area utama untuk seluruh halaman aplikasi.
 Dashboard
 
 Inventaris
-├── Data Tools
+├── Data Alatukur
 ├── Data Consumable
 └── Data Peminjam
 
 Transaksi
-├── Peminjaman Tools
-├── Pengembalian Tools
+├── Peminjaman Alatukur
+├── Pengembalian Alatukur
 ├── Consumable Masuk
 └── Consumable Keluar
 
@@ -254,7 +254,7 @@ Pengaturan
 
 ## Tujuan
 
-Dashboard digunakan untuk memberikan informasi singkat mengenai kondisi inventaris Ruang Tools.
+Dashboard digunakan untuk memberikan informasi singkat mengenai kondisi inventaris Ruang Alatukur.
 
 ---
 
@@ -262,11 +262,11 @@ Dashboard digunakan untuk memberikan informasi singkat mengenai kondisi inventar
 
 Dashboard menampilkan beberapa summary card.
 
-- Total Data Tools
+- Total Data Alatukur
 - Total Data Consumable
 - Total Peminjam
-- Tools Dipinjam
-- Tools Tersedia
+- Alatukur Dipinjam
+- Alatukur Tersedia
 - Consumable Hampir Habis
 - Jumlah Alat Rusak
 
@@ -292,8 +292,8 @@ Menampilkan daftar transaksi terbaru.
 
 Contoh
 
-- Peminjaman Tools
-- Pengembalian Tools
+- Peminjaman Alatukur
+- Pengembalian Alatukur
 - Consumable Masuk
 - Consumable Keluar
 
@@ -311,11 +311,11 @@ Berisi tombol cepat menuju halaman:
 
 # 7. Inventaris
 
-Menu Inventaris digunakan untuk mengelola seluruh data master yang terdapat pada Ruang Tools.
+Menu Inventaris digunakan untuk mengelola seluruh data master yang terdapat pada Ruang Alatukur.
 
 ---
 
-# 7.1 Data Tools
+# 7.1 Data Alatukur
 
 ## Tujuan
 
@@ -352,7 +352,7 @@ Mengelola seluruh data inventaris peralatan.
 
 ---
 
-## Halaman Detail Tools
+## Halaman Detail Alatukur
 
 Informasi yang ditampilkan
 
@@ -449,17 +449,17 @@ Mengelola master data pegawai yang dapat melakukan peminjaman.
 
 ## Digunakan Pada
 
-Data peminjam akan digunakan sebagai referensi pada transaksi peminjaman tools sehingga staff tidak perlu menginput data pegawai secara berulang.
+Data peminjam akan digunakan sebagai referensi pada transaksi peminjaman alat ukur sehingga staff tidak perlu menginput data pegawai secara berulang.
 
 ---
 
 # 8. Transaksi
 
-Menu Transaksi digunakan untuk mencatat seluruh aktivitas keluar masuk inventaris pada Ruang Tools. Setiap transaksi akan memperbarui data inventaris secara otomatis dan tersimpan sebagai riwayat.
+Menu Transaksi digunakan untuk mencatat seluruh aktivitas keluar masuk inventaris pada Ruang Alatukur. Setiap transaksi akan memperbarui data inventaris secara otomatis dan tersimpan sebagai riwayat.
 
 ---
 
-# 8.1 Peminjaman Tools
+# 8.1 Peminjaman Alatukur
 
 ## Tujuan
 
@@ -500,7 +500,7 @@ Mencatat proses peminjaman peralatan oleh pegawai.
 
 ---
 
-# 8.2 Pengembalian Tools
+# 8.2 Pengembalian Alatukur
 
 ## Tujuan
 
@@ -650,7 +650,7 @@ Menyajikan laporan inventaris secara otomatis berdasarkan data transaksi.
 
 ## Jenis Laporan
 
-- Laporan Inventaris Tools
+- Laporan Inventaris Alatukur
 - Laporan Peminjaman
 - Laporan Pengembalian
 - Laporan Consumable
@@ -699,7 +699,7 @@ Mengelola informasi pengguna dan konfigurasi sistem.
 ### Hak Akses
 
 - Administrator
-- Staff Ruang Tools
+- Staff Ruang Alatukur
 
 ---
 
@@ -740,7 +740,7 @@ Frontend dibangun menggunakan komponen yang dapat digunakan kembali pada berbaga
 - Alert
 - Modal
 - Card
-- Tooltip
+- Alatukurtip
 - Breadcrumb
 - Avatar
 
@@ -784,7 +784,7 @@ src/
 ├── app/
 │   ├── dashboard/
 │   ├── inventaris/
-│   │   ├── tools/
+│   │   ├── alat ukur/
 │   │   ├── consumable/
 │   │   └── peminjam/
 │   ├── transaksi/
@@ -858,7 +858,7 @@ Gunakan camelCase.
 Contoh
 
 ```ts
-const totalTools = 120;
+const totalAlatukur = 120;
 const borrowedItems = [];
 ```
 
@@ -869,7 +869,7 @@ const borrowedItems = [];
 Gunakan awalan **I** atau nama deskriptif.
 
 ```ts
-interface Tool {
+interface Alatukur {
   id: string;
   namaBarang: string;
   stok: number;
@@ -982,4 +982,4 @@ Website dirancang agar dapat digunakan pada berbagai ukuran layar.
 
 # 17. Penutup
 
-Dokumen ini menjadi acuan pengembangan **Frontend Sistem Manajemen Inventaris Ruang Tools** menggunakan **Next.js App Router** dan **TypeScript**. Seluruh halaman, komponen, dan struktur antarmuka dirancang agar konsisten, mudah digunakan, serta mendukung proses pengelolaan inventaris secara efektif sesuai kebutuhan operasional Workshop Mekanik PT PLN (Persero).
+Dokumen ini menjadi acuan pengembangan **Frontend Sistem Manajemen Inventaris Ruang Alatukur** menggunakan **Next.js App Router** dan **TypeScript**. Seluruh halaman, komponen, dan struktur antarmuka dirancang agar konsisten, mudah digunakan, serta mendukung proses pengelolaan inventaris secara efektif sesuai kebutuhan operasional Workshop Mekanik PT PLN (Persero).

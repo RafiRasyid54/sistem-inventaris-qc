@@ -1,6 +1,6 @@
 import apiFetch from "lib/api";
-import { PeminjamType } from "types/DataToolsTypes";
-import { PeminjamFormValues } from "components/ruangtools/datapeminjam/PeminjamFormModal";
+import { PeminjamType } from "types/DataAlatukurTypes";
+import { PeminjamFormValues } from "components/ruangalat ukur/datapeminjam/PeminjamFormModal";
 
 interface PemintaApiResponse {
   id: string; // Ini sekarang berisi nomor RFID atau UUID bawaan

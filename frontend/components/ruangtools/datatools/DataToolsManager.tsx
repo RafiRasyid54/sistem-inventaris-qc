@@ -1,6 +1,6 @@
 "use client";
 // import node module libraries
-import { exportToExcel, exportToPDF, ExportColumn } from "components/ruangtools/riwayat/common/exportUtils";
+import { exportToExcel, exportToPDF, ExportColumn } from "components/ruangalat ukur/riwayat/common/exportUtils";
 import { AntreanItemResponse } from "services/peminjamanService";
 import { useEffect, useMemo, useState, useCallback, useRef } from "react";
 import {
@@ -19,7 +19,7 @@ import {
   IconCircleCheck,
   IconSearch,
   IconX,
-  IconTool,
+  IconAlatukur,
   IconMoodEmpty,
 } from "@tabler/icons-react";
 import { v4 as uuid } from "uuid";
@@ -28,7 +28,7 @@ import useSWR, { useSWRConfig } from "swr";
 // Import service layer
 import {
   fetchAntrean,
-  scanTool,
+  scanAlatukur,
   updateCartItem,
   removeCartItem,
   prosesPeminjamanApi,
@@ -40,42 +40,42 @@ import api from "lib/api";
 // import redux store
 import { useAppDispatch, useAppSelector } from "store/store";
 import {
-  fetchTools,
-  addToolThunk,
-  updateToolThunk,
-  deleteToolThunk,
-} from "store/slices/inventoryToolsSlice";
+  fetchAlatukur,
+  addAlatukurThunk,
+  updateAlatukurThunk,
+  deleteAlatukurThunk,
+} from "store/slices/inventoryAlatukurSlice";
 
 // import custom types
 import {
-  ToolItemType,
-  ToolFormValues,
+  AlatukurItemType,
+  AlatukurFormValues,
   CartItemType,
-} from "types/DataToolsTypes";
+} from "types/DataAlatukurTypes";
 import { ConsumableItemType } from "types/DataConsumableTypes"; // Tambahan untuk Universal Scanner
 
 // import custom components
 import TanstackTable from "components/table/TanstackTable";
 import Flex from "components/common/Flex";
 import DasherBreadcrumb from "components/common/DasherBreadcrumb";
-import { getDataToolsColumns } from "components/ruangtools/datatools/ColumnDefination";
-import ToolFormModal from "components/ruangtools/datatools/ToolFormModal";
-import ToolDetailModal from "components/ruangtools/datatools/ToolDetailModal";
-import DeleteConfirmModal from "components/ruangtools/datatools/DeleteConfirmModal";
-import CartFAB from "components/ruangtools/datatools/CartFAB";
+import { getDataAlatukurColumns } from "components/ruangalat ukur/dataalat ukur/ColumnDefination";
+import AlatukurFormModal from "components/ruangalat ukur/dataalat ukur/AlatukurFormModal";
+import AlatukurDetailModal from "components/ruangalat ukur/dataalat ukur/AlatukurDetailModal";
+import DeleteConfirmModal from "components/ruangalat ukur/dataalat ukur/DeleteConfirmModal";
+import CartFAB from "components/ruangalat ukur/dataalat ukur/CartFAB";
 import CartOffcanvas from "components/common/CartOffcanvas";
 import LoanFormModal from "components/common/LoanFormModal";
 import AddToCartFlyEffect, {
   FlyAnimationItem,
-} from "components/ruangtools/datatools/AddToCartFlyEffect";
+} from "components/ruangalat ukur/dataalat ukur/AddToCartFlyEffect";
 
-// Tipe gabungan untuk item keranjang (tools + consumable)
+// Tipe gabungan untuk item keranjang (alat ukur + consumable)
 interface UnifiedCartItem extends Partial<CartItemType> {
   cartId?: string | number;
   id?: string | number;
   consumable_id?: string;
   jumlah: number;
-  item_type?: "tool" | "consumable";
+  item_type?: "alat ukur" | "consumable";
 }
 
 interface LoanSubmitValues {
@@ -90,10 +90,10 @@ interface LoanSubmitValues {
 }
 
 // ---- Helper: generate kode barang berikutnya ----
-const generateNextKodeBarang = (tools: ToolItemType[]): string => {
-  if (tools.length === 0) return "T-001";
-  const maxNumber = tools.reduce((max, tool) => {
-    const match = tool.kodeBarang.match(/^T-(\d+)$/);
+const generateNextKodeBarang = (alat ukur: AlatukurItemType[]): string => {
+  if (alat ukur.length === 0) return "T-001";
+  const maxNumber = alat ukur.reduce((max, alat ukur) => {
+    const match = alat ukur.kodeBarang.match(/^T-(\d+)$/);
     if (!match) return max;
     const num = parseInt(match[1], 10);
     return num > max ? num : max;
@@ -115,14 +115,14 @@ const EXPORT_COLUMNS: ExportColumn[] = [
   { header: "Tersedia", key: "tersedia" },
 ];
 
-const DataToolsManager = () => {
+const DataAlatukurManager = () => {
   const dispatch = useAppDispatch();
   const { mutate } = useSWRConfig();
 
-  // Data tools dari Redux store
-  const tools = useAppSelector((state) => state.inventoryTools.tools);
-  const loadingTools = useAppSelector((state) => state.inventoryTools.loadingTools);
-  const toolsError = useAppSelector((state) => state.inventoryTools.toolsError);
+  // Data alat ukur dari Redux store
+  const alat ukur = useAppSelector((state) => state.inventoryAlatukur.alat ukur);
+  const loadingAlatukur = useAppSelector((state) => state.inventoryAlatukur.loadingAlatukur);
+  const alat ukurError = useAppSelector((state) => state.inventoryAlatukur.alat ukurError);
 
   // Data consumable untuk Universal Scanner
   const [consumables, setConsumables] = useState<ConsumableItemType[]>([]);
@@ -131,7 +131,7 @@ const DataToolsManager = () => {
   const [formModalOpen, setFormModalOpen] = useState(false);
   const [detailModalOpen, setDetailModalOpen] = useState(false);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
-  const [activeTool, setActiveTool] = useState<ToolItemType | null>(null);
+  const [activeAlatukur, setActiveAlatukur] = useState<AlatukurItemType | null>(null);
   const [suggestedKodeBarang, setSuggestedKodeBarang] = useState("");
 
   // ---- State Keranjang Peminjaman ----
@@ -150,67 +150,67 @@ const DataToolsManager = () => {
   // ---- Notifikasi ----
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
-  // ---- Toolbar: pencarian ----
+  // ---- Alatukurbar: pencarian ----
   const [searchTerm, setSearchTerm] = useState("");
 
   // ================= FETCH KERANJANG MENGGUNAKAN SWR & SERVICE =================
   const { data: dbCart } = useSWR("/peminjaman/antrean", fetchAntrean);
 
-  // Sinkronisasi data Tools dari Database + Gabungkan dengan data Consumable dari LocalStorage
+  // Sinkronisasi data Alatukur dari Database + Gabungkan dengan data Consumable dari LocalStorage
   useEffect(() => {
-    let groupedToolsCart: UnifiedCartItem[] = [];
+    let groupedAlatukurCart: UnifiedCartItem[] = [];
 
     if (dbCart && Array.isArray(dbCart)) {
-      groupedToolsCart = dbCart.reduce((acc: UnifiedCartItem[], item: AntreanItemResponse) => {
+      groupedAlatukurCart = dbCart.reduce((acc: UnifiedCartItem[], item: AntreanItemResponse) => {
         const cartRecordId = item.id;
-        const toolIdVal = item.tools_id;
+        const alat ukurIdVal = item.alat ukur_id;
 
-        const existingItem = acc.find((c) => c.toolId === toolIdVal);
+        const existingItem = acc.find((c) => c.alat ukurId === alat ukurIdVal);
 
         if (existingItem) {
           existingItem.jumlah += item.qty ?? 1;
         } else {
           acc.push({
             cartId: cartRecordId,
-            toolId: toolIdVal,
+            alat ukurId: alat ukurIdVal,
             namaBarang: item.nama_barang || "Nama Alat Tidak Ditemukan",
             kodeBarang: item.kode_barang || "-",
             jumlah: item.qty ?? 1,
             maxJumlah: item.max_jumlah ?? 99,
-            item_type: "tool",
+            item_type: "alat ukur",
           });
         }
         return acc;
       }, []);
     }
-    // Simpan tools ke localStorage agar halaman consumable bisa membacanya
-    localStorage.setItem("global_shared_tools_cart", JSON.stringify(groupedToolsCart));
+    // Simpan alat ukur ke localStorage agar halaman consumable bisa membacanya
+    localStorage.setItem("global_shared_alat ukur_cart", JSON.stringify(groupedAlatukurCart));
 
     // Ambil data consumable dari localStorage
     const savedConsumableCart = JSON.parse(localStorage.getItem("global_shared_consumable_cart") || "[]");
 
-    // Gabungkan data tools dan consumable ke state cart utama
-    setCart([...groupedToolsCart, ...savedConsumableCart]);
+    // Gabungkan data alat ukur dan consumable ke state cart utama
+    setCart([...groupedAlatukurCart, ...savedConsumableCart]);
   }, [dbCart]);
 
   // Data filter tabel
-  const filteredTools = useMemo(() => {
+  const filteredAlatukur = useMemo(() => {
     const keyword = searchTerm.trim().toLowerCase();
     
-    if (!keyword) return tools;
+    if (!keyword) return alat ukur;
 
-    return tools.filter((tool) => {
-      const kodeBarang = (tool.kodeBarang || "").toLowerCase();
-      const namaBarang = (tool.namaBarang || "").toLowerCase();
-      const merk = (tool.merk || "").toLowerCase();
-      const tipe = (tool.tipe || "").toLowerCase();
-      const warna = (tool.warna || "").toLowerCase();
-      const ukuran = (tool.ukuran || "").toLowerCase();
-      const kondisi = (tool.kondisi || "").toLowerCase();
+    return alat ukur.filter((alat ukur) => {
+      const kodeBarang = (alat ukur.kodeBarang || "").toLowerCase();
+      const namaBarang = (alat ukur.namaBarang || "").toLowerCase();
+      const merk = (alat ukur.merk || "").toLowerCase();
+      const tipe = (alat ukur.tipe || "").toLowerCase();
+      const warna = (alat ukur.warna || "").toLowerCase();
+      const ukuran = (alat ukur.ukuran || "").toLowerCase();
+      const kondisi = (alat ukur.kondisi || "").toLowerCase();
 
-      const stok = String(tool.stok || 0);
-      const dipinjam = String(tool.dipinjam || 0);
-      const tersedia = String((tool.stok || 0) - (tool.dipinjam || 0));
+      const stok = String(alat ukur.stok || 0);
+      const dipinjam = String(alat ukur.dipinjam || 0);
+      const tersedia = String((alat ukur.stok || 0) - (alat ukur.dipinjam || 0));
 
       return (
         kodeBarang.includes(keyword) ||
@@ -225,11 +225,11 @@ const DataToolsManager = () => {
         tersedia.includes(keyword)
       );
     });
-  }, [tools, searchTerm]);
+  }, [alat ukur, searchTerm]);
 
   // ================= LOAD DATA DARI DATABASE =================
   useEffect(() => {
-    dispatch(fetchTools());
+    dispatch(fetchAlatukur());
     getConsumables().then(setConsumables).catch(console.error); // Load consumables untuk Universal Scanner
   }, [dispatch]);
 
@@ -250,27 +250,27 @@ const DataToolsManager = () => {
           const scannedCode = barcodeBuffer.current;
           barcodeBuffer.current = ''; 
 
-          // 1. Cari di database Tools terlebih dahulu
-          const foundTool = tools.find((t) => 
+          // 1. Cari di database Alatukur terlebih dahulu
+          const foundAlatukur = alat ukur.find((t) => 
             (t.kodeBarang && t.kodeBarang.toLowerCase() === scannedCode.toLowerCase()) || t.id === scannedCode
           );
 
-          if (foundTool) {
-            const tersedia = foundTool.stok - foundTool.dipinjam;
+          if (foundAlatukur) {
+            const tersedia = foundAlatukur.stok - foundAlatukur.dipinjam;
             if (tersedia > 0) {
               try {
-                await scanTool(foundTool.id, 1);
+                await scanAlatukur(foundAlatukur.id, 1);
                 mutate("/peminjaman/antrean");
-                setSuccessMessage(`Berhasil: Tool ${foundTool.namaBarang} ditambahkan ke keranjang.`);
+                setSuccessMessage(`Berhasil: Alatukur ${foundAlatukur.namaBarang} ditambahkan ke keranjang.`);
                 setTimeout(() => setSuccessMessage(null), 3000);
               } catch (err) {
-                console.error("Gagal menambah Tool", err);
+                console.error("Gagal menambah Alatukur", err);
               }
             } else {
-               alert(`Gagal: Stok Tool ${foundTool.namaBarang} kosong/dipinjam semua.`);
+               alert(`Gagal: Stok Alatukur ${foundAlatukur.namaBarang} kosong/dipinjam semua.`);
             }
           } 
-          // 2. Jika tidak ada di Tools, cari di database Consumable
+          // 2. Jika tidak ada di Alatukur, cari di database Consumable
           else {
             const foundConsumable = consumables.find((c) => 
               (c.kode_barang && c.kode_barang.toLowerCase() === scannedCode.toLowerCase()) || c.id === scannedCode
@@ -329,77 +329,77 @@ const DataToolsManager = () => {
 
     window.addEventListener('keydown', handleGlobalScan);
     return () => window.removeEventListener('keydown', handleGlobalScan);
-  }, [tools, consumables, cart, mutate]);
+  }, [alat ukur, consumables, cart, mutate]);
 
-  // ================= CRUD TOOLS =================
+  // ================= CRUD ALAT UKUR =================
   const openAddModal = () => {
-    setActiveTool(null);
-    setSuggestedKodeBarang(generateNextKodeBarang(tools));
+    setActiveAlatukur(null);
+    setSuggestedKodeBarang(generateNextKodeBarang(alat ukur));
     setFormModalOpen(true);
   };
 
-  const openEditModal = (tool: ToolItemType) => {
-    setActiveTool(tool);
+  const openEditModal = (alat ukur: AlatukurItemType) => {
+    setActiveAlatukur(alat ukur);
     setFormModalOpen(true);
   };
 
-  const handleFormSubmit = async (values: ToolFormValues) => {
+  const handleFormSubmit = async (values: AlatukurFormValues) => {
     try {
-      if (activeTool) {
-        await dispatch(updateToolThunk({ id: activeTool.id, values })).unwrap();
+      if (activeAlatukur) {
+        await dispatch(updateAlatukurThunk({ id: activeAlatukur.id, values })).unwrap();
       } else {
-        await dispatch(addToolThunk(values)).unwrap();
+        await dispatch(addAlatukurThunk(values)).unwrap();
       }
       setFormModalOpen(false);
-      setActiveTool(null);
+      setActiveAlatukur(null);
     } catch (err) {
       const message = err instanceof Error ? err.message : "Gagal menyimpan data";
       alert(message);
     }
   }; 
 
-  const openDetailModal = (tool: ToolItemType) => {
-    setActiveTool(tool);
+  const openDetailModal = (alat ukur: AlatukurItemType) => {
+    setActiveAlatukur(alat ukur);
     setDetailModalOpen(true);
   };
 
   const handleExportPDF = () => {
-    const dataWithTersedia = filteredTools.map((t) => ({
+    const dataWithTersedia = filteredAlatukur.map((t) => ({
       ...t,
       tersedia: t.stok - t.dipinjam,
     }));
-    exportToPDF(dataWithTersedia as unknown as Record<string, unknown>[], EXPORT_COLUMNS, "data-tools", "Data Tools");
+    exportToPDF(dataWithTersedia as unknown as Record<string, unknown>[], EXPORT_COLUMNS, "data-alat ukur", "Data Alatukur");
   };
 
   const handleExportExcel = () => {
-    const dataWithTersedia = filteredTools.map((t) => ({
+    const dataWithTersedia = filteredAlatukur.map((t) => ({
       ...t,
       tersedia: t.stok - t.dipinjam,
     }));
-    exportToExcel(dataWithTersedia as unknown as Record<string, unknown>[], EXPORT_COLUMNS, "data-tools");
+    exportToExcel(dataWithTersedia as unknown as Record<string, unknown>[], EXPORT_COLUMNS, "data-alat ukur");
   };
 
-  const openDeleteModal = (tool: ToolItemType) => {
-    setActiveTool(tool);
+  const openDeleteModal = (alat ukur: AlatukurItemType) => {
+    setActiveAlatukur(alat ukur);
     setDeleteModalOpen(true);
   };
 
   const handleConfirmDelete = async () => {
-    if (!activeTool) return;
+    if (!activeAlatukur) return;
     try {
-      await dispatch(deleteToolThunk(activeTool.id)).unwrap();
+      await dispatch(deleteAlatukurThunk(activeAlatukur.id)).unwrap();
     } catch (err) {
       const message = err instanceof Error ? err.message : "Gagal menghapus data";
       alert(message);
     } finally {
       setDeleteModalOpen(false);
-      setActiveTool(null);
+      setActiveAlatukur(null);
     }
   };
 
   // ================= KERANJANG PEMINJAMAN =================
-  const handleAddToCart = useCallback(async (tool: ToolItemType, event: React.MouseEvent<HTMLButtonElement>) => {
-    const tersedia = tool.stok - tool.dipinjam;
+  const handleAddToCart = useCallback(async (alat ukur: AlatukurItemType, event: React.MouseEvent<HTMLButtonElement>) => {
+    const tersedia = alat ukur.stok - alat ukur.dipinjam;
     if (tersedia <= 0) return;
     
     const rect = event.currentTarget.getBoundingClientRect();
@@ -409,7 +409,7 @@ const DataToolsManager = () => {
     ]);
 
     try {
-      await scanTool(tool.id, 1);
+      await scanAlatukur(alat ukur.id, 1);
       mutate("/peminjaman/antrean");
     } catch (err) { 
       console.error("Gagal menambah ke keranjang DB", err); 
@@ -442,11 +442,11 @@ const DataToolsManager = () => {
       );
       localStorage.setItem("global_shared_consumable_cart", JSON.stringify(updated));
     } else {
-      const savedTools = JSON.parse(localStorage.getItem("global_shared_tools_cart") || "[]");
-      const updated = savedTools.map((c: any) =>
+      const savedAlatukur = JSON.parse(localStorage.getItem("global_shared_alat ukur_cart") || "[]");
+      const updated = savedAlatukur.map((c: any) =>
         c.cartId === cartId || c.id === cartId ? { ...c, jumlah: newJumlah } : c
       );
-      localStorage.setItem("global_shared_tools_cart", JSON.stringify(updated));
+      localStorage.setItem("global_shared_alat ukur_cart", JSON.stringify(updated));
     }
 
     // 3. Batalkan request API sebelumnya jika user masih asyik mengetik/ngeklik
@@ -468,7 +468,7 @@ const DataToolsManager = () => {
             body: JSON.stringify({ qty: newJumlah }),
           });
         } else {
-          // Update item jenis Tool ke backend
+          // Update item jenis Alatukur ke backend
           await updateCartItem(cartId, newJumlah);
         }
 
@@ -502,7 +502,7 @@ const DataToolsManager = () => {
       return;
     }
 
-    // 3. Jika item tersebut adalah Tool
+    // 3. Jika item tersebut adalah Alatukur
     try {
       await removeCartItem(cartId);
       mutate("/peminjaman/antrean"); 
@@ -533,12 +533,12 @@ const DataToolsManager = () => {
         throw new Error("Data peminjam tidak ditemukan. Silakan pilih peminjam terlebih dahulu.");
       }
 
-      const hasToolItems = cart.some((c) => c.item_type === "tool" || !c.item_type);
+      const hasAlatukurItems = cart.some((c) => c.item_type === "alat ukur" || !c.item_type);
       const hasConsumableItems = cart.some((c) => c.item_type === "consumable");
 
       const apiRequests = [];
 
-      if (hasToolItems) {
+      if (hasAlatukurItems) {
         apiRequests.push(
           prosesPeminjamanApi({
             pemintaId: pemintaIdValue,
@@ -575,12 +575,12 @@ const DataToolsManager = () => {
       }
 
       localStorage.removeItem("global_shared_consumable_cart");
-      localStorage.removeItem("global_shared_tools_cart");
+      localStorage.removeItem("global_shared_alat ukur_cart");
 
       setCart([]);
       setLoanFormOpen(false);
       mutate("/peminjaman/antrean");
-      dispatch(fetchTools());
+      dispatch(fetchAlatukur());
 
       setSuccessMessage(
         `Peminjaman untuk ${values.namaPeminjam || values.namaPeminta} berhasil dibuat. Status: Sedang Dipinjam.`
@@ -596,7 +596,7 @@ const DataToolsManager = () => {
 
   const columns = useMemo(
     () =>
-      getDataToolsColumns({
+      getDataAlatukurColumns({
         onDetail: openDetailModal,
         onEdit: openEditModal,
         onDelete: openDeleteModal,
@@ -604,7 +604,7 @@ const DataToolsManager = () => {
         cartItems: cart
           .filter((c) => c.item_type !== "consumable")
           .map((c) => ({
-            toolId: c.toolId ?? "",
+            alat ukurId: c.alat ukurId ?? "",
             cartId: c.cartId,
             kodeBarang: c.kodeBarang ?? "-",
             namaBarang: c.namaBarang ?? "-",
@@ -616,7 +616,7 @@ const DataToolsManager = () => {
   );
 
   return (
-    <div className="datatools-page">
+    <div className="dataalat ukur-page">
       {successMessage && (
         <Alert variant="success" className="d-flex align-items-center gap-2" dismissible onClose={() => setSuccessMessage(null)}>
           <IconCircleCheck size={20} />
@@ -635,9 +635,9 @@ const DataToolsManager = () => {
         <Col>
           <Flex justifyContent="between" alignItems="center" className="mb-4 w-100" breakpoint="md">
             <div>
-              <h1 className="mb-2 h2">Data Tools</h1>
+              <h1 className="mb-2 h2">Data Alatukur</h1>
               <p className="text-secondary mb-0">
-                Mengelola seluruh data peralatan yang terdapat di Ruang Tools.
+                Mengelola seluruh data peralatan yang terdapat di Ruang Alatukur.
               </p>
               <DasherBreadcrumb />
             </div>
@@ -652,11 +652,11 @@ const DataToolsManager = () => {
       </Row>
 
       <Card className="card-lg mb-6">
-        {/* ---- Toolbar: Search ---- */}
-        <div className="datatools-toolbar border-bottom">
+        {/* ---- Alatukurbar: Search ---- */}
+        <div className="dataalat ukur-alat ukurbar border-bottom">
           <Row className="g-2 align-items-center">
             <Col lg={5} md={6}>
-              <InputGroup className="datatools-search">
+              <InputGroup className="dataalat ukur-search">
                 <InputGroup.Text><IconSearch size={18} /></InputGroup.Text>
                 <Form.Control
                   type="search"
@@ -665,7 +665,7 @@ const DataToolsManager = () => {
                   onChange={(e) => setSearchTerm(e.target.value)}
                 />
                 {searchTerm && (
-                  <Button variant="link" className="datatools-search-clear" onClick={() => setSearchTerm("")}>
+                  <Button variant="link" className="dataalat ukur-search-clear" onClick={() => setSearchTerm("")}>
                     <IconX size={16} />
                   </Button>
                 )}
@@ -673,7 +673,7 @@ const DataToolsManager = () => {
             </Col>
             <Col lg={4} md={3} className="text-md-end">
               <span className="text-secondary small">
-                Menampilkan <span className="fw-semibold text-body">{filteredTools.length}</span> dari {tools.length} data
+                Menampilkan <span className="fw-semibold text-body">{filteredAlatukur.length}</span> dari {alat ukur.length} data
               </span>
             </Col>
             <Col lg={3} md={3} className="d-flex justify-content-md-end gap-2">
@@ -688,23 +688,23 @@ const DataToolsManager = () => {
         </div>
 
         <CardBody>
-          {toolsError && <Alert variant="danger">{toolsError}</Alert>}
-          {loadingTools ? (
+          {alat ukurError && <Alert variant="danger">{alat ukurError}</Alert>}
+          {loadingAlatukur ? (
             <div className="text-center py-6">
               <Spinner animation="border" size="sm" className="me-2" /> Memuat data...
             </div>
-          ) : tools.length === 0 ? (
-            <div className="datatools-empty text-center py-6">
-              <div className="datatools-empty-icon mb-3"><IconTool size={32} /></div>
-              <h5 className="mb-1">Belum ada data tools</h5>
-              <p className="text-secondary mb-4">Mulai dengan menambahkan peralatan pertama ke Ruang Tools.</p>
+          ) : alat ukur.length === 0 ? (
+            <div className="dataalat ukur-empty text-center py-6">
+              <div className="dataalat ukur-empty-icon mb-3"><IconAlatukur size={32} /></div>
+              <h5 className="mb-1">Belum ada data alat ukur</h5>
+              <p className="text-secondary mb-4">Mulai dengan menambahkan peralatan pertama ke Ruang Alatukur.</p>
               <Button variant="primary" className="d-inline-flex align-items-center gap-2" onClick={openAddModal}>
                 <IconPlus size={18} /> Tambah Data
               </Button>
             </div>
-          ) : filteredTools.length === 0 ? (
-            <div className="datatools-empty text-center py-6">
-              <div className="datatools-empty-icon mb-3"><IconMoodEmpty size={32} /></div>
+          ) : filteredAlatukur.length === 0 ? (
+            <div className="dataalat ukur-empty text-center py-6">
+              <div className="dataalat ukur-empty-icon mb-3"><IconMoodEmpty size={32} /></div>
               <h5 className="mb-1">Tidak ada hasil</h5>
               <p className="text-secondary mb-4">Tidak ditemukan data yang cocok dengan pencarian.</p>
               <Button variant="outline-secondary" className="d-inline-flex align-items-center gap-2" onClick={() => setSearchTerm("")}>
@@ -712,15 +712,15 @@ const DataToolsManager = () => {
               </Button>
             </div>
           ) : (
-            <TanstackTable data={filteredTools} columns={columns} pagination />
+            <TanstackTable data={filteredAlatukur} columns={columns} pagination />
           )}
         </CardBody>
       </Card>
 
       {/* ---- Modals ---- */}
-      <ToolFormModal show={formModalOpen} onClose={() => { setFormModalOpen(false); setActiveTool(null); }} onSubmit={handleFormSubmit} initialData={activeTool} suggestedKodeBarang={suggestedKodeBarang} />
-      <ToolDetailModal show={detailModalOpen} onClose={() => setDetailModalOpen(false)} tool={activeTool} />
-      <DeleteConfirmModal show={deleteModalOpen} onClose={() => setDeleteModalOpen(false)} onConfirm={handleConfirmDelete} tool={activeTool} />
+      <AlatukurFormModal show={formModalOpen} onClose={() => { setFormModalOpen(false); setActiveAlatukur(null); }} onSubmit={handleFormSubmit} initialData={activeAlatukur} suggestedKodeBarang={suggestedKodeBarang} />
+      <AlatukurDetailModal show={detailModalOpen} onClose={() => setDetailModalOpen(false)} alat ukur={activeAlatukur} />
+      <DeleteConfirmModal show={deleteModalOpen} onClose={() => setDeleteModalOpen(false)} onConfirm={handleConfirmDelete} alat ukur={activeAlatukur} />
 
       {/* ---- Keranjang Peminjaman ---- */}
       <CartFAB itemCount={cart.length} onClick={() => setCartOpen(true)} />
@@ -732,4 +732,4 @@ const DataToolsManager = () => {
   );
 };
 
-export default DataToolsManager;
+export default DataAlatukurManager;

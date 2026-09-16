@@ -1,49 +1,62 @@
 <?php
 
-namespace App\Http\Controllers\API;
+namespace App\Http\Controllers\Api; // <-- Diperbaiki (huruf kecil 'pi') agar tidak error di Linux/Server
 
-use App\Models\Peminta;
 use App\Http\Controllers\Controller;
+use App\Models\Peminta;
 use Illuminate\Http\Request;
-use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Validator;
 
 class PemintaController extends Controller
 {
-    // GET /api/peminta
-    // GET /api/peminta?aktif=1  -> cuma yang aktif (dipakai buat dropdown pilih peminjam)
+    /**
+     * GET /api/peminta
+     * Menampilkan semua pekerja (bisa difilter yang aktif saja untuk dropdown)
+     */
     public function index(Request $request)
     {
-        $query = Peminta::orderBy('nama');
+        // Pastikan nama kolom di database nanti adalah 'nama_peminta' ya!
+        $query = Peminta::orderBy('nama_peminta');
 
         if ($request->has('aktif')) {
             $query->where('aktif', $request->boolean('aktif'));
         }
 
-        return response()->json($query->get());
+        return response()->json([
+            'status' => 'success',
+            'data' => $query->get()
+        ]);
     }
 
-    // GET /api/peminta/{id}
+    /**
+     * GET /api/peminta/{id}
+     * Menampilkan detail satu pekerja (Berdasarkan Nomor Kartu RFID)
+     */
     public function show(string $id)
     {
         $peminta = Peminta::find($id);
 
-        if (! $peminta) {
-            return response()->json(['message' => 'Peminta tidak ditemukan'], 404);
+        if (!$peminta) {
+            return response()->json(['message' => 'Peminta/Pekerja tidak ditemukan'], 404);
         }
 
-        return response()->json($peminta);
+        return response()->json([
+            'status' => 'success',
+            'data' => $peminta
+        ]);
     }
 
-    // POST /api/peminta
+    /**
+     * POST /api/peminta
+     * Mendaftarkan pekerja baru (Tap kartu RFID baru untuk merekam ID-nya)
+     */
     public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'id'     => 'nullable|string|unique:peminta,id',
-            'nama'   => 'required|string|max:255',
+            'id' => 'required|string|unique:peminta,id', // <-- Ini adalah Nomor Kartu RFID
+            'nama_peminta' => 'required|string|max:255',
             'divisi' => 'required|string|max:255',
-            // --- VALIDASI ROLE BARU (INVENTORY MAN) ---
-            'role'   => 'nullable|string|in:user,inventory man', 
+            'role' => 'nullable|string|in:user,inventory man', 
         ]);
 
         if ($validator->fails()) {
@@ -52,31 +65,40 @@ class PemintaController extends Controller
 
         $data = $validator->validated();
         
-        // Default role jika tidak diisi dari frontend adalah 'user'
+        // Default role jika tidak diisi adalah 'user' biasa
         if (empty($data['role'])) {
             $data['role'] = 'user';
         }
 
+        // Otomatis aktif saat pertama dibuat
+        $data['aktif'] = true;
+
         $peminta = Peminta::create($data);
 
-        return response()->json($peminta, 201);
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Pekerja baru berhasil didaftarkan.',
+            'data' => $peminta
+        ], 201);
     }
 
-    // PUT/PATCH /api/peminta/{id}
+    /**
+     * PUT/PATCH /api/peminta/{id}
+     * Edit data pekerja
+     */
     public function update(Request $request, string $id)
     {
         $peminta = Peminta::find($id);
 
-        if (! $peminta) {
-            return response()->json(['message' => 'Peminta tidak ditemukan'], 404);
+        if (!$peminta) {
+            return response()->json(['message' => 'Peminta/Pekerja tidak ditemukan'], 404);
         }
 
         $validator = Validator::make($request->all(), [
-            'id'     => 'nullable|string|unique:peminta,id,' . $id,
-            'nama'   => 'sometimes|required|string|max:255',
+            'id' => 'sometimes|string|unique:peminta,id,' . $id,
+            'nama_peminta' => 'sometimes|required|string|max:255',
             'divisi' => 'sometimes|required|string|max:255',
-            // --- VALIDASI ROLE BARU (INVENTORY MAN) ---
-            'role'   => 'sometimes|required|string|in:user,inventory man',
+            'role' => 'sometimes|required|string|in:user,inventory man',
         ]);
 
         if ($validator->fails()) {
@@ -85,39 +107,51 @@ class PemintaController extends Controller
 
         $peminta->update($validator->validated());
 
-        return response()->json($peminta);
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Data pekerja berhasil diperbarui.',
+            'data' => $peminta
+        ]);
     }
 
-    // DELETE /api/peminta/{id}
+    /**
+     * DELETE /api/peminta/{id}
+     * Menonaktifkan pekerja (Bukan dihapus permanen agar riwayat alat tidak hilang)
+     */
     public function destroy(string $id)
     {
         $peminta = Peminta::find($id);
 
-        if (! $peminta) {
-            return response()->json(['message' => 'Peminta tidak ditemukan'], 404);
+        if (!$peminta) {
+            return response()->json(['message' => 'Peminta/Pekerja tidak ditemukan'], 404);
         }
 
         $peminta->update(['aktif' => false]);
 
         return response()->json([
-            'message' => 'Peminta berhasil dinonaktifkan. Riwayat transaksi lama tetap aman.',
+            'status' => 'success',
+            'message' => 'Pekerja berhasil dinonaktifkan. Riwayat transaksi lama tetap aman.',
             'data' => $peminta,
         ]);
     }
 
-    // PATCH /api/peminta/{id}/aktifkan
+    /**
+     * PATCH /api/peminta/{id}/aktifkan
+     * Mengaktifkan kembali pekerja
+     */
     public function aktifkan(string $id)
     {
         $peminta = Peminta::find($id);
 
-        if (! $peminta) {
-            return response()->json(['message' => 'Peminta tidak ditemukan'], 404);
+        if (!$peminta) {
+            return response()->json(['message' => 'Peminta/Pekerja tidak ditemukan'], 404);
         }
 
         $peminta->update(['aktif' => true]);
 
         return response()->json([
-            'message' => 'Peminta berhasil diaktifkan kembali.',
+            'status' => 'success',
+            'message' => 'Pekerja berhasil diaktifkan kembali.',
             'data' => $peminta,
         ]);
     }

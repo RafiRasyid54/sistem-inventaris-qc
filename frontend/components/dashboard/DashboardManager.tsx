@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link"; 
 import { Row, Col, Card, CardBody, Spinner, Alert, Badge, } from "react-bootstrap";
 import {
-  IconTool,
+  IconAlatukur,
   IconPackage,
   IconUsers,
   IconClockHour4,
@@ -18,7 +18,7 @@ import {
   XAxis,
   YAxis,
   CartesianGrid,
-  Tooltip,
+  Alatukurtip,
   ResponsiveContainer,
 } from "recharts";
 
@@ -141,7 +141,7 @@ const DashboardManager = () => {
           <div>
             <h1 className="mb-2 h2">Dashboard</h1>
             <p className="text-secondary mb-0">
-              Ringkasan aktivitas dan kondisi inventaris Ruang Tools.
+              Ringkasan aktivitas dan kondisi inventaris Ruang Alatukur.
             </p>
             <DasherBreadcrumb />
           </div>
@@ -171,7 +171,7 @@ const DashboardManager = () => {
     );
   }
 
-  const orderToolsStatus = (summary as any)?.order_tools_status || {};
+  const orderAlatukurStatus = (summary as any)?.order_alat ukur_status || {};
   const orderConsumableStatus = (summary as any)?.order_consumable_status || {};
 
   return (
@@ -182,11 +182,11 @@ const DashboardManager = () => {
       {/* Baris 1: Ringkasan Utama */}
       <Row className="g-3 mb-4">
         <Col xs={6} md={6} xl={3}>
-          <Link href="/inventaris/data-tools" style={{ textDecoration: "none", color: "inherit", display: "block" }}>
+          <Link href="/inventaris/data-alat ukur" style={{ textDecoration: "none", color: "inherit", display: "block" }}>
             <StatCard
-              icon={<IconTool size={26} />}
-              title="Total Tools"
-              value={summary?.total_tools ?? 0}
+              icon={<IconAlatukur size={26} />}
+              title="Total Alatukur"
+              value={summary?.total_alat ukur ?? 0}
               variant="primary"
             />
           </Link>
@@ -284,13 +284,13 @@ const DashboardManager = () => {
 
       {/* Baris 3: Grafik Tren (Dua Kolom Bersandingan) */}
       <Row className="g-3 mb-4">
-        {/* Kolom Kiri: Tren Tools */}
+        {/* Kolom Kiri: Tren Alatukur */}
         <Col lg={6}>
           <Card className="card-lg h-100">
             <CardBody>
               <div className="d-flex align-items-center gap-2 mb-3">
                 <IconTrendingUp className="text-primary" size={20} />
-                <h5 className="mb-0">Tren Peminjaman Tools (30 Hari Terakhir)</h5>
+                <h5 className="mb-0">Tren Peminjaman Alatukur (30 Hari Terakhir)</h5>
               </div>
               {tren.length === 0 ? (
                 <p className="text-secondary small mb-0">Belum ada data.</p>
@@ -307,7 +307,7 @@ const DashboardManager = () => {
                       stroke="#a0a0a0"
                     />
                     <YAxis allowDecimals={false} fontSize={12} stroke="#a0a0a0" />
-                    <Tooltip
+                    <Alatukurtip
                       labelFormatter={(val) =>
                         new Date(String(val)).toLocaleDateString("id-ID", { day: "2-digit", month: "long", year: "numeric" })
                       }
@@ -350,7 +350,7 @@ const DashboardManager = () => {
                       stroke="#a0a0a0"
                     />
                     <YAxis allowDecimals={false} fontSize={12} stroke="#a0a0a0" />
-                    <Tooltip
+                    <Alatukurtip
                       labelFormatter={(val) =>
                         new Date(String(val)).toLocaleDateString("id-ID", { day: "2-digit", month: "long", year: "numeric" })
                       }
@@ -498,33 +498,33 @@ const DashboardManager = () => {
       <Row className="g-3">
         <Col md={6}>
           <Link 
-            href="/order/order-tools" 
+            href="/order/order-alat ukur" 
             style={{ textDecoration: "none", color: "inherit" }} 
             className="d-block h-100"
-            title="Ke Halaman Order Tools"
+            title="Ke Halaman Order Alatukur"
           >
             <Card className="card-lg h-100 border-primary border-opacity-25 shadow-sm" style={{ cursor: "pointer" }}>
               <CardBody>
                 <h6 className="mb-4 d-flex align-items-center gap-2">
                   <IconShoppingCart size={20} className="text-primary"/> 
-                  Rincian Status Order Tools
+                  Rincian Status Order Alatukur
                 </h6>
                 <Row className="text-center">
                   <Col xs={3}>
                     <div className="text-secondary small mb-1">Belum Dibeli</div>
-                    <div className="h4 mb-0 text-secondary">{orderToolsStatus.belum_dibeli ?? 0}</div>
+                    <div className="h4 mb-0 text-secondary">{orderAlatukurStatus.belum_dibeli ?? 0}</div>
                   </Col>
                   <Col xs={3}>
                     <div className="text-secondary small mb-1">On Progres</div>
-                    <div className="h4 mb-0 text-primary">{orderToolsStatus.on_progres ?? 0}</div>
+                    <div className="h4 mb-0 text-primary">{orderAlatukurStatus.on_progres ?? 0}</div>
                   </Col>
                   <Col xs={3}>
                     <div className="text-secondary small mb-1">Sudah Dibeli</div>
-                    <div className="h4 mb-0 text-success">{orderToolsStatus.sudah_dibeli ?? 0}</div>
+                    <div className="h4 mb-0 text-success">{orderAlatukurStatus.sudah_dibeli ?? 0}</div>
                   </Col>
                   <Col xs={3}>
                     <div className="text-secondary small mb-1">Ditolak</div>
-                    <div className="h4 mb-0 text-danger">{orderToolsStatus.ditolak ?? 0}</div>
+                    <div className="h4 mb-0 text-danger">{orderAlatukurStatus.ditolak ?? 0}</div>
                   </Col>
                 </Row>
               </CardBody>

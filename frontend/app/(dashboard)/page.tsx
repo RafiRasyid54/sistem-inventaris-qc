@@ -20,7 +20,7 @@ const HomePage = () => {
         const isSuperAdmin = roles.includes("Super Admin");
         if (!isSuperAdmin && !perms.includes("view_dashboard")) {
           // Redirect ke halaman lain yang pasti bisa diakses, urut dari prioritas
-          if (perms.includes("view_inventaris")) router.replace("/inventaris/data-tools");
+          if (perms.includes("view_inventaris")) router.replace("/inventaris/data-alat ukur");
           else if (perms.includes("view_transaksi")) router.replace("/transaksi/peminjaman-aktif");
           else if (perms.includes("view_riwayat")) router.replace("/riwayat");
           else if (perms.includes("view_pemeliharaan_mesin")) router.replace("/pemeliharaan/data-mesin");

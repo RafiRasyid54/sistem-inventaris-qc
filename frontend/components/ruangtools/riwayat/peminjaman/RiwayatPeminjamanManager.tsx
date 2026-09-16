@@ -18,15 +18,15 @@ import { RiwayatPeminjamanType } from "types/RiwayatTypes";
 import TanstackTable from "components/table/TanstackTable";
 import Flex from "components/common/Flex";
 import DasherBreadcrumb from "components/common/DasherBreadcrumb";
-import RiwayatFilterBar from "components/ruangtools/riwayat/common/RiwayatFilterBar";
+import RiwayatFilterBar from "components/ruangalat ukur/riwayat/common/RiwayatFilterBar";
 import {
   DateFilterValue,
   dateInFilter,
   parseRowDate,
-} from "components/ruangtools/common/dateUtils";
-import { getRiwayatPeminjamanColumns } from "components/ruangtools/riwayat/peminjaman/ColumnDefination";
-import DetailTransaksiModal from "components/ruangtools/riwayat/peminjaman/DetailTransaksiModal";
-import { exportToExcel, exportToPDF, ExportColumn, getFilteredExportFileName } from "components/ruangtools/riwayat/common/exportUtils";
+} from "components/ruangalat ukur/common/dateUtils";
+import { getRiwayatPeminjamanColumns } from "components/ruangalat ukur/riwayat/peminjaman/ColumnDefination";
+import DetailTransaksiModal from "components/ruangalat ukur/riwayat/peminjaman/DetailTransaksiModal";
+import { exportToExcel, exportToPDF, ExportColumn, getFilteredExportFileName } from "components/ruangalat ukur/riwayat/common/exportUtils";
 
 import { getRiwayatPeminjaman } from "services/peminjamanService";
 
@@ -141,9 +141,9 @@ const RiwayatPeminjamanManager = () => {
   };
 
   const handleExportPDF = () =>
-    exportToPDF(filteredList, EXPORT_COLUMNS, getFilteredExportFileName("Riwayat_Peminjaman_Tools", namaFilter), "Riwayat Peminjaman Tools");
+    exportToPDF(filteredList, EXPORT_COLUMNS, getFilteredExportFileName("Riwayat_Peminjaman_Alatukur", namaFilter), "Riwayat Peminjaman Alatukur");
   const handleExportExcel = () =>
-    exportToExcel(filteredList, EXPORT_COLUMNS, getFilteredExportFileName("Riwayat_Peminjaman_Tools", namaFilter));
+    exportToExcel(filteredList, EXPORT_COLUMNS, getFilteredExportFileName("Riwayat_Peminjaman_Alatukur", namaFilter));
 
   const columns = getRiwayatPeminjamanColumns({
     onDetail: openDetailModal,
@@ -156,9 +156,9 @@ const RiwayatPeminjamanManager = () => {
         <Col>
           <Flex justifyContent="between" alignItems="center" className="mb-4 w-100" breakpoint="md">
             <div>
-              <h1 className="mb-2 h2">Riwayat Peminjaman Tools</h1>
+              <h1 className="mb-2 h2">Riwayat Peminjaman Alatukur</h1>
               <p className="text-secondary mb-0">
-                Menampilkan riwayat seluruh transaksi peminjaman tools yang telah dikembalikan.
+                Menampilkan riwayat seluruh transaksi peminjaman alat ukur yang telah dikembalikan.
               </p>
               <DasherBreadcrumb />
             </div>
@@ -167,10 +167,10 @@ const RiwayatPeminjamanManager = () => {
       </Row>
 
       <Card className="card-lg mb-6">
-        {/* ---- Toolbar: Search + Info (baris 1) & Filter + Export (baris 2) ---- */}
-        <div className="riwayat-toolbar border-bottom">
+        {/* ---- Alatukurbar: Search + Info (baris 1) & Filter + Export (baris 2) ---- */}
+        <div className="riwayat-alat ukurbar border-bottom">
           {/* Baris 1: Search (kiri) + Info jumlah data (kanan) */}
-          <div className="riwayat-toolbar-row">
+          <div className="riwayat-alat ukurbar-row">
             <InputGroup className="riwayat-search">
               <InputGroup.Text>
                 <IconSearch size={18} />

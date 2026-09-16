@@ -19,7 +19,7 @@ import {
   IconMoodEmpty,
 } from "@tabler/icons-react";
 // import custom types
-import { PeminjamanAktifItemType } from "types/DataToolsTypes";
+import { PeminjamanAktifItemType } from "types/DataAlatukurTypes";
 
 // import services (langsung ke API, data ini tidak perlu dibagi ke halaman lain)
 import { getPeminjamanAktif } from "services/peminjamanService";
@@ -28,21 +28,21 @@ import { getPeminjamanAktif } from "services/peminjamanService";
 import TanstackTable from "components/table/TanstackTable";
 import Flex from "components/common/Flex";
 import DasherBreadcrumb from "components/common/DasherBreadcrumb";
-import { getPeminjamanAktifColumns } from "components/ruangtools/peminjamanaktif/ColumnDefination";
-import RiwayatFilterBar from "components/ruangtools/riwayat/common/RiwayatFilterBar";
+import { getPeminjamanAktifColumns } from "components/ruangalat ukur/peminjamanaktif/ColumnDefination";
+import RiwayatFilterBar from "components/ruangalat ukur/riwayat/common/RiwayatFilterBar";
 import {
   DateFilterValue,
   dateInFilter,
   parseRowDate,
-} from "components/ruangtools/common/dateUtils";
-import { exportToExcel, exportToPDF, ExportColumn, getFilteredExportFileName } from "components/ruangtools/riwayat/common/exportUtils";
+} from "components/ruangalat ukur/common/dateUtils";
+import { exportToExcel, exportToPDF, ExportColumn, getFilteredExportFileName } from "components/ruangalat ukur/riwayat/common/exportUtils";
 
 const PeminjamanAktifManager = () => {
   const [items, setItems] = useState<PeminjamanAktifItemType[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // ---- Toolbar: pencarian (murni UI, tidak menyentuh API/data) ----
+  // ---- Alatukurbar: pencarian (murni UI, tidak menyentuh API/data) ----
   const [searchTerm, setSearchTerm] = useState("");
   const [tanggalFilter, setTanggalFilter] = useState<DateFilterValue | null>(null);
   const [namaFilter, setNamaFilter] = useState("");
@@ -124,9 +124,9 @@ const PeminjamanAktifManager = () => {
       </Row>
 
       <Card className="card-lg mb-6">
-        {/* ---- Toolbar: Search ---- */}
-        <div className="riwayat-toolbar border-bottom">
-          <div className="riwayat-toolbar-row">
+        {/* ---- Alatukurbar: Search ---- */}
+        <div className="riwayat-alat ukurbar border-bottom">
+          <div className="riwayat-alat ukurbar-row">
             <InputGroup className="riwayat-search">
                 <InputGroup.Text>
                   <IconSearch size={18} />

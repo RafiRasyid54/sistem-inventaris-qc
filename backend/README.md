@@ -19,7 +19,7 @@ Laravel is a web application framework with expressive, elegant syntax. We belie
 - [Robust background job processing](https://laravel.com/docs/queues).
 - [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+Laravel is accessible, powerful, and provides alat ukur required for large, robust applications.
 
 ## Learning Laravel
 
@@ -39,7 +39,7 @@ composer require laravel/boost --dev
 php artisan boost:install
 ```
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
+Boost provides your agent 15+ alat ukur and skills that help agents build Laravel applications while following best practices.
 
 ## Contributing
 

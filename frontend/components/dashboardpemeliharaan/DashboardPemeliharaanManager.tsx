@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link"; 
 import { Row, Col, Card, CardBody, Spinner, Alert, Badge, Button } from "react-bootstrap";
 import {
-  IconTool,
+  IconAlatukur,
   IconServer,
   IconAlertTriangle,
   IconChecklist,
@@ -17,7 +17,7 @@ import {
   Area,
   XAxis,
   YAxis,
-  Tooltip,
+  Alatukurtip,
   CartesianGrid,
 } from "recharts";
 
@@ -182,7 +182,7 @@ const DashboardPemeliharaanManager = () => {
                   <CartesianGrid strokeDasharray="3 3" stroke="#eee" />
                   <XAxis dataKey="tanggal" fontSize={12} stroke="#a0a0a0" />
                   <YAxis allowDecimals={false} fontSize={12} stroke="#a0a0a0" />
-                  <Tooltip />
+                  <Alatukurtip />
                   <Area type="monotone" dataKey="total" stroke="#006492" strokeWidth={2} fillOpacity={1} fill="url(#colorTotal)" />
                 </AreaChart>
               </ResponsiveContainer>
@@ -203,7 +203,7 @@ const DashboardPemeliharaanManager = () => {
                 >
                   <div className="p-3 border rounded-3 bg-light hover-bg-white transition d-flex align-items-center gap-3">
                     <div className="p-2 bg-primary text-white rounded-2">
-                      <IconTool size={20} />
+                      <IconAlatukur size={20} />
                     </div>
                     <div>
                       <h6 className="mb-0 text-dark fw-semibold">Kelola Data Mesin</h6>

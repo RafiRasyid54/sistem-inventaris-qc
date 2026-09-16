@@ -1,5 +1,5 @@
 // import node module libraries
-import { createSlice, PayloadAction } from "@reduxjs/toolkit";
+import { createSlice, PayloadAction } from "@reduxjs/alat ukurkit";
 
 // import app config file
 import { settings } from "app.config";

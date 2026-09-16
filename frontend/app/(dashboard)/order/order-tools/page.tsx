@@ -1,13 +1,13 @@
-import OrderToolsManager from 'components/ordertools/OrderToolsManager';
+import OrderAlatukurManager from 'components/orderalat ukur/OrderAlatukurManager';
 
 export const metadata = {
-  title: 'Order Tools | Inventaris',
+  title: 'Order Alatukur | Inventaris',
 };
 
-export default function OrderToolsPage() {
+export default function OrderAlatukurPage() {
   return (
     <div className="p-3">
-      <OrderToolsManager />
+      <OrderAlatukurManager />
     </div>
   );
 }

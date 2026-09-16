@@ -326,21 +326,21 @@
 }
 
 .fc {
-  .fc-toolbar {
+  .fc-alat ukurbar {
     display: flex;
     justify-content: space-between;
     align-items: center;
 
-    &.fc-header-toolbar {
+    &.fc-header-alat ukurbar {
       padding: 1.5rem 1.5rem;
     }
 
-    &.fc-footer-toolbar {
+    &.fc-footer-alat ukurbar {
       margin-top: 1.5em;
     }
   }
 
-  .fc-toolbar-title {
+  .fc-alat ukurbar-title {
     font-size: 1.75em;
     margin: 0;
     @media (max-width: 990px) {
@@ -349,21 +349,21 @@
   }
 }
 
-.fc-direction-ltr .fc-toolbar > * > :not(:first-child) {
+.fc-direction-ltr .fc-alat ukurbar > * > :not(:first-child) {
   margin-left: 0.75em;
 
   /* space between */
 }
 
 .fc-direction-rtl {
-  .fc-toolbar > * > :not(:first-child) {
+  .fc-alat ukurbar > * > :not(:first-child) {
     margin-right: 0.75em;
 
     /* space between */
   }
 
-  .fc-toolbar-ltr {
-    /* when the toolbar-chunk positioning system is explicitly left-to-right */
+  .fc-alat ukurbar-ltr {
+    /* when the alat ukurbar-chunk positioning system is explicitly left-to-right */
     flex-direction: row-reverse;
   }
 }
@@ -1832,12 +1832,12 @@ a.fc-event {
 
 @media (max-width: 768px) {
   .fc {
-    .fc-header-toolbar {
+    .fc-header-alat ukurbar {
       flex-direction: column;
       align-items: flex-start;
     }
-    .fc-toolbar-chunk:nth-child(1),
-    .fc-toolbar-chunk:nth-child(2) {
+    .fc-alat ukurbar-chunk:nth-child(1),
+    .fc-alat ukurbar-chunk:nth-child(2) {
       margin-bottom: 0.5rem;
     }
   }

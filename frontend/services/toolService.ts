@@ -1,8 +1,8 @@
 import apiFetch from "lib/api";
-import { ToolItemType, ToolFormValues } from "types/DataToolsTypes";
+import { AlatukurItemType, AlatukurFormValues } from "types/DataAlatukurTypes";
 
 // Bentuk data mentah persis seperti yang dikirim Laravel (snake_case)
-interface ToolApiResponse {
+interface AlatukurApiResponse {
   id: string;
   kode_barang: string;
   nama_barang: string;
@@ -17,7 +17,7 @@ interface ToolApiResponse {
 }
 
 // Bentuk payload yang dikirim ke Laravel saat create/update
-interface ToolApiPayload {
+interface AlatukurApiPayload {
   kode_barang: string;
   nama_barang: string;
   merk: string;
@@ -29,16 +29,16 @@ interface ToolApiPayload {
   kategori: string;
 }
 
-const keadaanToKondisi = (keadaan: string): ToolItemType["kondisi"] => {
+const keadaanToKondisi = (keadaan: string): AlatukurItemType["kondisi"] => {
   return keadaan === "R" ? "Rusak" : "Baik";
 };
 
-const kondisiToKeadaan = (kondisi: ToolItemType["kondisi"]): string => {
+const kondisiToKeadaan = (kondisi: AlatukurItemType["kondisi"]): string => {
   return kondisi === "Baik" ? "B" : "R";
 };
 
 // Ubah 1 objek dari bentuk backend (snake_case) ke bentuk yang dipakai komponen (camelCase)
-function mapToolFromApi(item: ToolApiResponse): ToolItemType {
+function mapAlatukurFromApi(item: AlatukurApiResponse): AlatukurItemType {
   return {
     id: item.id,
     kodeBarang: item.kode_barang,
@@ -50,12 +50,12 @@ function mapToolFromApi(item: ToolApiResponse): ToolItemType {
     kondisi: keadaanToKondisi(item.keadaan),
     stok: item.stok,
     dipinjam: item.sedang_dipinjam,
-    kategori: (item.kategori as ToolItemType["kategori"]) ?? "alat_biasa",
+    kategori: (item.kategori as AlatukurItemType["kategori"]) ?? "alat_biasa",
   };
 }
 
 // Ubah form values (camelCase) ke payload yang dimengerti Laravel (snake_case)
-function mapToolToApi(values: ToolFormValues): ToolApiPayload {
+function mapAlatukurToApi(values: AlatukurFormValues): AlatukurApiPayload {
   return {
     kode_barang: values.kodeBarang,
     nama_barang: values.namaBarang,
@@ -69,50 +69,50 @@ function mapToolToApi(values: ToolFormValues): ToolApiPayload {
   };
 }
 
-function sortByKode(tools: ToolItemType[]): ToolItemType[] {
-  return [...tools].sort((a, b) =>
+function sortByKode(alat ukur: AlatukurItemType[]): AlatukurItemType[] {
+  return [...alat ukur].sort((a, b) =>
     b.kodeBarang.localeCompare(a.kodeBarang, undefined, { numeric: true })
   );
 }
 
-export async function getTools(): Promise<ToolItemType[]> {
-  const data: ToolApiResponse[] = await apiFetch("/tools");
-  return sortByKode(data.map(mapToolFromApi));
+export async function getAlatukur(): Promise<AlatukurItemType[]> {
+  const data: AlatukurApiResponse[] = await apiFetch("/alat ukur");
+  return sortByKode(data.map(mapAlatukurFromApi));
 }
 
-export async function createTool(values: ToolFormValues): Promise<ToolItemType> {
-  const data: ToolApiResponse = await apiFetch("/tools", {
+export async function createAlatukur(values: AlatukurFormValues): Promise<AlatukurItemType> {
+  const data: AlatukurApiResponse = await apiFetch("/alat ukur", {
     method: "POST",
-    body: JSON.stringify(mapToolToApi(values)),
+    body: JSON.stringify(mapAlatukurToApi(values)),
   });
-  return mapToolFromApi(data);
+  return mapAlatukurFromApi(data);
 }
 
-export async function updateTool(id: string, values: ToolFormValues): Promise<ToolItemType> {
-  const data: ToolApiResponse = await apiFetch(`/tools/${id}`, {
+export async function updateAlatukur(id: string, values: AlatukurFormValues): Promise<AlatukurItemType> {
+  const data: AlatukurApiResponse = await apiFetch(`/alat ukur/${id}`, {
     method: "PUT",
-    body: JSON.stringify(mapToolToApi(values)),
+    body: JSON.stringify(mapAlatukurToApi(values)),
   });
-  return mapToolFromApi(data);
+  return mapAlatukurFromApi(data);
 }
 
-export async function deleteTool(id: string): Promise<void> {
-  await apiFetch(`/tools/${id}`, { method: "DELETE" });
+export async function deleteAlatukur(id: string): Promise<void> {
+  await apiFetch(`/alat ukur/${id}`, { method: "DELETE" });
 }
 
-export async function updateToolKondisi(
+export async function updateAlatukurKondisi(
   id: string,
   kondisi: "Baik" | "Rusak"
 ): Promise<void> {
   const keadaan = kondisi === "Rusak" ? "R" : "B";
-  await apiFetch(`/tools/${id}`, {
+  await apiFetch(`/alat ukur/${id}`, {
     method: "PUT",
     body: JSON.stringify({ keadaan }),
   });
 }
 
-export async function kurangiStokTool(id: string, jumlah: number): Promise<void> {
-  await apiFetch(`/tools/${id}/kurangi-stok`, {
+export async function kurangiStokAlatukur(id: string, jumlah: number): Promise<void> {
+  await apiFetch(`/alat ukur/${id}/kurangi-stok`, {
     method: "PATCH",
     body: JSON.stringify({ jumlah }),
   });

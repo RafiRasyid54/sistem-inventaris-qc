@@ -14,7 +14,7 @@ status      : Optional, possible options are online, away, offline, busy
 soft        : Optional, if it's set it will show soft background color which is only usefule for type = initial
 showExact	  : Optional, specify this parameter with name para, if you want to show exactly name value rather acronym format.
 bodyClasses	: Optional, if you want to apply classes to avatar body i.e. span like me-3, ms-3 etc... you can use this property.
-imgtooltip	: Optional - Boolean - Default=false, if you specify this parameter, it will show name para value in tooltip.
+imgalat ukurtip	: Optional - Boolean - Default=false, if you specify this parameter, it will show name para value in alat ukurtip.
 
 */
 
@@ -50,7 +50,7 @@ interface AvatarProps {
   variant?: AvatarVariant;
   soft?: boolean;
   showExact?: boolean;
-  imgtooltip?: boolean;
+  imgalat ukurtip?: boolean;
   bodyClasses?: string;
 }
 
@@ -66,7 +66,7 @@ const Avatar: React.FC<AvatarProps> = (props) => {
     soft = false,
     variant = "primary",
     showExact = false,
-    imgtooltip,
+    imgalat ukurtip,
     bodyClasses,
   } = props;
 
@@ -75,7 +75,7 @@ const Avatar: React.FC<AvatarProps> = (props) => {
       const matches = name.match(/\b(\w)/g);
       const acronym = showExact ? name : matches?.join("") ?? "";
       if (soft) {
-        return imgtooltip ? (
+        return imgalat ukurtip ? (
           <DasherTippy content={name}>
             <span
               className={`avatar avatar-${size} avatar-${variant}-soft me-0 mb-2 mb-lg-0`}
@@ -91,7 +91,7 @@ const Avatar: React.FC<AvatarProps> = (props) => {
           </span>
         );
       }
-      if (imgtooltip && name) {
+      if (imgalat ukurtip && name) {
         return (
           <DasherTippy content={name}>
             <span
@@ -121,7 +121,7 @@ const Avatar: React.FC<AvatarProps> = (props) => {
         );
       }
     } else if (type === "image" && src) {
-      if (imgtooltip && name) {
+      if (imgalat ukurtip && name) {
         return (
           <span
             className={`avatar avatar-${size} me-1 ${

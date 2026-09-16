@@ -11,7 +11,7 @@ import OrderConsumableFormModal from './OrderConsumableFormModal';
 import OrderConsumableEditModal from './OrderConsumableEditModal';
 import { getOrderConsumables, updateOrderConsumableStatus, deleteOrderConsumable } from '/services/orderConsumableService';
 
-import { exportToExcel, exportToPDF, ExportColumn } from "components/ruangtools/riwayat/common/exportUtils";
+import { exportToExcel, exportToPDF, ExportColumn } from "components/ruangalat ukur/riwayat/common/exportUtils";
 
 interface OrderData {
   id: number;
@@ -308,8 +308,8 @@ export default function OrderConsumableManager() {
       </Row>
 
       <Card className="card-lg mb-6">
-        <div className="riwayat-toolbar border-bottom p-3">
-          <div className="riwayat-toolbar-row d-flex justify-content-between align-items-center gap-3 flex-wrap">
+        <div className="riwayat-alat ukurbar border-bottom p-3">
+          <div className="riwayat-alat ukurbar-row d-flex justify-content-between align-items-center gap-3 flex-wrap">
             <div className="d-flex gap-2 flex-wrap">
               <InputGroup className="riwayat-search" style={{ maxWidth: "350px" }}>
                 <InputGroup.Text><IconSearch size={18} /></InputGroup.Text>

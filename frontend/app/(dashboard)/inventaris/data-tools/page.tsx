@@ -2,15 +2,15 @@
 import { Metadata } from "next";
 
 // import custom components
-import DataToolsManager from "components/ruangtools/datatools/DataToolsManager";
+import DataAlatukurManager from "components/ruangalat ukur/dataalat ukur/DataAlatukurManager";
 
 export const metadata: Metadata = {
-  title: "Data Tools | Ruang Tools - Admin Panel",
-  description: "Mengelola seluruh data peralatan yang terdapat di Ruang Tools",
+  title: "Data Alatukur | Ruang Alatukur - Admin Panel",
+  description: "Mengelola seluruh data peralatan yang terdapat di Ruang Alatukur",
 };
 
-const DataToolsPage = () => {
-  return <DataToolsManager />;
+const DataAlatukurPage = () => {
+  return <DataAlatukurManager />;
 };
 
-export default DataToolsPage;
+export default DataAlatukurPage;

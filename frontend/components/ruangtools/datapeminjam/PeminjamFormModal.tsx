@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { Modal, Form, Row, Col, Button, Alert } from "react-bootstrap";
 import { IconUser, IconPencil, IconPlus, IconIdBadge2 } from "@tabler/icons-react";
 
-import { PeminjamType } from "types/DataToolsTypes";
+import { PeminjamType } from "types/DataAlatukurTypes";
 
 // Kita gunakan "id" untuk menyimpan kode RFID dan menambahkan opsi role
 export type PeminjamFormValues = Omit<PeminjamType, "id" | "aktif"> & { 

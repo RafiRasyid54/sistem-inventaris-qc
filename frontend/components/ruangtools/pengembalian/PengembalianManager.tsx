@@ -6,7 +6,7 @@ import { IconCircleCheck } from "@tabler/icons-react";
 import { createLaporanKerusakan } from "services/laporanKerusakanService";
 
 // import custom types
-import { PeminjamanAktifItemType } from "types/DataToolsTypes";
+import { PeminjamanAktifItemType } from "types/DataAlatukurTypes";
 
 // import services
 import { getPeminjamanAktif, tandaiDikembalikan } from "services/peminjamanService";
@@ -15,11 +15,11 @@ import { getPemintaAktif } from "services/pemintaService";
 // import custom components
 import Flex from "components/common/Flex";
 import DasherBreadcrumb from "components/common/DasherBreadcrumb";
-import PengembalianScanForm from "components/ruangtools/pengembalian/PengembalianScanForm";
+import PengembalianScanForm from "components/ruangalat ukur/pengembalian/PengembalianScanForm";
 import PengembalianChecklist, {
   PengembalianBatchItem,
   PengembalianGroupItem,
-} from "components/ruangtools/pengembalian/PengembalianChecklist";
+} from "components/ruangalat ukur/pengembalian/PengembalianChecklist";
 
 const PengembalianManager = () => {
   const [items, setItems] = useState<PeminjamanAktifItemType[]>([]);
@@ -79,25 +79,25 @@ const PengembalianManager = () => {
       const records: Record<string, PeminjamanAktifItemType[]> = {};
 
       milikPeminjamIni.forEach((item) => {
-        if (!records[item.toolId]) {
-          records[item.toolId] = [];
+        if (!records[item.alat ukurId]) {
+          records[item.alat ukurId] = [];
           grouped.push({
-            id: item.toolId,
-            toolId: item.toolId,
+            id: item.alat ukurId,
+            alat ukurId: item.alat ukurId,
             kodeBarang: item.kodeBarang,
             namaBarang: item.namaBarang,
             jumlah: 0,
           });
         }
-        records[item.toolId].push(item);
-        const g = grouped.find((g) => g.id === item.toolId)!;
+        records[item.alat ukurId].push(item);
+        const g = grouped.find((g) => g.id === item.alat ukurId)!;
         g.jumlah += item.jumlah;
       });
 
       // Data dari API terurut terbaru->terlama; balik urutan tiap grup
       // supaya alokasi pengembalian FIFO (transaksi terlama duluan).
-      Object.keys(records).forEach((toolId) => {
-        records[toolId].reverse();
+      Object.keys(records).forEach((alat ukurId) => {
+        records[alat ukurId].reverse();
       });
 
       setNamaPeminjamAktif(peminta.nama);
@@ -147,7 +147,7 @@ const PengembalianManager = () => {
             if (!dicatatOleh) throw new Error("Sesi login tidak ditemukan. Silakan login ulang.");
             await createLaporanKerusakan({
               tanggal: new Date().toISOString(),
-              tool_id: item.toolId,
+              alat ukur_id: item.alat ukurId,
               peminjaman_id: record.id,
               jumlah: ambilBisaDiperbaiki,
               keterangan: catatanBisaDiperbaiki,
@@ -163,7 +163,7 @@ const PengembalianManager = () => {
             if (!dicatatOleh) throw new Error("Sesi login tidak ditemukan. Silakan login ulang.");
             await createLaporanKerusakan({
               tanggal: new Date().toISOString(),
-              tool_id: item.toolId,
+              alat ukur_id: item.alat ukurId,
               peminjaman_id: record.id,
               jumlah: ambilRusakPermanen,
               keterangan: catatanRusakPermanen,

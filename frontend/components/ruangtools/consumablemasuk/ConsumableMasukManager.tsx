@@ -30,16 +30,16 @@ import {
 import TanstackTable from "components/table/TanstackTable";
 import Flex from "components/common/Flex";
 import DasherBreadcrumb from "components/common/DasherBreadcrumb";
-import RiwayatFilterBar from "components/ruangtools/riwayat/common/RiwayatFilterBar";
+import RiwayatFilterBar from "components/ruangalat ukur/riwayat/common/RiwayatFilterBar";
 import {
   DateFilterValue,
   dateInFilter,
   parseRowDate,
-} from "components/ruangtools/common/dateUtils";
-import { exportToExcel, exportToPDF, ExportColumn, getFilteredExportFileName } from "components/ruangtools/riwayat/common/exportUtils";
-import { getConsumableMasukColumns } from "components/ruangtools/consumablemasuk/ColumnDefination";
-import ConsumableMasukFormModal from "components/ruangtools/consumablemasuk/ConsumableMasukFormModal";
-import DeleteConfirmModal from "components/ruangtools/consumablemasuk/DeleteConfirmModal";
+} from "components/ruangalat ukur/common/dateUtils";
+import { exportToExcel, exportToPDF, ExportColumn, getFilteredExportFileName } from "components/ruangalat ukur/riwayat/common/exportUtils";
+import { getConsumableMasukColumns } from "components/ruangalat ukur/consumablemasuk/ColumnDefination";
+import ConsumableMasukFormModal from "components/ruangalat ukur/consumablemasuk/ConsumableMasukFormModal";
+import DeleteConfirmModal from "components/ruangalat ukur/consumablemasuk/DeleteConfirmModal";
 
 import { getConsumables } from "services/consumableService";
 import {
@@ -67,7 +67,7 @@ const ConsumableMasukManager = () => {
   const [activeItem, setActiveItem] = useState<ConsumableMasukType | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
-  // ---- Toolbar: pencarian (murni UI, tidak menyentuh API/data) ----
+  // ---- Alatukurbar: pencarian (murni UI, tidak menyentuh API/data) ----
   const [searchTerm, setSearchTerm] = useState("");
   const [tanggalFilter, setTanggalFilter] = useState<DateFilterValue | null>(null);
   const [namaFilter, setNamaFilter] = useState("");
@@ -326,9 +326,9 @@ const ConsumableMasukManager = () => {
       </Row>
 
       <Card className="card-lg mb-6">
-        {/* ---- Toolbar: Search ---- */}
-        <div className="riwayat-toolbar border-bottom">
-          <div className="riwayat-toolbar-row">
+        {/* ---- Alatukurbar: Search ---- */}
+        <div className="riwayat-alat ukurbar border-bottom">
+          <div className="riwayat-alat ukurbar-row">
             <InputGroup className="riwayat-search">
                 <InputGroup.Text>
                   <IconSearch size={18} />

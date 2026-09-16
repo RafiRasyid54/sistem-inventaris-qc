@@ -2,11 +2,11 @@
 import { Metadata } from "next";
 
 // import custom components
-import ProfileManager from "components/ruangtools/profile/ProfileManager";
+import ProfileManager from "components/ruangalat ukur/profile/ProfileManager";
 
 export const metadata: Metadata = {
-  title: "Profil Saya | Ruang Tools",
-  description: "Kelola informasi profil dan keamanan akun Ruang Tools",
+  title: "Profil Saya | Ruang Alatukur",
+  description: "Kelola informasi profil dan keamanan akun Ruang Alatukur",
 };
 
 const ProfilePage = () => {

@@ -2,15 +2,15 @@
 import { Metadata } from "next";
 
 // import custom components
-import ToolMasukManager from "components/ruangtools/toolsmasuk/ToolMasukManager";
+import AlatukurMasukManager from "components/ruangalat ukur/alat ukurmasuk/AlatukurMasukManager";
 
 export const metadata: Metadata = {
-  title: "Tools Masuk | Ruang Tools - Admin Panel",
+  title: "Alatukur Masuk | Ruang Alatukur - Admin Panel",
   description: "Mencatat alat yang masuk",
 };
 
-const ToolMasukPage = () => {
-  return <ToolMasukManager />;
+const AlatukurMasukPage = () => {
+  return <AlatukurMasukManager />;
 };
 
-export default ToolMasukPage;
+export default AlatukurMasukPage;

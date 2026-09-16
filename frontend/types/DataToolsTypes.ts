@@ -1,7 +1,7 @@
-export type ToolCondition = "Baik" | "Rusak";
-export type ToolKategori = "mesin" | "alat_biasa" | "perkakas_mesin";
+export type AlatukurCondition = "Baik" | "Rusak";
+export type AlatukurKategori = "mesin" | "alat_biasa" | "perkakas_mesin";
 
-export interface ToolItemType {
+export interface AlatukurItemType {
   id: string;
   kodeBarang: string;
   namaBarang: string;
@@ -9,21 +9,21 @@ export interface ToolItemType {
   tipe: string;
   warna: string;
   ukuran: string;
-  kondisi: ToolCondition;
+  kondisi: AlatukurCondition;
   stok: number;
   dipinjam: number;
-  kategori?: ToolKategori;
+  kategori?: AlatukurKategori;
 }
 
-export type ToolFormValues = Omit<ToolItemType, "id">;
+export type AlatukurFormValues = Omit<AlatukurItemType, "id">;
 
 // ------------------------------------------------------------------
-// Tools Masuk (riwayat alat masuk)
+// Alatukur Masuk (riwayat alat masuk)
 // ------------------------------------------------------------------
-export interface ToolMasukType {
+export interface AlatukurMasukType {
   id: string;
   tanggal: string;
-  tool_id: string;
+  alat ukur_id: string;
   kode_barang: string;
   nama_barang: string;
   merk: string;
@@ -38,9 +38,9 @@ export interface ToolMasukType {
   };
 }
 
-export interface ToolMasukFormValues {
+export interface AlatukurMasukFormValues {
   tanggal: string;
-  tool_id: string;
+  alat ukur_id: string;
   kode_barang: string;
   nama_barang: string;
   merk: string;
@@ -55,7 +55,7 @@ export interface ToolMasukFormValues {
 // Keranjang Peminjaman
 // ------------------------------------------------------------------
 export interface CartItemType {
-  toolId: string;
+  alat ukurId: string;
   cartId?: string | number; // id baris di temporary_cart, dipakai untuk update/hapus
   kodeBarang: string;
   namaBarang: string;
@@ -98,11 +98,11 @@ export interface LoanFormValues {
 export type TransaksiStatus = "Sedang Dipinjam" | "Selesai";
 
 export interface TransaksiPeminjamanItemType {
-  toolId: string;
+  alat ukurId: string;
   kodeBarang: string;
   namaBarang: string;
   jumlah: number;
-  kondisiSaatDipinjam: ToolCondition;
+  kondisiSaatDipinjam: AlatukurCondition;
 }
 
 
@@ -120,16 +120,16 @@ export interface TransaksiPeminjamanType {
 // Form Pengembalian
 // ------------------------------------------------------------------
 export interface PengembalianItemInput {
-  toolId: string;
+  alat ukurId: string;
   kodeBarang: string;
   namaBarang: string;
   jumlah: number;
-  kondisi: ToolCondition;
+  kondisi: AlatukurCondition;
   catatan: string;
 }
 
 // ------------------------------------------------------------------
-// Riwayat Kerusakan (dipakai reducer prosesPengembalian di inventoryToolsSlice)
+// Riwayat Kerusakan (dipakai reducer prosesPengembalian di inventoryAlatukurSlice)
 // ------------------------------------------------------------------
 export interface KerusakanHistoryType {
   id: string;
@@ -137,7 +137,7 @@ export interface KerusakanHistoryType {
   kodeBarang: string;
   namaBarang: string;
   jumlah: number;
-  kondisi: ToolCondition;
+  kondisi: AlatukurCondition;
   catatan: string;
   namaPeminjam: string;
   divisi: string;
@@ -148,7 +148,7 @@ export interface KerusakanHistoryType {
 // ------------------------------------------------------------------
 export interface PeminjamanAktifItemType {
   id: string;
-  toolId: string;
+  alat ukurId: string;
   tanggal: string;
   kodeBarang: string;
   namaBarang: string;

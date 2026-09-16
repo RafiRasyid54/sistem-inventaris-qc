@@ -18,21 +18,21 @@ import { LaporanKerusakanType } from "types/LaporanKerusakanTypes";
 import TanstackTable from "components/table/TanstackTable";
 import Flex from "components/common/Flex";
 import DasherBreadcrumb from "components/common/DasherBreadcrumb";
-import RiwayatFilterBar from "components/ruangtools/riwayat/common/RiwayatFilterBar";
+import RiwayatFilterBar from "components/ruangalat ukur/riwayat/common/RiwayatFilterBar";
 import {
   DateFilterValue,
   dateInFilter,
   parseRowDate,
-} from "components/ruangtools/common/dateUtils";
+} from "components/ruangalat ukur/common/dateUtils";
 import {
   exportToExcel,
   exportToPDF,
   ExportColumn,
   getFilteredExportFileName,
-} from "components/ruangtools/riwayat/common/exportUtils";
-import { getLaporanKerusakanColumns } from "components/ruangtools/laporan/kerusakan/ColumnDefination";
-import DetailLaporanModal from "components/ruangtools/laporan/kerusakan/DetailLaporanModal";
-import ConfirmActionModal from "components/ruangtools/laporan/kerusakan/ConfirmActionModal";
+} from "components/ruangalat ukur/riwayat/common/exportUtils";
+import { getLaporanKerusakanColumns } from "components/ruangalat ukur/laporan/kerusakan/ColumnDefination";
+import DetailLaporanModal from "components/ruangalat ukur/laporan/kerusakan/DetailLaporanModal";
+import ConfirmActionModal from "components/ruangalat ukur/laporan/kerusakan/ConfirmActionModal";
 
 import { getLaporanKerusakan, repairLaporanKerusakan, tandaiPermanenLaporanKerusakan } from "services/laporanKerusakanService";
 
@@ -251,8 +251,8 @@ const LaporanKerusakanManager = () => {
       </Row>
 
       <Card className="card-lg mb-6">
-        <div className="riwayat-toolbar border-bottom">
-          <div className="riwayat-toolbar-row">
+        <div className="riwayat-alat ukurbar border-bottom">
+          <div className="riwayat-alat ukurbar-row">
             <InputGroup className="riwayat-search">
               <InputGroup.Text>
                 <IconSearch size={18} />

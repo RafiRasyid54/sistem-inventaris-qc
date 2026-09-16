@@ -4,43 +4,43 @@ import { Modal, Button } from "react-bootstrap";
 import { IconTrash, IconAlertTriangle } from "@tabler/icons-react";
 
 // import custom types
-import { ToolItemType } from "types/DataToolsTypes";
+import { AlatukurItemType } from "types/DataAlatukurTypes";
 
 interface DeleteConfirmModalProps {
   show: boolean;
   onClose: () => void;
   onConfirm: () => void;
-  tool: ToolItemType | null;
+  alat ukur: AlatukurItemType | null;
 }
 
 const DeleteConfirmModal = ({
   show,
   onClose,
   onConfirm,
-  tool,
+  alat ukur,
 }: DeleteConfirmModalProps) => {
   return (
-    <Modal show={show} onHide={onClose} centered className="tool-delete-modal">
+    <Modal show={show} onHide={onClose} centered className="alat ukur-delete-modal">
       <Modal.Header closeButton>
         <Modal.Title as="h5" className="d-flex align-items-center gap-2">
-          <span className="tool-delete-title-icon">
+          <span className="alat ukur-delete-title-icon">
             <IconTrash size={20} />
           </span>
           Hapus Data
         </Modal.Title>
       </Modal.Header>
       <Modal.Body className="text-center">
-        <div className="tool-delete-icon mb-3">
+        <div className="alat ukur-delete-icon mb-3">
           <IconAlertTriangle size={32} />
         </div>
         <h5 className="mb-2">Yakin ingin menghapus data ini?</h5>
         <p className="text-secondary mb-3">
           Tindakan ini tidak bisa dibatalkan.
         </p>
-        <div className="tool-delete-hero">
-          <div className="fw-semibold">{tool?.namaBarang}</div>
+        <div className="alat ukur-delete-hero">
+          <div className="fw-semibold">{alat ukur?.namaBarang}</div>
           <div className="text-secondary small">
-            Kode Barang: <span className="fw-semibold text-body">{tool?.kodeBarang}</span>
+            Kode Barang: <span className="fw-semibold text-body">{alat ukur?.kodeBarang}</span>
           </div>
         </div>
       </Modal.Body>

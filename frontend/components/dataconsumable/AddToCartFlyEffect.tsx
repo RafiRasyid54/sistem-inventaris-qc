@@ -1,6 +1,6 @@
 "use client";
 // import node module libraries
-import { IconTool } from "@tabler/icons-react";
+import { IconAlatukur } from "@tabler/icons-react";
 
 export interface FlyAnimationItem {
   id: string;
@@ -60,7 +60,7 @@ const AddToCartFlyEffect = ({
               className="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center shadow"
               style={{ width: 30, height: 30 }}
             >
-              <IconTool size={16} />
+              <IconAlatukur size={16} />
             </div>
           </div>
         );

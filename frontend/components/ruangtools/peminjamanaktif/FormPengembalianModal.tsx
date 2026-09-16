@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { Modal, Form, Button, Alert, Row, Col } from "react-bootstrap";
 import { IconRotateClockwise2, IconCheck } from "@tabler/icons-react";
 
-import { PeminjamanAktifItemType } from "types/DataToolsTypes";
+import { PeminjamanAktifItemType } from "types/DataAlatukurTypes";
 
 export type JenisKerusakan = "bisa_diperbaiki" | "rusak_permanen";
 

@@ -7,12 +7,11 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Str;
 use Laravel\Sanctum\HasApiTokens;
-use Spatie\Permission\Traits\HasRoles; // <-- 1. Tambahkan ini
+use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable
 {
-    /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasApiTokens, HasFactory, Notifiable, HasRoles; // <-- 2. Sisipkan HasRoles di sini
+    use HasApiTokens, HasFactory, Notifiable, HasRoles;
 
     public $incrementing = false;
     protected $keyType = 'string';
@@ -32,7 +31,7 @@ class User extends Authenticatable
         'username',
         'email',
         'password',
-        'role', // Catatan: Kolom ini nanti bisa diabaikan karena kita pakai tabel relasi Spatie
+        'role',
         'divisi',
         'no_hp',
         'avatar_path',
@@ -54,26 +53,8 @@ class User extends Authenticatable
         ];
     }
 
-    // FUNGSI hasRole() DAN scopeRole() MANUAL TELAH DIHAPUS 
-    // AGAR TIDAK BENTROK DENGAN BAWAAN SPATIE
-
     public function peminjamanDicatat(): \Illuminate\Database\Eloquent\Relations\HasMany
     {
         return $this->hasMany(Peminjaman::class, 'dicatat_oleh');
-    }
-
-    public function consumableMasukDicatat(): \Illuminate\Database\Eloquent\Relations\HasMany
-    {
-        return $this->hasMany(ConsumableMasuk::class, 'dicatat_oleh');
-    }
-
-    public function consumableKeluarDicatat(): \Illuminate\Database\Eloquent\Relations\HasMany
-    {
-        return $this->hasMany(ConsumableKeluar::class, 'dicatat_oleh');
-    }
-
-    public function laporanKerusakanDilaporkan(): \Illuminate\Database\Eloquent\Relations\HasMany
-    {
-        return $this->hasMany(LaporanKerusakanTools::class, 'dilaporkan_oleh');
     }
 }

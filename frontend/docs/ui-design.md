@@ -1,5 +1,5 @@
 # UI Design Guideline
-## Sistem Manajemen Inventaris Ruang Tools
+## Sistem Manajemen Inventaris Ruang Alatukur
 PT PLN (Persero)
 
 ---
@@ -10,7 +10,7 @@ Dokumen ini menjadi acuan utama dalam melakukan redesign tampilan website. Fokus
 
 JANGAN mengubah alur bisnis, struktur menu, logika program, API, database, maupun fungsi yang telah berjalan.
 
-Prioritas utama adalah membuat tampilan yang modern, profesional, bersih, konsisten, dan mudah digunakan oleh staff Ruang Tools.
+Prioritas utama adalah membuat tampilan yang modern, profesional, bersih, konsisten, dan mudah digunakan oleh staff Ruang Alatukur.
 
 ---
 
@@ -176,7 +176,7 @@ Menu yang digunakan:
 
 📦 Inventaris
 
-- Data Tools
+- Data Alatukur
 - Data Consumable
 - Data Peminjam
 
@@ -187,7 +187,7 @@ Menu yang digunakan:
 
 🕘 Riwayat
 
-- Peminjaman Tools
+- Peminjaman Alatukur
 - Consumable Keluar
 
 📈 Laporan Kerusakan Alat
@@ -425,7 +425,7 @@ Judul
 
 Deskripsi singkat
 
-Toolbar
+Alatukurbar
 
 Table/Card
 
@@ -437,7 +437,7 @@ Pagination
 
 Dashboard
 
-Data Tools
+Data Alatukur
 
 Data Consumable
 
@@ -493,4 +493,4 @@ Fokus hanya pada:
 
 # Goal Akhir
 
-Hasil akhir harus menyerupai dashboard admin profesional yang modern dengan identitas visual PT PLN, memiliki tampilan bersih, konsisten, nyaman digunakan, serta memudahkan staff Ruang Tools dalam melakukan pengelolaan inventaris sehari-hari.
+Hasil akhir harus menyerupai dashboard admin profesional yang modern dengan identitas visual PT PLN, memiliki tampilan bersih, konsisten, nyaman digunakan, serta memudahkan staff Ruang Alatukur dalam melakukan pengelolaan inventaris sehari-hari.

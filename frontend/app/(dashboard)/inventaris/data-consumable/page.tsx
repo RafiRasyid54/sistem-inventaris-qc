@@ -5,8 +5,8 @@ import { Metadata } from "next";
 import DataConsumableManager from "components/dataconsumable/DataConsumableManager";
 
 export const metadata: Metadata = {
-  title: "Data Consumable | Ruang Tools - Admin Panel",
-  description: "Mengelola seluruh data consumable yang terdapat di Ruang Tools",
+  title: "Data Consumable | Ruang Alatukur - Admin Panel",
+  description: "Mengelola seluruh data consumable yang terdapat di Ruang Alatukur",
 };
 
 const DataConsumablePage = () => {

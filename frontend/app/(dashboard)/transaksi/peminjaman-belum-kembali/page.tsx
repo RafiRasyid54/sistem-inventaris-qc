@@ -8,7 +8,7 @@ interface PeminjamanItem {
   jumlah: number;
   tanggal: string;
   nama_pekerjaan: string;
-  tool?: {
+  alat ukur?: {
     nama_barang: string;
     kode_barang: string;
   };
@@ -79,7 +79,7 @@ export default function PeminjamanBelumKembaliPage() {
                     {item.peminta?.nama || 'N/A'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-gray-700">
-                    {item.tool?.nama_barang || 'Alat Dihapus'} <span className="text-xs text-gray-400">({item.tool?.kode_barang})</span>
+                    {item.alat ukur?.nama_barang || 'Alat Dihapus'} <span className="text-xs text-gray-400">({item.alat ukur?.kode_barang})</span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-gray-700">{item.jumlah}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-gray-700">{new Date(item.tanggal).toLocaleDateString()}</td>

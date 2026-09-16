@@ -2,12 +2,12 @@
 import { Metadata } from "next";
 
 // import custom components
-import RiwayatPeminjamanManager from "components/ruangtools/riwayat/peminjaman/RiwayatPeminjamanManager";
+import RiwayatPeminjamanManager from "components/ruangalat ukur/riwayat/peminjaman/RiwayatPeminjamanManager";
 
 export const metadata: Metadata = {
-  title: "Riwayat Peminjaman Tools | Ruang Tools - Admin Panel",
+  title: "Riwayat Peminjaman Alatukur | Ruang Alatukur - Admin Panel",
   description:
-    "Menampilkan riwayat seluruh transaksi peminjaman tools yang telah dikembalikan",
+    "Menampilkan riwayat seluruh transaksi peminjaman alat ukur yang telah dikembalikan",
 };
 
 const RiwayatPeminjamanPage = () => {

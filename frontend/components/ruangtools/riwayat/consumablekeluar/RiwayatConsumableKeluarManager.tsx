@@ -21,17 +21,17 @@ import {
 import TanstackTable from "components/table/TanstackTable";
 import Flex from "components/common/Flex";
 import DasherBreadcrumb from "components/common/DasherBreadcrumb";
-import RiwayatFilterBar from "components/ruangtools/riwayat/common/RiwayatFilterBar";
+import RiwayatFilterBar from "components/ruangalat ukur/riwayat/common/RiwayatFilterBar";
 import {
   DateFilterValue,
   dateInFilter,
   parseRowDate,
-} from "components/ruangtools/common/dateUtils";
-import KeteranganModal from "components/ruangtools/riwayat/common/KeteranganModal";
-import { getRiwayatConsumableKeluarColumns } from "components/ruangtools/riwayat/consumablekeluar/ColumnDefination";
-import DetailTransaksiModal from "components/ruangtools/riwayat/consumablekeluar/DetailTransaksiModal";
-import EditRiwayatModal from "components/ruangtools/riwayat/consumablekeluar/EditRiwayatModal";
-import { exportToExcel, exportToPDF, ExportColumn, getFilteredExportFileName } from "components/ruangtools/riwayat/common/exportUtils";
+} from "components/ruangalat ukur/common/dateUtils";
+import KeteranganModal from "components/ruangalat ukur/riwayat/common/KeteranganModal";
+import { getRiwayatConsumableKeluarColumns } from "components/ruangalat ukur/riwayat/consumablekeluar/ColumnDefination";
+import DetailTransaksiModal from "components/ruangalat ukur/riwayat/consumablekeluar/DetailTransaksiModal";
+import EditRiwayatModal from "components/ruangalat ukur/riwayat/consumablekeluar/EditRiwayatModal";
+import { exportToExcel, exportToPDF, ExportColumn, getFilteredExportFileName } from "components/ruangalat ukur/riwayat/common/exportUtils";
 
 import { getRiwayatConsumableKeluar } from "services/consumableKeluarService";
 
@@ -196,10 +196,10 @@ const RiwayatConsumableKeluarManager = () => {
       </Row>
 
       <Card className="card-lg mb-6">
-        {/* ---- Toolbar: Search + Info (baris 1) & Filter + Export (baris 2) ---- */}
-        <div className="riwayat-toolbar border-bottom">
+        {/* ---- Alatukurbar: Search + Info (baris 1) & Filter + Export (baris 2) ---- */}
+        <div className="riwayat-alat ukurbar border-bottom">
           {/* Baris 1: Search (kiri) + Info jumlah data (kanan) */}
-          <div className="riwayat-toolbar-row">
+          <div className="riwayat-alat ukurbar-row">
             <InputGroup className="riwayat-search">
               <InputGroup.Text>
                 <IconSearch size={18} />

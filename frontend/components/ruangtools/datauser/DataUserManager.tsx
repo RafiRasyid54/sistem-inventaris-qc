@@ -35,11 +35,11 @@ import api from "lib/api";
 import TanstackTable from "components/table/TanstackTable";
 import Flex from "components/common/Flex";
 import DasherBreadcrumb from "components/common/DasherBreadcrumb";
-import { getDataUserColumns } from "components/ruangtools/datauser/ColumnDefination";
-import UserFormModal from "components/ruangtools/datauser/UserFormModal";
-import DeleteConfirmModal from "components/ruangtools/datauser/DeleteConfirmModal";
-import ActivateConfirmModal from "components/ruangtools/datauser/ActivateConfirmModal";
-import ResetPasswordModal from "components/ruangtools/datauser/ResetPasswordModal";
+import { getDataUserColumns } from "components/ruangalat ukur/datauser/ColumnDefination";
+import UserFormModal from "components/ruangalat ukur/datauser/UserFormModal";
+import DeleteConfirmModal from "components/ruangalat ukur/datauser/DeleteConfirmModal";
+import ActivateConfirmModal from "components/ruangalat ukur/datauser/ActivateConfirmModal";
+import ResetPasswordModal from "components/ruangalat ukur/datauser/ResetPasswordModal";
 
 const DataUserManager = () => {
   const [users, setUsers] = useState<UserItemType[]>([]);
@@ -247,7 +247,7 @@ const DataUserManager = () => {
 );
 
   return (
-    <div className="datatools-page">
+    <div className="dataalat ukur-page">
       {successMessage && (
         <Alert
           variant="success"
@@ -285,10 +285,10 @@ const DataUserManager = () => {
       </Row>
 
       <Card className="card-lg mb-6">
-        <div className="datatools-toolbar border-bottom">
+        <div className="dataalat ukur-alat ukurbar border-bottom">
           <Row className="g-2 align-items-center">
             <Col lg={6} md={7}>
-              <InputGroup className="datatools-search">
+              <InputGroup className="dataalat ukur-search">
                 <InputGroup.Text>
                   <IconSearch size={18} />
                 </InputGroup.Text>
@@ -299,7 +299,7 @@ const DataUserManager = () => {
                   onChange={(e) => setSearchTerm(e.target.value)}
                 />
                 {searchTerm && (
-                  <Button variant="link" className="datatools-search-clear" onClick={() => setSearchTerm("")}>
+                  <Button variant="link" className="dataalat ukur-search-clear" onClick={() => setSearchTerm("")}>
                     <IconX size={16} />
                   </Button>
                 )}
@@ -330,8 +330,8 @@ const DataUserManager = () => {
               <Spinner animation="border" size="sm" className="me-2" /> Memuat data...
             </div>
           ) : users.length === 0 ? (
-            <div className="datatools-empty text-center py-6">
-              <div className="datatools-empty-icon mb-3">
+            <div className="dataalat ukur-empty text-center py-6">
+              <div className="dataalat ukur-empty-icon mb-3">
                 <IconUsers size={32} />
               </div>
               <h5 className="mb-1">Belum ada data user</h5>
@@ -341,8 +341,8 @@ const DataUserManager = () => {
               </Button>
             </div>
           ) : filteredUsers.length === 0 ? (
-            <div className="datatools-empty text-center py-6">
-              <div className="datatools-empty-icon mb-3">
+            <div className="dataalat ukur-empty text-center py-6">
+              <div className="dataalat ukur-empty-icon mb-3">
                 <IconMoodEmpty size={32} />
               </div>
               <h5 className="mb-1">Tidak ada hasil</h5>

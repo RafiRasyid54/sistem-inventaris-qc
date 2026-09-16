@@ -7,8 +7,8 @@ import { IconRotateClockwise2, IconArrowLeft, IconSearch, IconX } from "@tabler/
 export type JenisKerusakan = "bisa_diperbaiki" | "rusak_permanen";
 
 export interface PengembalianGroupItem {
-  id: string; // dipakai toolId sebagai id grup
-  toolId: string;
+  id: string; // dipakai alat ukurId sebagai id grup
+  alat ukurId: string;
   kodeBarang: string;
   namaBarang: string;
   jumlah: number; // total gabungan dari semua transaksi pinjam alat ini
@@ -33,7 +33,7 @@ export interface PengembalianKerusakanEntry {
 
 export interface PengembalianBatchItem {
   id: string;
-  toolId: string;
+  alat ukurId: string;
   namaBarang: string;
   jumlahDikembalikan: number;
   kerusakan: PengembalianKerusakanEntry[];
@@ -173,7 +173,7 @@ const PengembalianChecklist = ({
 
       return {
         id: item.id,
-        toolId: item.toolId,
+        alat ukurId: item.alat ukurId,
         namaBarang: item.namaBarang,
         jumlahDikembalikan: row.jumlahDikembalikan,
         kerusakan,
@@ -201,8 +201,8 @@ const PengembalianChecklist = ({
         </div>
       </CardBody>
 
-      <div className="riwayat-toolbar border-bottom px-4 py-3">
-        <div className="riwayat-toolbar-row d-flex flex-wrap align-items-center gap-2">
+      <div className="riwayat-alat ukurbar border-bottom px-4 py-3">
+        <div className="riwayat-alat ukurbar-row d-flex flex-wrap align-items-center gap-2">
           <InputGroup className="riwayat-search" style={{ maxWidth: 320 }}>
             <InputGroup.Text>
               <IconSearch size={18} />

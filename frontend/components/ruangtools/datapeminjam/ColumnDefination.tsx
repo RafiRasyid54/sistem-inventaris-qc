@@ -3,7 +3,7 @@ import { ColumnDef } from "@tanstack/react-table";
 import { Dropdown, Badge, Spinner } from "react-bootstrap";
 import { IconDotsVertical } from "@tabler/icons-react";
 
-import { PeminjamType } from "types/DataToolsTypes";
+import { PeminjamType } from "types/DataAlatukurTypes";
 import ActionMenu from "components/common/ActionMenu";
 
 interface ColumnHandlers {

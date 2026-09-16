@@ -31,7 +31,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 import TanstackTable from "components/table/TanstackTable";
 import Flex from "components/common/Flex";
 import api from "lib/api";
-import { exportToExcel, exportToPDF, ExportColumn } from "components/ruangtools/riwayat/common/exportUtils";
+import { exportToExcel, exportToPDF, ExportColumn } from "components/ruangalat ukur/riwayat/common/exportUtils";
 
 interface MesinItemType {
   id: number | string;
@@ -342,10 +342,10 @@ const DataAktivitasManager = () => {
           </Row>
 
           <Card className="card-lg mb-4">
-            <div className="datatools-toolbar border-bottom p-2 p-md-3">
+            <div className="dataalat ukur-alat ukurbar border-bottom p-2 p-md-3">
               <Row className="g-2 align-items-center">
                 <Col xs={12} md={5}>
-                  <InputGroup className="datatools-search input-group-sm">
+                  <InputGroup className="dataalat ukur-search input-group-sm">
                     <InputGroup.Text><IconSearch size={16} /></InputGroup.Text>
                     <Form.Control
                       type="search"
@@ -354,7 +354,7 @@ const DataAktivitasManager = () => {
                       onChange={(e) => setSearchTerm(e.target.value)}
                     />
                     {searchTerm && (
-                      <Button variant="link" className="datatools-search-clear" onClick={() => setSearchTerm("")}>
+                      <Button variant="link" className="dataalat ukur-search-clear" onClick={() => setSearchTerm("")}>
                         <IconX size={14} />
                       </Button>
                     )}
@@ -376,14 +376,14 @@ const DataAktivitasManager = () => {
                   <Spinner animation="border" size="sm" className="me-2" /> Memuat data mesin...
                 </div>
               ) : mesinList.length === 0 ? (
-                <div className="datatools-empty text-center py-4">
-                  <div className="datatools-empty-icon mb-2"><IconBox size={28} /></div>
+                <div className="dataalat ukur-empty text-center py-4">
+                  <div className="dataalat ukur-empty-icon mb-2"><IconBox size={28} /></div>
                   <h6 className="mb-1">Belum ada data mesin produksi</h6>
                   <p className="text-secondary small mb-3">Tambahkan data mesin melalui menu pemeliharaan terlebih dahulu.</p>
                 </div>
               ) : filteredMesin.length === 0 ? (
-                <div className="datatools-empty text-center py-4">
-                  <div className="datatools-empty-icon mb-2"><IconMoodEmpty size={28} /></div>
+                <div className="dataalat ukur-empty text-center py-4">
+                  <div className="dataalat ukur-empty-icon mb-2"><IconMoodEmpty size={28} /></div>
                   <h6 className="mb-1">Tidak ada hasil</h6>
                   <p className="text-secondary small mb-3">Tidak ditemukan mesin yang cocok.</p>
                   <Button variant="outline-secondary" size="sm" onClick={() => setSearchTerm("")}>

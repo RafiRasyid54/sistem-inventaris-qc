@@ -6,12 +6,12 @@ import TanstackTable from "components/table/TanstackTable";
 import Flex from "components/common/Flex";
 import DasherBreadcrumb from "components/common/DasherBreadcrumb";
 import { Modal } from "react-bootstrap";
-import OrderToolsFormModal from './OrderToolsFormModal';
-import OrderToolsEditModal from './OrderToolsEditModal';
-import { getOrderTools, updateOrderToolsStatus, deleteOrderTools } from '/services/orderToolsService';
+import OrderAlatukurFormModal from './OrderAlatukurFormModal';
+import OrderAlatukurEditModal from './OrderAlatukurEditModal';
+import { getOrderAlatukur, updateOrderAlatukurStatus, deleteOrderAlatukur } from '/services/orderAlatukurService';
 
 // IMPORT UTILITY EXPORT BAWAAN
-import { exportToExcel, exportToPDF, ExportColumn } from "components/ruangtools/riwayat/common/exportUtils";
+import { exportToExcel, exportToPDF, ExportColumn } from "components/ruangalat ukur/riwayat/common/exportUtils";
 
 interface OrderData {
   id: number;
@@ -53,7 +53,7 @@ const EXPORT_COLUMNS_ORDER: ExportColumn[] = [
   { header: "Tgl Kedatangan", key: "tanggal_kedatangan" },
 ];
 
-export default function OrderToolsManager() {
+export default function OrderAlatukurManager() {
   const [orders, setOrders] = useState<OrderData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -70,7 +70,7 @@ export default function OrderToolsManager() {
     setLoading(true);
     setError(null);
     try {
-      const data = await getOrderTools(status);
+      const data = await getOrderAlatukur(status);
       setOrders(data || []);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Gagal memuat data");
@@ -91,7 +91,7 @@ export default function OrderToolsManager() {
         const tzOffset = now.getTimezoneOffset() * 60000;
         tanggalKedatangan = (new Date(now.getTime() - tzOffset)).toISOString().slice(0, 19).replace('T', ' ');
       }
-      await updateOrderToolsStatus(id, newStatus, tanggalKedatangan);
+      await updateOrderAlatukurStatus(id, newStatus, tanggalKedatangan);
       setSuccessMessage("Status berhasil diperbarui.");
       fetchOrders();
       setTimeout(() => setSuccessMessage(null), 4000);
@@ -113,7 +113,7 @@ export default function OrderToolsManager() {
     if (deleteId === null) return;
     setIsDeleting(true);
     try {
-      await deleteOrderTools(deleteId);
+      await deleteOrderAlatukur(deleteId);
       setSuccessMessage("Data order berhasil dihapus.");
       fetchOrders();
       setTimeout(() => setSuccessMessage(null), 4000);
@@ -163,8 +163,8 @@ export default function OrderToolsManager() {
     exportToPDF(
       dataToExport as unknown as Record<string, unknown>[],
       EXPORT_COLUMNS_ORDER,
-      "data-order-tools",
-      "Laporan Order Tools"
+      "data-order-alat ukur",
+      "Laporan Order Alatukur"
     );
   };
 
@@ -181,7 +181,7 @@ export default function OrderToolsManager() {
     exportToExcel(
       dataToExport as unknown as Record<string, unknown>[],
       EXPORT_COLUMNS_ORDER,
-      "data-order-tools"
+      "data-order-alat ukur"
     );
   };
 
@@ -287,9 +287,9 @@ export default function OrderToolsManager() {
             breakpoint="md"
           >
             <div>
-              <h1 className="mb-2 h2">Order Tools</h1>
+              <h1 className="mb-2 h2">Order Alatukur</h1>
               <p className="text-secondary mb-3">
-                Kelola daftar pengajuan dan pemesanan alat tools baru.
+                Kelola daftar pengajuan dan pemesanan alat alat ukur baru.
               </p>
               <DasherBreadcrumb />
             </div>
@@ -309,8 +309,8 @@ export default function OrderToolsManager() {
       </Row>
 
       <Card className="card-lg mb-6">
-        <div className="riwayat-toolbar border-bottom p-3">
-          <div className="riwayat-toolbar-row d-flex justify-content-between align-items-center gap-3 flex-wrap">
+        <div className="riwayat-alat ukurbar border-bottom p-3">
+          <div className="riwayat-alat ukurbar-row d-flex justify-content-between align-items-center gap-3 flex-wrap">
             <div className="d-flex gap-2 flex-wrap">
               <InputGroup className="riwayat-search" style={{ maxWidth: "350px" }}>
                 <InputGroup.Text><IconSearch size={18} /></InputGroup.Text>
@@ -368,7 +368,7 @@ export default function OrderToolsManager() {
             <div className="text-center py-6">
               <IconClipboardList size={32} className="mb-3 text-secondary" />
               <h5 className="mb-1">Tidak ada data order</h5>
-              <p className="text-secondary mb-0">Belum ada pengajuan order tools yang tercatat.</p>
+              <p className="text-secondary mb-0">Belum ada pengajuan order alat ukur yang tercatat.</p>
             </div>
           ) : (
             <div style={{ overflowX: 'auto', whiteSpace: 'nowrap' }}>
@@ -378,8 +378,8 @@ export default function OrderToolsManager() {
         </CardBody>
       </Card>
 
-      <OrderToolsFormModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onSuccess={fetchOrders} />
-      <OrderToolsEditModal
+      <OrderAlatukurFormModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onSuccess={fetchOrders} />
+      <OrderAlatukurEditModal
         isOpen={isEditModalOpen}
         onClose={() => { setIsEditModalOpen(false); setEditData(null); }}
         onSuccess={fetchOrders}

@@ -10,7 +10,7 @@ data/
 
 Contoh:
 
-tools.ts
+alat ukur.ts
 
 consumables.ts
 
@@ -22,7 +22,7 @@ reports.ts
 
 Gunakan minimal:
 
-20 data tools
+20 data alat ukur
 
 20 consumable
 
@@ -30,4 +30,4 @@ Gunakan minimal:
 
 15 peminjam
 
-Dummy data harus realistis sesuai kondisi Ruang Tools PT PLN.
+Dummy data harus realistis sesuai kondisi Ruang Alatukur PT PLN.

@@ -4,9 +4,9 @@ import { Modal, Button, Table, Badge } from "react-bootstrap";
 import { IconArrowBackUp } from "@tabler/icons-react";
 
 // import custom types
-import { TransaksiPeminjamanType, ToolCondition } from "types/DataToolsTypes";
+import { TransaksiPeminjamanType, AlatukurCondition } from "types/DataAlatukurTypes";
 
-const kondisiVariant = (kondisi: ToolCondition) => {
+const kondisiVariant = (kondisi: AlatukurCondition) => {
   switch (kondisi) {
     case "Baik":
       return { bg: "success-subtle", text: "success-emphasis" };
@@ -55,7 +55,7 @@ const DetailTransaksiModal = ({
             {transaksi.items.map((item) => {
               const { bg, text } = kondisiVariant(item.kondisiSaatDipinjam);
               return (
-                <tr key={item.toolId}>
+                <tr key={item.alat ukurId}>
                   <td>{item.namaBarang}</td>
                   <td className="text-center">{item.jumlah}</td>
                   <td>

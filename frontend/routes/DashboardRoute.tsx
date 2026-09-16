@@ -6,7 +6,7 @@ import {
   IconArrowsExchange,
   IconHistory,
   IconShoppingCart,
-  IconTools,
+  IconAlatukur,
   IconReportAnalytics,
   IconUsers,
 } from "@tabler/icons-react";
@@ -31,7 +31,7 @@ export const DashboardMenu: MenuItemType[] = [
     title: "Inventaris",
     icon: <IconBoxSeam size={20} strokeWidth={1.5} />,
     children: [
-      { id: uuid(), name: "Data Tools", link: "/inventaris/data-tools" },
+      { id: uuid(), name: "Data Alatukur", link: "/inventaris/data-alat ukur" },
       {
         id: uuid(),
         name: "Data Consumable",
@@ -71,8 +71,8 @@ export const DashboardMenu: MenuItemType[] = [
       },
       {
         id: uuid(),
-        name: "Tools Masuk",
-        link: "/transaksi/tools-masuk",
+        name: "Alatukur Masuk",
+        link: "/transaksi/alat ukur-masuk",
       },
     ],
   },
@@ -83,8 +83,8 @@ export const DashboardMenu: MenuItemType[] = [
     children: [
       {
         id: uuid(),
-        name: "Peminjaman Tools",
-        link: "/riwayat/peminjaman-tools",
+        name: "Peminjaman Alatukur",
+        link: "/riwayat/peminjaman-alat ukur",
       },
       {
         id: uuid(),
@@ -110,8 +110,8 @@ export const DashboardMenu: MenuItemType[] = [
       },
       {
         id: uuid(),
-        name: "Order Tools",
-        link: "/order/order-tools",
+        name: "Order Alatukur",
+        link: "/order/order-alat ukur",
       },
     ],
   },
@@ -138,7 +138,7 @@ export const DashboardMenu: MenuItemType[] = [
   {
     id: uuid(),
     title: "Pemeliharaan",
-    icon: <IconTools size={20} strokeWidth={1.5} />,
+    icon: <IconAlatukur size={20} strokeWidth={1.5} />,
     children: [
       {
         id: uuid(),

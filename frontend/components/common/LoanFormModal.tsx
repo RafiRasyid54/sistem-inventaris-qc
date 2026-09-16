@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { Modal, Form, Row, Col, Button, Spinner } from "react-bootstrap";
 import { IconClipboardList, IconCheck } from "@tabler/icons-react";
 
-import { PeminjamType } from "types/DataToolsTypes";
+import { PeminjamType } from "types/DataAlatukurTypes";
 import { getPemintaAktif } from "services/pemintaService";
 import apiFetch from "lib/api";
 // Jika Anda memiliki service untuk pekerjaan, Anda bisa mengimpornya di sini.
@@ -283,7 +283,7 @@ const LoanFormModal = ({
               {cartItems.map((item, index) => {
                 const displayName = item.namaBarang || item.nama || "Nama Barang Tidak Diketahui";
                 const displayCode = item.kodeBarang || item.kode_barang || "";
-                const uniqueKey = item.toolId || item.consumable_id || item.cartId || item.id || index;
+                const uniqueKey = item.alat ukurId || item.consumable_id || item.cartId || item.id || index;
 
                 return (
                   <li key={uniqueKey} className="d-flex justify-content-between align-items-center px-2 py-2 rounded small border-bottom">
@@ -293,7 +293,7 @@ const LoanFormModal = ({
                     </div>
                     <div className="d-flex align-items-center gap-2">
                       {item.item_type && (
-                        <span className={`badge bg-${item.item_type === 'tool' ? 'info' : 'warning'} text-dark`} style={{ fontSize: '9px' }}>
+                        <span className={`badge bg-${item.item_type === 'alat ukur' ? 'info' : 'warning'} text-dark`} style={{ fontSize: '9px' }}>
                           {item.item_type.toUpperCase()}
                         </span>
                       )}

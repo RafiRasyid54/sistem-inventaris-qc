@@ -1,7 +1,7 @@
 "use client";
 // import node module libraries
 import { useEffect, useMemo, useState, useCallback, useRef } from "react";
-import { exportToExcel, exportToPDF, ExportColumn } from "components/ruangtools/riwayat/common/exportUtils";
+import { exportToExcel, exportToPDF, ExportColumn } from "components/ruangalat ukur/riwayat/common/exportUtils";
 import {
   Row,
   Col,
@@ -25,8 +25,8 @@ import { v4 as uuid } from "uuid";
 
 // Redux & Services untuk Universal Scanner
 import { useAppDispatch, useAppSelector } from "store/store";
-import { fetchTools } from "store/slices/inventoryToolsSlice";
-import { scanTool, fetchAntrean, prosesPeminjamanApi, updateCartItem } from "services/peminjamanService";
+import { fetchAlatukur } from "store/slices/inventoryAlatukurSlice";
+import { scanAlatukur, fetchAntrean, prosesPeminjamanApi, updateCartItem } from "services/peminjamanService";
 
 import {
   ConsumableItemType,
@@ -37,14 +37,14 @@ import {
 interface ConsumableCartItem extends ConsumableCartItemType {
   id: string;
   cartId?: string | number;
-  item_type?: 'tool' | 'consumable';
+  item_type?: 'alat ukur' | 'consumable';
 }
 
 import TanstackTable from "components/table/TanstackTable";
 import Flex from "components/common/Flex";
 import DasherBreadcrumb from "components/common/DasherBreadcrumb";
 import { getConsumableColumns } from "components/dataconsumable/ColumnDefination";
-import ConsumableToolFormModal from "components/dataconsumable/ConsumableFormModal";
+import ConsumableAlatukurFormModal from "components/dataconsumable/ConsumableFormModal";
 import ConsumableDetailModal from "components/dataconsumable/ConsumableDetailModal";
 import DeleteConfirmModal from "components/dataconsumable/DeleteConfirmModal";
 import CartFAB from "components/dataconsumable/CartFAB";
@@ -94,7 +94,7 @@ interface AntreanConsumableApiItem {
 
 const DataConsumableManager = () => {
   const dispatch = useAppDispatch();
-  const tools = useAppSelector((state) => state.inventoryTools.tools);
+  const alat ukur = useAppSelector((state) => state.inventoryAlatukur.alat ukur);
 
   const [consumables, setConsumables] = useState<ConsumableItemType[]>([]);
   const [loading, setLoading] = useState(true);
@@ -162,9 +162,9 @@ const DataConsumableManager = () => {
 
       localStorage.setItem("global_shared_consumable_cart", JSON.stringify(mappedConsumableCart));
 
-      const savedToolCart: ConsumableCartItem[] = JSON.parse(localStorage.getItem("global_shared_tools_cart") || "[]");
+      const savedAlatukurCart: ConsumableCartItem[] = JSON.parse(localStorage.getItem("global_shared_alat ukur_cart") || "[]");
 
-      const combinedCart = [...mappedConsumableCart, ...savedToolCart];
+      const combinedCart = [...mappedConsumableCart, ...savedAlatukurCart];
 
       setCart(combinedCart);
     } catch (err) {
@@ -178,10 +178,10 @@ const DataConsumableManager = () => {
 
     loadConsumables();
     loadCart();
-    dispatch(fetchTools()); // Fetch tools untuk Universal Scanner
+    dispatch(fetchAlatukur()); // Fetch alat ukur untuk Universal Scanner
 
     const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === "global_shared_tools_cart" || e.key === "global_shared_consumable_cart") {
+      if (e.key === "global_shared_alat ukur_cart" || e.key === "global_shared_consumable_cart") {
         loadCart();
       }
     };
@@ -247,44 +247,44 @@ const DataConsumableManager = () => {
                alert(`Gagal: Stok Consumable ${foundItem.nama} sudah habis!`);
             }
           } 
-          // 2. Jika tidak ada di Consumable, cari di database Tools
+          // 2. Jika tidak ada di Consumable, cari di database Alatukur
           else {
-            const foundTool = tools.find((t) => 
+            const foundAlatukur = alat ukur.find((t) => 
               (t.kodeBarang && t.kodeBarang.toLowerCase() === scannedCode.toLowerCase()) || t.id === scannedCode
             );
 
-            if (foundTool) {
-              const tersedia = foundTool.stok - foundTool.dipinjam;
+            if (foundAlatukur) {
+              const tersedia = foundAlatukur.stok - foundAlatukur.dipinjam;
               if (tersedia > 0) {
                 try {
-                  await scanTool(foundTool.id, 1);
+                  await scanAlatukur(foundAlatukur.id, 1);
                   
-                  // Sinkronisasi data keranjang tools dari API ke LocalStorage
-                  const dbCartTools = await fetchAntrean();
-                  const groupedToolsCart = dbCartTools.reduce((acc: any[], item: any) => {
-                    const existingItem = acc.find((c: any) => c.toolId === item.tools_id);
+                  // Sinkronisasi data keranjang alat ukur dari API ke LocalStorage
+                  const dbCartAlatukur = await fetchAntrean();
+                  const groupedAlatukurCart = dbCartAlatukur.reduce((acc: any[], item: any) => {
+                    const existingItem = acc.find((c: any) => c.alat ukurId === item.alat ukur_id);
                     if (existingItem) {
                       existingItem.jumlah += item.qty ?? 1;
                     } else {
                       acc.push({
-                        cartId: item.id, toolId: item.tools_id,
+                        cartId: item.id, alat ukurId: item.alat ukur_id,
                         namaBarang: item.nama_barang || "Nama Alat Tidak Ditemukan",
                         kodeBarang: item.kode_barang || "-",
-                        jumlah: item.qty ?? 1, maxJumlah: item.max_jumlah ?? 99, item_type: "tool",
+                        jumlah: item.qty ?? 1, maxJumlah: item.max_jumlah ?? 99, item_type: "alat ukur",
                       });
                     }
                     return acc;
                   }, []);
-                  localStorage.setItem("global_shared_tools_cart", JSON.stringify(groupedToolsCart));
+                  localStorage.setItem("global_shared_alat ukur_cart", JSON.stringify(groupedAlatukurCart));
                   
                   await loadCart(); // Trigger update UI
-                  setSuccessMessage(`Berhasil: Tool ${foundTool.namaBarang} ditambahkan ke keranjang.`);
+                  setSuccessMessage(`Berhasil: Alatukur ${foundAlatukur.namaBarang} ditambahkan ke keranjang.`);
                   setTimeout(() => setSuccessMessage(null), 3000);
                 } catch (err) {
-                  console.error("Gagal menambah Tool", err);
+                  console.error("Gagal menambah Alatukur", err);
                 }
               } else {
-                 alert(`Gagal: Stok Tool ${foundTool.namaBarang} kosong/dipinjam semua.`);
+                 alert(`Gagal: Stok Alatukur ${foundAlatukur.namaBarang} kosong/dipinjam semua.`);
               }
             } else {
                alert(`Barcode tidak terdaftar di sistem manapun: ${scannedCode}`);
@@ -298,7 +298,7 @@ const DataConsumableManager = () => {
 
     window.addEventListener('keydown', handleGlobalScan);
     return () => window.removeEventListener('keydown', handleGlobalScan);
-  }, [consumables, tools, cart, loadCart]);
+  }, [consumables, alat ukur, cart, loadCart]);
 
   const filteredConsumables = useMemo(() => {
     const keyword = searchTerm.trim().toLowerCase();
@@ -487,10 +487,10 @@ const DataConsumableManager = () => {
     );
 
     // 2. Simpan ke Local Storage (Sinkron antar halaman instan)
-    if (targetItem.item_type === 'tool') {
-      const savedTools = JSON.parse(localStorage.getItem("global_shared_tools_cart") || "[]");
-      const updatedToolCart = savedTools.map((c: any) => (c.cartId === cartId ? { ...c, jumlah: qty } : c));
-      localStorage.setItem("global_shared_tools_cart", JSON.stringify(updatedToolCart));
+    if (targetItem.item_type === 'alat ukur') {
+      const savedAlatukur = JSON.parse(localStorage.getItem("global_shared_alat ukur_cart") || "[]");
+      const updatedAlatukurCart = savedAlatukur.map((c: any) => (c.cartId === cartId ? { ...c, jumlah: qty } : c));
+      localStorage.setItem("global_shared_alat ukur_cart", JSON.stringify(updatedAlatukurCart));
     } else {
       const savedCons = JSON.parse(localStorage.getItem("global_shared_consumable_cart") || "[]");
       const updatedConsCart = savedCons.map((c: any) => (c.id === cartId || c.consumable_id === cartId ? { ...c, jumlah: qty } : c));
@@ -505,7 +505,7 @@ const DataConsumableManager = () => {
     // 4. Jadwalkan ke Backend setelah 500ms
     const timer = setTimeout(async () => {
       try {
-        if (targetItem.item_type === 'tool') {
+        if (targetItem.item_type === 'alat ukur') {
            await updateCartItem(cartId, qty);
         } else {
            const token = localStorage.getItem("token");
@@ -537,12 +537,12 @@ const DataConsumableManager = () => {
 
     setCart((prev) => prev.filter((c) => c.id !== cartId && c.consumable_id !== cartId && c.cartId !== cartId));
 
-    if (targetItem.item_type === 'tool') {
-      const savedTools = JSON.parse(localStorage.getItem("global_shared_tools_cart") || "[]");
-      const updatedToolCart = savedTools.filter((c: any) => c.cartId !== cartId);
-      localStorage.setItem("global_shared_tools_cart", JSON.stringify(updatedToolCart));
+    if (targetItem.item_type === 'alat ukur') {
+      const savedAlatukur = JSON.parse(localStorage.getItem("global_shared_alat ukur_cart") || "[]");
+      const updatedAlatukurCart = savedAlatukur.filter((c: any) => c.cartId !== cartId);
+      localStorage.setItem("global_shared_alat ukur_cart", JSON.stringify(updatedAlatukurCart));
       try {
-          // Hanya memicu event untuk memberitahu halaman DataTools (jika diperlukan)
+          // Hanya memicu event untuk memberitahu halaman DataAlatukur (jika diperlukan)
       } catch (e) {
           console.error(e);
       }
@@ -580,7 +580,7 @@ const DataConsumableManager = () => {
 
       const pemintaIdVal = values.peminjamId || values.pemintaId || "";
       const hasConsumableItems = cart.some((c) => c.item_type === 'consumable' || !c.item_type);
-      const hasToolItems = cart.some((c) => c.item_type === 'tool');
+      const hasAlatukurItems = cart.some((c) => c.item_type === 'alat ukur');
 
       const apiRequests = [];
 
@@ -605,7 +605,7 @@ const DataConsumableManager = () => {
         );
       }
 
-      if (hasToolItems) {
+      if (hasAlatukurItems) {
         apiRequests.push(
           prosesPeminjamanApi({
             pemintaId: pemintaIdVal,
@@ -622,7 +622,7 @@ const DataConsumableManager = () => {
         await Promise.all(apiRequests);
       }
 
-      localStorage.removeItem("global_shared_tools_cart");
+      localStorage.removeItem("global_shared_alat ukur_cart");
       localStorage.removeItem("global_shared_consumable_cart");
 
       setLoanFormOpen(false);
@@ -656,7 +656,7 @@ const DataConsumableManager = () => {
   );
 
   return (
-    <div className="datatools-page">
+    <div className="dataalat ukur-page">
       {successMessage && (
         <Alert
           variant="success"
@@ -681,7 +681,7 @@ const DataConsumableManager = () => {
             <div>
               <h1 className="mb-2 h2">Data Consumable</h1>
               <p className="text-secondary mb-0">
-                Mengelola seluruh data bahan yang terdapat di Ruang Tools.
+                Mengelola seluruh data bahan yang terdapat di Ruang Alatukur.
               </p>
               <DasherBreadcrumb />
             </div>
@@ -695,10 +695,10 @@ const DataConsumableManager = () => {
       </Row>
 
       <Card className="card-lg mb-6">
-        <div className="datatools-toolbar border-bottom">
+        <div className="dataalat ukur-alat ukurbar border-bottom">
           <Row className="g-2 align-items-center">
             <Col lg={5} md={6}>
-              <InputGroup className="datatools-search">
+              <InputGroup className="dataalat ukur-search">
                 <InputGroup.Text><IconSearch size={18} /></InputGroup.Text>
                 <Form.Control
                   type="search"
@@ -707,7 +707,7 @@ const DataConsumableManager = () => {
                   onChange={(e) => setSearchTerm(e.target.value)}
                 />
                 {searchTerm && (
-                  <Button variant="link" className="datatools-search-clear" onClick={() => setSearchTerm("")}>
+                  <Button variant="link" className="dataalat ukur-search-clear" onClick={() => setSearchTerm("")}>
                     <IconX size={16} />
                   </Button>
                 )}
@@ -736,17 +736,17 @@ const DataConsumableManager = () => {
               <Spinner animation="border" size="sm" className="me-2" /> Memuat data...
             </div>
           ) : consumables.length === 0 ? (
-            <div className="datatools-empty text-center py-6">
-              <div className="datatools-empty-icon mb-3"><IconBox size={32} /></div>
+            <div className="dataalat ukur-empty text-center py-6">
+              <div className="dataalat ukur-empty-icon mb-3"><IconBox size={32} /></div>
               <h5 className="mb-1">Belum ada data consumable</h5>
-              <p className="text-secondary mb-4">Mulai dengan menambahkan bahan pertama ke Ruang Tools.</p>
+              <p className="text-secondary mb-4">Mulai dengan menambahkan bahan pertama ke Ruang Alatukur.</p>
               <Button variant="primary" className="d-inline-flex align-items-center gap-2" onClick={openAddModal}>
                 <IconPlus size={18} /> Tambah Bahan
               </Button>
             </div>
           ) : filteredConsumables.length === 0 ? (
-            <div className="datatools-empty text-center py-6">
-              <div className="datatools-empty-icon mb-3"><IconMoodEmpty size={32} /></div>
+            <div className="dataalat ukur-empty text-center py-6">
+              <div className="dataalat ukur-empty-icon mb-3"><IconMoodEmpty size={32} /></div>
               <h5 className="mb-1">Tidak ada hasil</h5>
               <p className="text-secondary mb-4">Tidak ditemukan bahan yang cocok dengan pencarian.</p>
               <Button variant="outline-secondary" className="d-inline-flex align-items-center gap-2" onClick={() => setSearchTerm("")}>
@@ -759,7 +759,7 @@ const DataConsumableManager = () => {
         </CardBody>
       </Card>
 
-      <ConsumableToolFormModal
+      <ConsumableAlatukurFormModal
         show={formModalOpen}
         onClose={() => {
           setFormModalOpen(false);

@@ -9,11 +9,11 @@ import {
   IconArrowRight,
 } from "@tabler/icons-react";
 
-// Definisikan tipe fleksibel agar support Tools & Consumable sekaligus
+// Definisikan tipe fleksibel agar support Alatukur & Consumable sekaligus
 export interface UnifiedCartItem {
   cartId?: string | number;
   id?: string | number;
-  toolId?: string | number;
+  alat ukurId?: string | number;
   consumable_id?: string | number;
   namaBarang?: string;
   nama?: string;
@@ -22,7 +22,7 @@ export interface UnifiedCartItem {
   jumlah: number;
   maxJumlah?: number;
   stok_tersedia?: number;
-  item_type?: 'tool' | 'consumable';
+  item_type?: 'alat ukur' | 'consumable';
 }
 
 interface CartOffcanvasProps {
@@ -106,10 +106,10 @@ const CartOffcanvas = ({
         ) : (
           <div className="d-flex flex-column gap-3 flex-grow-1">
             {items.map((item, index) => {
-              // Menyesuaikan penamaan properti yang berbeda antara Tools & Consumable
+              // Menyesuaikan penamaan properti yang berbeda antara Alatukur & Consumable
               const displayName = item.namaBarang || item.nama || "Nama Tidak Diketahui";
               const displayCode = item.kodeBarang || item.kode_barang || "-";
-              const uniqueKey = item.cartId || item.id || item.toolId || item.consumable_id || index;
+              const uniqueKey = item.cartId || item.id || item.alat ukurId || item.consumable_id || index;
               const maxLimit = item.maxJumlah ?? item.stok_tersedia ?? 99;
 
               return (
@@ -120,7 +120,7 @@ const CartOffcanvas = ({
                       <div className="text-secondary small d-flex align-items-center gap-2">
                         <span>{displayCode}</span>
                         {item.item_type && (
-                          <span className={`badge bg-${item.item_type === 'tool' ? 'info' : 'warning'} text-dark`} style={{ fontSize: '10px' }}>
+                          <span className={`badge bg-${item.item_type === 'alat ukur' ? 'info' : 'warning'} text-dark`} style={{ fontSize: '10px' }}>
                             {item.item_type.toUpperCase()}
                           </span>
                         )}

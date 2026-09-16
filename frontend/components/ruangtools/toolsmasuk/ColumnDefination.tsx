@@ -5,14 +5,14 @@ import { Dropdown, Badge } from "react-bootstrap";
 import { IconDotsVertical } from "@tabler/icons-react";
 
 // import custom types
-import { ToolMasukType } from "types/DataToolsTypes";
+import { AlatukurMasukType } from "types/DataAlatukurTypes";
 
 // import custom components
 import ActionMenu from "components/common/ActionMenu";
 
 interface ColumnHandlers {
-  onEdit: (item: ToolMasukType) => void;
-  onDelete: (item: ToolMasukType) => void;
+  onEdit: (item: AlatukurMasukType) => void;
+  onDelete: (item: AlatukurMasukType) => void;
 }
 
 const formatTanggal = (raw: string): string => {
@@ -31,10 +31,10 @@ const formatTanggal = (raw: string): string => {
   return `${tanggal}, ${jam}`;
 };
 
-export const getToolMasukColumns = ({
+export const getAlatukurMasukColumns = ({
   onEdit,
   onDelete,
-}: ColumnHandlers): ColumnDef<ToolMasukType>[] => [
+}: ColumnHandlers): ColumnDef<AlatukurMasukType>[] => [
   {
     accessorKey: "tanggal",
     header: "Tanggal",

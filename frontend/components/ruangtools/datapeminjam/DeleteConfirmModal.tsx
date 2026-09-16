@@ -4,7 +4,7 @@ import { Modal, Button, Spinner } from "react-bootstrap";
 import { IconUserOff, IconAlertTriangle } from "@tabler/icons-react";
 
 // import custom types
-import { PeminjamType } from "types/DataToolsTypes";
+import { PeminjamType } from "types/DataAlatukurTypes";
 
 interface DeleteConfirmModalProps {
   show: boolean;

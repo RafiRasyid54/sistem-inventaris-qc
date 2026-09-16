@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Str;
 
 class Peminta extends Model
 {
@@ -12,15 +13,16 @@ class Peminta extends Model
 
     protected $table = 'peminta';
 
+    // Karena ID kita bisa berupa nomor RFID (string) atau UUID, kita matikan auto-increment
     public $incrementing = false;
     protected $keyType = 'string';
 
     protected $fillable = [
-        'id', // <-- Kita masukkan 'id' ke sini agar bisa diisi nomor RFID dari Frontend
-        'nama',
+        'id', // <-- Diisi nomor RFID dari Frontend
+        'nama_peminta', // <-- WAJIB nama_peminta, jangan nama
         'divisi',
         'aktif',
-        'role', // <--- Tambahkan kolom role agar bisa disimpan ke database
+        'role',
     ];
 
     protected $casts = [
@@ -32,36 +34,29 @@ class Peminta extends Model
         parent::boot();
 
         static::creating(function ($model) {
-            // Jika id kosong (pekerja tidak didaftarkan pakai kartu RFID),
+            // Jika id kosong (pekerja didaftarkan manual tanpa tap kartu RFID),
             // maka Laravel otomatis membuatkan UUID acak.
             if (empty($model->id)) {
-                $model->id = (string) \Illuminate\Support\Str::uuid();
+                $model->id = (string) Str::uuid();
             }
             
-            // default aktif kalau tidak dikirim
+            // Default aktif
             if (! isset($model->aktif)) {
                 $model->aktif = true;
             }
 
-            // default role menjadi 'user' jika saat dibuat datanya kosong
+            // Default role
             if (! isset($model->role)) {
                 $model->role = 'user';
             }
         });
     }
 
+    /**
+     * Relasi: 1 Peminta/Pekerja bisa melakukan BANYAK transaksi peminjaman
+     */
     public function peminjaman(): HasMany
     {
-        return $this->hasMany(Peminjaman::class);
-    }
-
-    public function consumableKeluar(): HasMany
-    {
-        return $this->hasMany(ConsumableKeluar::class);
-    }
-    
-    public function consumableMasuk(): HasMany
-    {
-        return $this->hasMany(ConsumableMasuk::class, 'dicatat_oleh', 'id');
+        return $this->hasMany(Peminjaman::class, 'peminta_id');
     }
 }
