@@ -1,10 +1,10 @@
 // import node module libraries
-import { configureStore } from "@reduxjs/alat ukurkit";
+import { configureStore } from "@reduxjs/toolkit";
 import { TypedUseSelectorHook, useDispatch, useSelector } from "react-redux";
 
 //import required reducers
 import appReducer from "./slices/appSlice";
-import inventoryAlatukurReducer from "./slices/inventoryAlatukurSlice";
+import inventoryAlatukurReducer from "store/slices/inventoryAlatukurSlice";
 
 const store = configureStore({
   reducer: {

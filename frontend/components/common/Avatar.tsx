@@ -8,13 +8,13 @@ size        : Required, possible options are xxl, xl, lg, md, sm, xs
 type        : Required, possible options are image , initial
 src         : Image source is required if type = image
 name        : Name is required if type = initial
-alt         : Optional, it's used for alt tag of image avtar, which is helpful for invalid url or broken link.
+alt         : Optional, it's used for alt tag of image avatar, which is helpful for invalid url or broken link.
 className   : Optional class list e.g. circle, rounded, rounded-circle, bg-info etc...
 status      : Optional, possible options are online, away, offline, busy
-soft        : Optional, if it's set it will show soft background color which is only usefule for type = initial
-showExact	  : Optional, specify this parameter with name para, if you want to show exactly name value rather acronym format.
-bodyClasses	: Optional, if you want to apply classes to avatar body i.e. span like me-3, ms-3 etc... you can use this property.
-imgalat ukurtip	: Optional - Boolean - Default=false, if you specify this parameter, it will show name para value in alat ukurtip.
+soft        : Optional, if it's set it will show soft background color which is only useful for type = initial
+showExact   : Optional, specify this parameter with name para, if you want to show exactly name value rather acronym format.
+bodyClasses : Optional, if you want to apply classes to avatar body i.e. span like me-3, ms-3 etc... you can use this property.
+imgAlatTooltip : Optional - Boolean - Default=false, if you specify this parameter, it will show name para value in tooltip.
 
 */
 
@@ -50,7 +50,7 @@ interface AvatarProps {
   variant?: AvatarVariant;
   soft?: boolean;
   showExact?: boolean;
-  imgalat ukurtip?: boolean;
+  imgAlatTooltip?: boolean;
   bodyClasses?: string;
 }
 
@@ -66,62 +66,53 @@ const Avatar: React.FC<AvatarProps> = (props) => {
     soft = false,
     variant = "primary",
     showExact = false,
-    imgalat ukurtip,
+    imgAlatTooltip = false,
     bodyClasses,
   } = props;
 
-  const GetAvatar = () => {
+  const renderAvatar = () => {
     if (type === "initial" && name) {
       const matches = name.match(/\b(\w)/g);
       const acronym = showExact ? name : matches?.join("") ?? "";
+
       if (soft) {
-        return imgalat ukurtip ? (
-          <DasherTippy content={name}>
-            <span
-              className={`avatar avatar-${size} avatar-${variant}-soft me-0 mb-2 mb-lg-0`}
-            >
-              <span className={`avatar-initials ${className}`}>{acronym}</span>
-            </span>
-          </DasherTippy>
-        ) : (
+        const softAvatarNode = (
           <span
             className={`avatar avatar-${size} avatar-${variant}-soft me-0 mb-2 mb-lg-0`}
           >
             <span className={`avatar-initials ${className}`}>{acronym}</span>
           </span>
         );
-      }
-      if (imgalat ukurtip && name) {
-        return (
-          <DasherTippy content={name}>
-            <span
-              title={alt}
-              className={`avatar avatar-${size} avatar-primary me-0 mb-2 mb-lg-0 ${
-                status ? "avatar-indicators avatar-" + status : ""
-              }`}
-            >
-              <span className={`avatar-initials bg-${variant} ${className}`}>
-                {acronym}
-              </span>
-            </span>
-          </DasherTippy>
+
+        return imgAlatTooltip ? (
+          <DasherTippy content={name}>{softAvatarNode}</DasherTippy>
+        ) : (
+          softAvatarNode
         );
-      } else {
-        return (
-          <span
-            title={alt}
-            className={`avatar avatar-${size} avatar-primary me-0 mb-2 mb-lg-0 ${
-              status ? "avatar-indicators avatar-" + status : ""
-            }`}
-          >
-            <span className={`avatar-initials bg-${variant} ${className}`}>
-              {acronym}
-            </span>
+      }
+
+      const standardAvatarNode = (
+        <span
+          title={alt}
+          className={`avatar avatar-${size} avatar-primary me-0 mb-2 mb-lg-0 ${
+            status ? "avatar-indicators avatar-" + status : ""
+          }`}
+        >
+          <span className={`avatar-initials bg-${variant} ${className}`}>
+            {acronym}
           </span>
-        );
-      }
-    } else if (type === "image" && src) {
-      if (imgalat ukurtip && name) {
+        </span>
+      );
+
+      return imgAlatTooltip && name ? (
+        <DasherTippy content={name}>{standardAvatarNode}</DasherTippy>
+      ) : (
+        standardAvatarNode
+      );
+    }
+
+    if (type === "image" && src) {
+      if (imgAlatTooltip && name) {
         return (
           <span
             className={`avatar avatar-${size} me-1 ${
@@ -137,32 +128,27 @@ const Avatar: React.FC<AvatarProps> = (props) => {
             </DasherTippy>
           </span>
         );
-      } else {
-        return (
-          <span
-            className={`avatar avatar-${size} me-0 ${
-              status ? "avatar-indicators mb-2 mb-lg-0 avatar-" + status : ""
-            }`}
-          >
-            <Image
-              src={getAssetPath(src)}
-              alt={alt}
-              className={`mb-2 mb-lg-0 ${className}`}
-            />
-          </span>
-        );
       }
-    } else {
+
       return (
         <span
-          dangerouslySetInnerHTML={{
-            __html: "Required Avatar parameter not found",
-          }}
-        ></span>
+          className={`avatar avatar-${size} me-0 ${
+            status ? "avatar-indicators mb-2 mb-lg-0 avatar-" + status : ""
+          }`}
+        >
+          <Image
+            src={getAssetPath(src)}
+            alt={alt}
+            className={`mb-2 mb-lg-0 ${className}`}
+          />
+        </span>
       );
     }
+
+    return <span>Required Avatar parameter not found</span>;
   };
-  return <GetAvatar />;
+
+  return renderAvatar();
 };
 
 /***************************

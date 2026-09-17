@@ -1,47 +1,81 @@
-//import node modules libraries
+// import node modules libraries
 import { v4 as uuid } from "uuid";
+
 import {
   IconLayoutDashboard,
   IconBoxSeam,
   IconArrowsExchange,
   IconHistory,
   IconShoppingCart,
-  IconAlatukur,
+  IconTool,
   IconReportAnalytics,
   IconUsers,
 } from "@tabler/icons-react";
 
-//import custom type
+// import custom type
 import { MenuItemType } from "types/menuTypes";
 
+// ============================================================
+// DASHBOARD MENU
+// ============================================================
+
 export const DashboardMenu: MenuItemType[] = [
+  // ==========================================================
+  // OPERASIONAL ALAT
+  // ==========================================================
+
   {
     id: uuid(),
     title: "Operasional Alat",
     grouptitle: true,
   },
+
   {
     id: uuid(),
     title: "Dashboard",
     link: "/",
-    icon: <IconLayoutDashboard size={20} strokeWidth={1.5} />,
+    icon: (
+      <IconLayoutDashboard
+        size={20}
+        strokeWidth={1.5}
+      />
+    ),
   },
+
+  // ==========================================================
+  // INVENTARIS
+  // ==========================================================
+
   {
     id: uuid(),
     title: "Inventaris",
-    icon: <IconBoxSeam size={20} strokeWidth={1.5} />,
+
+    icon: (
+      <IconBoxSeam
+        size={20}
+        strokeWidth={1.5}
+      />
+    ),
+
     children: [
-      { id: uuid(), name: "Data Alatukur", link: "/inventaris/data-alat ukur" },
+      {
+        id: uuid(),
+        name: "Data Alat Ukur",
+        link: "/inventaris/data-alat-ukur",
+      },
+
       {
         id: uuid(),
         name: "Data Consumable",
         link: "/inventaris/data-consumable",
       },
+
       {
         id: uuid(),
         name: "Data Peminjam",
         link: "/inventaris/data-peminjam",
       },
+
       {
         id: uuid(),
         name: "Data Pekerjaan",
@@ -49,48 +83,77 @@ export const DashboardMenu: MenuItemType[] = [
       },
     ],
   },
+
+  // ==========================================================
+  // TRANSAKSI
+  // ==========================================================
+
   {
     id: uuid(),
     title: "Transaksi",
-    icon: <IconArrowsExchange size={20} strokeWidth={1.5} />,
+
+    icon: (
+      <IconArrowsExchange
+        size={20}
+        strokeWidth={1.5}
+      />
+    ),
+
     children: [
       {
         id: uuid(),
         name: "Peminjaman Aktif",
         link: "/transaksi/peminjaman-aktif",
       },
+
       {
         id: uuid(),
         name: "Pengembalian Alat",
         link: "/transaksi/pengembalian",
       },
+
       {
         id: uuid(),
         name: "Consumable Masuk",
         link: "/transaksi/consumable-masuk",
       },
+
       {
         id: uuid(),
-        name: "Alatukur Masuk",
-        link: "/transaksi/alat ukur-masuk",
+        name: "Alat Ukur Masuk",
+        link: "/transaksi/alat-ukur-masuk",
       },
     ],
   },
+
+  // ==========================================================
+  // RIWAYAT
+  // ==========================================================
+
   {
     id: uuid(),
     title: "Riwayat",
-    icon: <IconHistory size={20} strokeWidth={1.5} />,
+
+    icon: (
+      <IconHistory
+        size={20}
+        strokeWidth={1.5}
+      />
+    ),
+
     children: [
       {
         id: uuid(),
-        name: "Peminjaman Alatukur",
-        link: "/riwayat/peminjaman-alat ukur",
+        name: "Peminjaman Alat Ukur",
+        link: "/riwayat/peminjaman-alat-ukur",
       },
+
       {
         id: uuid(),
         name: "Consumable Keluar",
         link: "/riwayat/consumable-keluar",
       },
+
       {
         id: uuid(),
         name: "Riwayat Perbaikan",
@@ -98,53 +161,103 @@ export const DashboardMenu: MenuItemType[] = [
       },
     ],
   },
+
+  // ==========================================================
+  // PENGAJUAN ORDER
+  // ==========================================================
+
   {
     id: uuid(),
     title: "Pengajuan Order",
-    icon: <IconShoppingCart size={20} strokeWidth={1.5} />,
+
+    icon: (
+      <IconShoppingCart
+        size={20}
+        strokeWidth={1.5}
+      />
+    ),
+
     children: [
       {
         id: uuid(),
         name: "Order Consumable",
         link: "/order/order-consumable",
       },
+
       {
         id: uuid(),
-        name: "Order Alatukur",
-        link: "/order/order-alat ukur",
+        name: "Order Alat Ukur",
+        link: "/order/order-alat-ukur",
       },
     ],
   },
+
+  // ==========================================================
+  // LAPORAN
+  // ==========================================================
+
   {
     id: uuid(),
     title: "Laporan Kerusakan Alat",
     link: "/laporan",
-    icon: <IconReportAnalytics size={20} strokeWidth={1.5} />,
+
+    icon: (
+      <IconReportAnalytics
+        size={20}
+        strokeWidth={1.5}
+      />
+    ),
   },
-  // ==========================================
-  // MENU PEMELIHARAAN (Hanya Mesin & Motor Konversi)
-  // ==========================================
+
+  // ==========================================================
+  // PEMELIHARAAN MESIN
+  // ==========================================================
+
   {
     id: uuid(),
     title: "Pemeliharaan Mesin",
     grouptitle: true,
   },
+
+  // ==========================================================
+  // DASHBOARD PEMELIHARAAN
+  // ==========================================================
+
   {
     id: uuid(),
     title: "Dashboard Pemeliharaan",
     link: "/pemeliharaan/dashboard",
-    icon: <IconLayoutDashboard size={20} strokeWidth={1.5} />,
+
+    icon: (
+      <IconLayoutDashboard
+        size={20}
+        strokeWidth={1.5}
+      />
+    ),
   },
+
+  // ==========================================================
+  // PEMELIHARAAN
+  // ==========================================================
+
   {
     id: uuid(),
     title: "Pemeliharaan",
-    icon: <IconAlatukur size={20} strokeWidth={1.5} />,
+
+    icon: (
+      <IconTool
+        size={20}
+        strokeWidth={1.5}
+      />
+    ),
+
     children: [
       {
         id: uuid(),
         name: "Pemeliharaan Mesin",
         link: "/pemeliharaan/data-mesin",
       },
+
       {
         id: uuid(),
         name: "Pemeliharaan Motor Konversi",
@@ -152,15 +265,27 @@ export const DashboardMenu: MenuItemType[] = [
       },
     ],
   },
-    {
+
+  // ==========================================================
+  // ADMINISTRASI
+  // ==========================================================
+
+  {
     id: uuid(),
     title: "Administrasi",
     grouptitle: true,
   },
+
   {
     id: uuid(),
     title: "Manajemen User",
     link: "/data-user",
-    icon: <IconUsers size={20} strokeWidth={1.5} />,
+
+    icon: (
+      <IconUsers
+        size={20}
+        strokeWidth={1.5}
+      />
+    ),
   },
 ];

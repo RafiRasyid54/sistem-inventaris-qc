@@ -1,33 +1,27 @@
 import apiFetch from "lib/api";
 import {
   DashboardSummary,
-  StokMenipisItem,
   TelatKembaliItem,
   AlatTerpopulerItem,
-  ConsumableTerpopulerItem,
   KerusakanSummary,
   AktivitasItem,
   TrenPeminjamanItem,
+  KalibrasiMendekatiItem,
 } from "types/DashboardTypes";
 
 export async function getDashboardSummary(): Promise<DashboardSummary> {
   return apiFetch<DashboardSummary>("/dashboard/summary");
 }
 
-export async function getStokMenipis(): Promise<StokMenipisItem[]> {
-  return apiFetch<StokMenipisItem[]>("/dashboard/stok-menipis");
-}
-
 export async function getTelatKembali(): Promise<TelatKembaliItem[]> {
-  return apiFetch<TelatKembaliItem[]>("/dashboard/telat-kembali");
+  const response = await apiFetch<any>("/dashboard/telat-kembali");
+  // Pastikan mengambil properti array-nya jika dibungkus, atau berikan fallback [] jika kosong
+  return response.data ?? response ?? [];
 }
 
 export async function getAlatTerpopuler(): Promise<AlatTerpopulerItem[]> {
-  return apiFetch<AlatTerpopulerItem[]>("/dashboard/alat-terpopuler");
-}
-
-export async function getConsumableTerpopuler(): Promise<ConsumableTerpopulerItem[]> {
-  return apiFetch<ConsumableTerpopulerItem[]>("/dashboard/consumable-terpopuler");
+  const response = await apiFetch<any>("/dashboard/alat-terpopuler");
+  return response.data ?? response ?? [];
 }
 
 export async function getKerusakanSummary(): Promise<KerusakanSummary> {
@@ -42,7 +36,8 @@ export async function getTrenPeminjaman(): Promise<TrenPeminjamanItem[]> {
   return apiFetch<TrenPeminjamanItem[]>("/dashboard/tren-peminjaman");
 }
 
-// ---> TAMBAHKAN FUNGSI INI UNTUK TREN CONSUMABLE <---
-export async function getTrenConsumable(): Promise<TrenPeminjamanItem[]> {
-  return apiFetch<TrenPeminjamanItem[]>("/dashboard/tren-consumable");
+export async function getKalibrasiMendekati(): Promise<KalibrasiMendekatiItem[]> {
+  // Jika backend membungkus respons dalam objek { data: [...] }, sesuaikan penanganan di bawah
+  const response = await apiFetch<any>("/dashboard/kalibrasi-mendekati");
+  return response.data ?? response;
 }

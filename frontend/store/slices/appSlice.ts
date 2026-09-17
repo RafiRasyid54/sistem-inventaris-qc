@@ -1,5 +1,5 @@
 // import node module libraries
-import { createSlice, PayloadAction } from "@reduxjs/alat ukurkit";
+import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 
 // import app config file
 import { settings } from "app.config";
@@ -30,8 +30,8 @@ const appSlice = createSlice({
     setCollapsed: (state, action: PayloadAction<{ value: MenuToggleType }>) => {
       document
         .querySelector("html")
-        ?.setAttribute("class", action.payload.value),
-        (state.collapsed = action.payload.value);
+        ?.setAttribute("class", action.payload.value);
+      state.collapsed = action.payload.value;
     },
   },
 });

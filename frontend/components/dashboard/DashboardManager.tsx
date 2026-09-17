@@ -1,16 +1,14 @@
 "use client";
-import { useEffect, useState } from "react";
-import Link from "next/link"; 
-import { Row, Col, Card, CardBody, Spinner, Alert, Badge, } from "react-bootstrap";
+import { useState } from "react";
+import Link from "next/link";
+import { Row, Col, Card, CardBody, Alert, Badge } from "react-bootstrap";
 import {
-  IconAlatukur,
-  IconPackage,
+  IconRuler2,
   IconUsers,
   IconClockHour4,
   IconAlertTriangle,
   IconTrendingUp,
   IconShoppingCart,
-  IconClipboardList,
 } from "@tabler/icons-react";
 import {
   LineChart,
@@ -18,34 +16,20 @@ import {
   XAxis,
   YAxis,
   CartesianGrid,
-  Alatukurtip,
+  Tooltip,
   ResponsiveContainer,
 } from "recharts";
 
 import {
   DashboardSummary,
-  StokMenipisItem,
+  KalibrasiMendekatiItem,
   TelatKembaliItem,
   AlatTerpopulerItem,
-  ConsumableTerpopulerItem,
-  KerusakanSummary,
   AktivitasItem,
   TrenPeminjamanItem,
+  OrderAlatUkurStatusCount,
 } from "types/DashboardTypes";
 
-import {
-  getDashboardSummary,
-  getStokMenipis,
-  getTelatKembali,
-  getAlatTerpopuler,
-  getConsumableTerpopuler,
-  getKerusakanSummary,
-  getAktivitasTerbaru,
-  getTrenPeminjaman,
-  getTrenConsumable, 
-} from "services/dashboardService";
-
-// import custom components
 import Flex from "components/common/Flex";
 import DasherBreadcrumb from "components/common/DasherBreadcrumb";
 import StatCard from "components/dashboard/StatCard";
@@ -64,84 +48,75 @@ const formatWaktu = (iso: string) => {
 const jenisLabel: Record<AktivitasItem["jenis"], { label: string; color: string }> = {
   peminjaman: { label: "Peminjaman", color: "primary" },
   pengembalian: { label: "Pengembalian", color: "success" },
-  consumable_keluar: { label: "Ambil Bahan", color: "info" },
-  kerusakan: { label: "Kerusakan", color: "danger" },
 };
 
+// --- DATA DUMMY (SESUAIKAN DENGAN INTERFACE TYPESCRIPT) ---
+const dummySummary: DashboardSummary = {
+  total_alat_ukur: 142,
+  sedang_dipinjam: 12,
+  peringatan_kalibrasi: 5,
+  total_peminta_aktif: 28,
+  total_pekerjaan_aktif: 4, // Ditambahkan sesuai error TypeScript
+  order_alat_ukur_status: {
+    belum_dibeli: 3,
+    on_progres: 2,
+    sudah_dibeli: 15,
+    ditolak: 1,
+  } as OrderAlatUkurStatusCount,
+};
+
+const dummyKalibrasi: KalibrasiMendekatiItem[] = [
+  { id: 1, nama_alat: "Digital Caliper 150mm", kode_alat: "AL-001", sn: "SN987654", tanggal_kalibrasi_selanjutnya: "2026-10-15" },
+  { id: 2, nama_alat: "Micrometer Outside", kode_alat: "AL-014", sn: "SN112233", tanggal_kalibrasi_selanjutnya: "2026-10-20" },
+];
+
+const dummyTelat: TelatKembaliItem[] = [
+  { 
+    id: 101, 
+    nama_alat: "Dial Indicator", 
+    nama_peminjam: "Ahmad Fauzi", 
+    hari_terlambat: 3,
+    kode_alat: "AL-022", // Ditambahkan sesuai error TypeScript
+    tanggal_pinjam: "2026-09-01" // Ditambahkan sesuai error TypeScript
+  },
+];
+
+const dummyAlatTerpopuler: AlatTerpopulerItem[] = [
+  { kode_alat: "AL-001", nama_alat: "Digital Caliper 150mm", merk: "Mitutoyo", sn: "SN987654", total_dipinjam: 24 },
+  { kode_alat: "AL-005", nama_alat: "Digital Multimeter", merk: "Fluke", sn: "SN554433", total_dipinjam: 18 },
+];
+
+const dummyAktivitas: AktivitasItem[] = [
+  { waktu: "2026-09-17T10:30:00Z", deskripsi: "Budi meminjam Digital Caliper 150mm", jenis: "peminjaman" },
+  { waktu: "2026-09-17T09:15:00Z", deskripsi: "Siti mengembalikan Micrometer Outside", jenis: "pengembalian" },
+];
+
+const dummyTren: TrenPeminjamanItem[] = [
+  { tanggal: "2026-09-01", total: 2 },
+  { tanggal: "2026-09-05", total: 5 },
+  { tanggal: "2026-09-10", total: 3 },
+  { tanggal: "2026-09-15", total: 8 },
+];
+
 const DashboardManager = () => {
-  const [summary, setSummary] = useState<DashboardSummary | null>(null);
-  const [stokMenipis, setStokMenipis] = useState<StokMenipisItem[]>([]);
-  const [telatKembali, setTelatKembali] = useState<TelatKembaliItem[]>([]);
-  const [alatTerpopuler, setAlatTerpopuler] = useState<AlatTerpopulerItem[]>([]);
-  const [consumableTerpopuler, setConsumableTerpopuler] = useState<ConsumableTerpopulerItem[]>([]);
-  const [kerusakan, setKerusakan] = useState<KerusakanSummary | null>(null);
-  const [aktivitas, setAktivitas] = useState<AktivitasItem[]>([]);
-  const [tren, setTren] = useState<TrenPeminjamanItem[]>([]);
-  const [trenConsumable, setTrenConsumable] = useState<TrenPeminjamanItem[]>([]);
+  const [summary] = useState<DashboardSummary | null>(dummySummary);
+  const [kalibrasiMendekati] = useState<KalibrasiMendekatiItem[]>(dummyKalibrasi);
+  const [telatKembali] = useState<TelatKembaliItem[]>(dummyTelat);
+  const [alatTerpopuler] = useState<AlatTerpopulerItem[]>(dummyAlatTerpopuler);
+  const [aktivitas] = useState<AktivitasItem[]>(dummyAktivitas);
+  const [tren] = useState<TrenPeminjamanItem[]>(dummyTren);
 
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    const loadAll = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const [
-          summaryData,
-          stokData,
-          telatData,
-          alatData,
-          consumableData,
-          kerusakanData,
-          aktivitasData,
-          trenData,
-          trenConsData,
-        ] = await Promise.all([
-          getDashboardSummary(),
-          getStokMenipis(),
-          getTelatKembali(),
-          getAlatTerpopuler(),
-          getConsumableTerpopuler(),
-          getKerusakanSummary(),
-          getAktivitasTerbaru(),
-          getTrenPeminjaman(),
-          getTrenConsumable(),
-        ]);
-
-        setSummary(summaryData);
-        setStokMenipis(stokData);
-        setTelatKembali(telatData);
-        setAlatTerpopuler(alatData);
-        setConsumableTerpopuler(consumableData);
-        setKerusakan(kerusakanData);
-        setAktivitas(aktivitasData);
-        setTren(trenData);
-        setTrenConsumable(trenConsData);
-      } catch (err) {
-        const message = err instanceof Error ? err.message : "Gagal memuat data dashboard";
-        setError(message);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadAll();
-  }, []);
+  const [loading] = useState(false);
+  const [error] = useState<string | null>(null);
 
   const PageHeader = (
     <Row>
       <Col>
-        <Flex
-          justifyContent="between"
-          alignItems="center"
-          className="mb-4 w-100"
-          breakpoint="md"
-        >
+        <Flex justifyContent="between" alignItems="center" className="mb-4 w-100" breakpoint="md">
           <div>
-            <h1 className="mb-2 h2">Dashboard</h1>
+            <h1 className="mb-2 h2">Dashboard (Mode Dummy)</h1>
             <p className="text-secondary mb-0">
-              Ringkasan aktivitas dan kondisi inventaris Ruang Alatukur.
+              Ringkasan aktivitas peminjaman dan status kalibrasi Alat Ukur.
             </p>
             <DasherBreadcrumb />
           </div>
@@ -154,10 +129,7 @@ const DashboardManager = () => {
     return (
       <>
         {PageHeader}
-        <div className="text-center py-6">
-          <Spinner animation="border" size="sm" className="me-2" />
-          Memuat dashboard...
-        </div>
+        <div className="text-center py-6">Memuat dashboard...</div>
       </>
     );
   }
@@ -171,43 +143,21 @@ const DashboardManager = () => {
     );
   }
 
-  const orderAlatukurStatus = (summary as any)?.order_alat ukur_status || {};
-  const orderConsumableStatus = (summary as any)?.order_consumable_status || {};
+  const orderAlatUkurStatus: Partial<OrderAlatUkurStatusCount> = summary?.order_alat_ukur_status ?? {};
 
   return (
     <>
       {PageHeader}
 
-
       {/* Baris 1: Ringkasan Utama */}
       <Row className="g-3 mb-4">
         <Col xs={6} md={6} xl={3}>
-          <Link href="/inventaris/data-alat ukur" style={{ textDecoration: "none", color: "inherit", display: "block" }}>
+          <Link href="/inventaris/data-alat-ukur" style={{ textDecoration: "none", color: "inherit", display: "block" }}>
             <StatCard
-              icon={<IconAlatukur size={26} />}
-              title="Total Alatukur"
-              value={summary?.total_alat ukur ?? 0}
+              icon={<IconRuler2 size={26} />}
+              title="Total Alat Ukur"
+              value={summary?.total_alat_ukur ?? 0}
               variant="primary"
-            />
-          </Link>
-        </Col>
-        <Col xs={6} md={6} xl={3}>
-          <Link href="/inventaris/data-consumable" style={{ textDecoration: "none", color: "inherit", display: "block" }}>
-            <StatCard
-              icon={<IconPackage size={26} />}
-              title="Total Consumable"
-              value={summary?.total_consumables ?? 0}
-              variant="info"
-            />
-          </Link>
-        </Col>
-        <Col xs={6} md={6} xl={3}>
-          <Link href="/inventaris/data-peminjam" style={{ textDecoration: "none", color: "inherit", display: "block" }}>
-            <StatCard
-              icon={<IconUsers size={26} />}
-              title="Total Peminta"
-              value={summary?.total_peminta ?? 0}
-              variant="success"
             />
           </Link>
         </Col>
@@ -221,33 +171,64 @@ const DashboardManager = () => {
             />
           </Link>
         </Col>
+        <Col xs={6} md={6} xl={3}>
+          <Link href="/inventaris/data-alat-ukur" style={{ textDecoration: "none", color: "inherit", display: "block" }}>
+            <StatCard
+              icon={<IconAlertTriangle size={26} />}
+              title="Peringatan Kalibrasi"
+              value={summary?.peringatan_kalibrasi ?? 0}
+              variant="danger"
+            />
+          </Link>
+        </Col>
+        <Col xs={6} md={6} xl={3}>
+          <Link href="/inventaris/data-peminjam" style={{ textDecoration: "none", color: "inherit", display: "block" }}>
+            <StatCard
+              icon={<IconUsers size={26} />}
+              title="Total Peminjam Aktif"
+              value={summary?.total_peminta_aktif ?? 0}
+              variant="success"
+            />
+          </Link>
+        </Col>
       </Row>
 
-      {/* Baris 2: Alert (Stok Menipis & Telat) */}
+      {/* Baris 2: Alert (Kalibrasi & Telat) */}
       <Row className="g-3 mb-4">
         <Col md={6}>
           <Card className="card-lg h-100">
             <CardBody>
               <div className="d-flex align-items-center gap-2 mb-3">
                 <IconAlertTriangle className="text-danger" size={20} />
-                <h5 className="mb-0">Stok Consumable Menipis</h5>
+                <h5 className="mb-0">Kalibrasi Jatuh Tempo / Mendekati</h5>
               </div>
-              {stokMenipis.length === 0 ? (
-                <p className="text-secondary small mb-0">Semua stok aman.</p>
+              {kalibrasiMendekati.length === 0 ? (
+                <p className="text-secondary small mb-0">Semua alat masih dalam masa kalibrasi aman.</p>
               ) : (
                 <ul className="list-unstyled mb-0 dash-list">
-                  {stokMenipis.map((item) => (
+                  {kalibrasiMendekati.map((item, idx) => (
                     <li
-                      key={item.id}
+                      key={item.id ?? idx}
                       className="d-flex justify-content-between align-items-center px-2 py-2 rounded small border-bottom"
                     >
                       <div>
                         <div className="fw-semibold">
-                          {item.nama} <span className="text-secondary fw-normal">({item.kode_barang})</span>
+                          {item.nama_alat} <span className="text-secondary fw-normal">({item.kode_alat})</span>
                         </div>
+                        {item.sn && (
+                          <div className="text-secondary" style={{ fontSize: "0.75rem" }}>
+                            SN: {item.sn}
+                          </div>
+                        )}
                       </div>
-                      <Badge bg={item.stok_tersedia === 0 ? "danger" : "warning"}>
-                        {item.stok_tersedia} unit
+                      <Badge bg="warning">
+                        {item.tanggal_kalibrasi_selanjutnya
+                          ? new Date(item.tanggal_kalibrasi_selanjutnya).toLocaleDateString("id-ID", {
+                              day: "2-digit",
+                              month: "short",
+                              year: "numeric",
+                            })
+                          : "-"}
                       </Badge>
                     </li>
                   ))}
@@ -261,16 +242,16 @@ const DashboardManager = () => {
             <CardBody>
               <div className="d-flex align-items-center gap-2 mb-3">
                 <IconClockHour4 className="text-warning" size={20} />
-                <h5 className="mb-0">Belum Dikembalikan &gt; 30 Hari</h5>
+                <h5 className="mb-0">Belum Dikembalikan (Telat)</h5>
               </div>
               {telatKembali.length === 0 ? (
                 <p className="text-secondary small mb-0">Tidak ada yang terlambat.</p>
               ) : (
                 <ul className="list-unstyled mb-0 dash-list">
-                  {telatKembali.map((item) => (
-                    <li key={item.id} className="d-flex justify-content-between align-items-center px-2 py-2 rounded small border-bottom">
+                  {telatKembali.map((item, idx) => (
+                    <li key={item.id ?? idx} className="d-flex justify-content-between align-items-center px-2 py-2 rounded small border-bottom">
                       <span>
-                        {item.nama_barang} — {item.nama_peminjam}
+                        {item.nama_alat} — {item.nama_peminjam}
                       </span>
                       <Badge bg="danger">{item.hari_terlambat} hari</Badge>
                     </li>
@@ -282,35 +263,36 @@ const DashboardManager = () => {
         </Col>
       </Row>
 
-      {/* Baris 3: Grafik Tren (Dua Kolom Bersandingan) */}
+      {/* Baris 3: Grafik Tren Peminjaman */}
       <Row className="g-3 mb-4">
-        {/* Kolom Kiri: Tren Alatukur */}
-        <Col lg={6}>
+        <Col xs={12}>
           <Card className="card-lg h-100">
             <CardBody>
               <div className="d-flex align-items-center gap-2 mb-3">
                 <IconTrendingUp className="text-primary" size={20} />
-                <h5 className="mb-0">Tren Peminjaman Alatukur (30 Hari Terakhir)</h5>
+                <h5 className="mb-0">Tren Peminjaman Alat Ukur (30 Hari Terakhir)</h5>
               </div>
               {tren.length === 0 ? (
                 <p className="text-secondary small mb-0">Belum ada data.</p>
               ) : (
-                <ResponsiveContainer width="100%" height={250}>
+                <ResponsiveContainer width="100%" height={280}>
                   <LineChart data={tren}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#555" opacity={0.3} />
                     <XAxis
                       dataKey="tanggal"
-                      tickFormatter={(val) =>
-                        new Date(String(val)).toLocaleDateString("id-ID", { day: "2-digit", month: "short" })
-                      }
+                      tickFormatter={(val) => {
+                        if (!val) return "";
+                        return new Date(String(val)).toLocaleDateString("id-ID", { day: "2-digit", month: "short" });
+                      }}
                       fontSize={12}
                       stroke="#a0a0a0"
                     />
                     <YAxis allowDecimals={false} fontSize={12} stroke="#a0a0a0" />
-                    <Alatukurtip
-                      labelFormatter={(val) =>
-                        new Date(String(val)).toLocaleDateString("id-ID", { day: "2-digit", month: "long", year: "numeric" })
-                      }
+                    <Tooltip
+                      labelFormatter={(val) => {
+                        if (!val) return "";
+                        return new Date(String(val)).toLocaleDateString("id-ID", { day: "2-digit", month: "long", year: "numeric" });
+                      }}
                     />
                     <Line
                       type="monotone"
@@ -326,54 +308,11 @@ const DashboardManager = () => {
             </CardBody>
           </Card>
         </Col>
-
-        {/* Kolom Kanan: Tren Consumable Keluar */}
-        <Col lg={6}>
-          <Card className="card-lg h-100">
-            <CardBody>
-              <div className="d-flex align-items-center gap-2 mb-3">
-                <IconTrendingUp className="text-info" size={20} />
-                <h5 className="mb-0">Tren Consumable Keluar (30 Hari Terakhir)</h5>
-              </div>
-              {trenConsumable.length === 0 ? (
-                <p className="text-secondary small mb-0">Belum ada data.</p>
-              ) : (
-                <ResponsiveContainer width="100%" height={250}>
-                  <LineChart data={trenConsumable}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#555" opacity={0.3} />
-                    <XAxis
-                      dataKey="tanggal"
-                      tickFormatter={(val) =>
-                        new Date(String(val)).toLocaleDateString("id-ID", { day: "2-digit", month: "short" })
-                      }
-                      fontSize={12}
-                      stroke="#a0a0a0"
-                    />
-                    <YAxis allowDecimals={false} fontSize={12} stroke="#a0a0a0" />
-                    <Alatukurtip
-                      labelFormatter={(val) =>
-                        new Date(String(val)).toLocaleDateString("id-ID", { day: "2-digit", month: "long", year: "numeric" })
-                      }
-                    />
-                    <Line
-                      type="monotone"
-                      dataKey="total"
-                      stroke="#17a2b8" 
-                      strokeWidth={2.5}
-                      dot={{ r: 3, fill: "#17a2b8" }}
-                      activeDot={{ r: 5 }}
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
-              )}
-            </CardBody>
-          </Card>
-        </Col>
       </Row>
 
-      {/* Baris 4: Alat Paling Sering, Consumable Laku, Status Kerusakan */}
+      {/* Baris 4: Alat Paling Sering Dipinjam */}
       <Row className="g-3 mb-4">
-        <Col md={4}>
+        <Col xs={12}>
           <Card className="card-lg h-100">
             <CardBody>
               <h6 className="mb-3">Alat Paling Sering Dipinjam</h6>
@@ -382,79 +321,22 @@ const DashboardManager = () => {
               ) : (
                 <ul className="list-unstyled mb-0 dash-list">
                   {alatTerpopuler.map((item, idx) => (
-                    <li key={idx} className="d-flex justify-content-between align-items-center px-2 py-2 rounded small border-bottom">
+                    <li key={item.kode_alat || idx} className="d-flex justify-content-between align-items-center px-2 py-2 rounded small border-bottom">
                       <div>
                         <div className="fw-semibold">
-                          {item.nama_barang} <span className="text-secondary fw-normal">({item.kode_barang || '-'})</span>
+                          {item.nama_alat} <span className="text-secondary fw-normal">({item.kode_alat || "-"})</span>
                         </div>
-                        <div className="text-secondary" style={{ fontSize: '0.75rem' }}>
-                          {item.merk || '-'} {item.ukuran ? ` • ${item.ukuran}` : ''}
+                        <div className="text-secondary" style={{ fontSize: "0.75rem" }}>
+                          {item.merk || "-"} {item.sn ? ` • SN: ${item.sn}` : ""}
                         </div>
                       </div>
-                      <Badge bg="primary" className="rounded-pill px-2">{item.total_transaksi}x</Badge>
+                      <Badge bg="primary" className="rounded-pill px-2">
+                        {item.total_dipinjam}x
+                      </Badge>
                     </li>
                   ))}
                 </ul>
               )}
-            </CardBody>
-          </Card>
-        </Col>
-        
-        <Col md={4}>
-          <Card className="card-lg h-100">
-            <CardBody>
-              <h6 className="mb-3">Consumable Paling Laku</h6>
-              {consumableTerpopuler.length === 0 ? (
-                <p className="text-secondary small mb-0">Belum ada data.</p>
-              ) : (
-                <ul className="list-unstyled mb-0 dash-list">
-                  {consumableTerpopuler.map((item, idx) => (
-                    <li key={idx} className="d-flex justify-content-between align-items-center px-2 py-2 rounded small border-bottom">
-                      <div>
-                        <div className="fw-semibold">
-                          {item.nama || item.nama_barang} <span className="text-secondary fw-normal">({item.kode_barang || '-'})</span>
-                        </div>
-                        <div className="text-secondary" style={{ fontSize: '0.75rem' }}>
-                          {item.merk || '-'} {item.ukuran ? ` • ${item.ukuran}` : ''}
-                        </div>
-                      </div>
-                      <Badge bg="info" className="rounded-pill px-2">{item.total_diambil} unit</Badge>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </CardBody>
-          </Card>
-        </Col>
-        
-        <Col md={4}>
-          <Card className="card-lg h-100">
-            <CardBody>
-              <h6 className="mb-3">Status Kerusakan Alat</h6>
-               <Row className="mb-3 pb-3 border-bottom text-center">
-                <Col xs={6} className="border-end">
-                  <div className="text-secondary small mb-1">Rusak Bulan Ini</div>
-                  <div className="h3 mb-0">{kerusakan?.bulan_ini ?? 0} <span className="fs-6 fw-normal text-secondary">unit</span></div>
-                </Col>
-                <Col xs={6}>
-                  <div className="text-secondary small mb-1">Total Rusak (Semua)</div>
-                  <div className="h3 mb-0">{kerusakan?.total_semua ?? 0} <span className="fs-6 fw-normal text-secondary">unit</span></div>
-                </Col>
-              </Row>
-              <Row className="text-center mt-2">
-                <Col xs={4}>
-                  <div className="text-secondary small mb-1">Diperbaiki</div>
-                  <div className="h4 mb-0 text-warning">{kerusakan?.sedang_diperbaiki ?? 0}</div>
-                </Col>
-                <Col xs={4} className="border-start border-end">
-                  <div className="text-secondary small mb-1">Selesai</div>
-                  <div className="h4 mb-0 text-success">{kerusakan?.sudah_diperbaiki ?? 0}</div>
-                </Col>
-                <Col xs={4}>
-                  <div className="text-secondary small mb-1">Permanen</div>
-                  <div className="h4 mb-0 text-danger">{kerusakan?.rusak_permanen ?? 0}</div>
-                </Col>
-              </Row>
             </CardBody>
           </Card>
         </Col>
@@ -472,7 +354,7 @@ const DashboardManager = () => {
                 <div style={{ maxHeight: 260, overflowY: "auto", paddingRight: "5px" }}>
                   <ul className="list-unstyled mb-0 dash-list">
                     {aktivitas.map((item, idx) => (
-                      <li key={idx} className="px-2 py-3 rounded border-bottom">
+                      <li key={`${item.waktu}-${idx}`} className="px-2 py-3 rounded border-bottom">
                         <div className="d-flex justify-content-between align-items-center gap-2">
                           <div>
                             <div className="small fw-semibold">{item.deskripsi}</div>
@@ -480,8 +362,8 @@ const DashboardManager = () => {
                               {formatWaktu(item.waktu)}
                             </div>
                           </div>
-                          <Badge bg={jenisLabel[item.jenis].color} className="flex-shrink-0 px-2 py-1">
-                            {jenisLabel[item.jenis].label}
+                          <Badge bg={jenisLabel[item.jenis]?.color || "secondary"} className="flex-shrink-0 px-2 py-1">
+                            {jenisLabel[item.jenis]?.label || item.jenis}
                           </Badge>
                         </div>
                       </li>
@@ -494,73 +376,37 @@ const DashboardManager = () => {
         </Col>
       </Row>
 
-      {/* Baris 6: Rincian Order */}
+      {/* Baris 6: Rincian Order Alat Ukur */}
       <Row className="g-3">
-        <Col md={6}>
-          <Link 
-            href="/order/order-alat ukur" 
-            style={{ textDecoration: "none", color: "inherit" }} 
+        <Col xs={12}>
+          <Link
+            href="/order/order-alat-ukur"
+            style={{ textDecoration: "none", color: "inherit" }}
             className="d-block h-100"
-            title="Ke Halaman Order Alatukur"
+            title="Ke Halaman Order Alat Ukur"
           >
             <Card className="card-lg h-100 border-primary border-opacity-25 shadow-sm" style={{ cursor: "pointer" }}>
               <CardBody>
                 <h6 className="mb-4 d-flex align-items-center gap-2">
-                  <IconShoppingCart size={20} className="text-primary"/> 
-                  Rincian Status Order Alatukur
+                  <IconShoppingCart size={20} className="text-primary" />
+                  Rincian Status Order Alat Ukur
                 </h6>
                 <Row className="text-center">
                   <Col xs={3}>
                     <div className="text-secondary small mb-1">Belum Dibeli</div>
-                    <div className="h4 mb-0 text-secondary">{orderAlatukurStatus.belum_dibeli ?? 0}</div>
+                    <div className="h4 mb-0 text-secondary">{orderAlatUkurStatus.belum_dibeli ?? 0}</div>
                   </Col>
                   <Col xs={3}>
                     <div className="text-secondary small mb-1">On Progres</div>
-                    <div className="h4 mb-0 text-primary">{orderAlatukurStatus.on_progres ?? 0}</div>
+                    <div className="h4 mb-0 text-primary">{orderAlatUkurStatus.on_progres ?? 0}</div>
                   </Col>
                   <Col xs={3}>
                     <div className="text-secondary small mb-1">Sudah Dibeli</div>
-                    <div className="h4 mb-0 text-success">{orderAlatukurStatus.sudah_dibeli ?? 0}</div>
+                    <div className="h4 mb-0 text-success">{orderAlatUkurStatus.sudah_dibeli ?? 0}</div>
                   </Col>
                   <Col xs={3}>
                     <div className="text-secondary small mb-1">Ditolak</div>
-                    <div className="h4 mb-0 text-danger">{orderAlatukurStatus.ditolak ?? 0}</div>
-                  </Col>
-                </Row>
-              </CardBody>
-            </Card>
-          </Link>
-        </Col>
-        
-        <Col md={6}>
-          <Link 
-            href="/order/order-consumable" 
-            style={{ textDecoration: "none", color: "inherit" }} 
-            className="d-block h-100"
-            title="Ke Halaman Order Consumable"
-          >
-            <Card className="card-lg h-100 border-danger border-opacity-25 shadow-sm" style={{ cursor: "pointer" }}>
-              <CardBody>
-                <h6 className="mb-4 d-flex align-items-center gap-2">
-                  <IconClipboardList size={20} className="text-danger"/> 
-                  Rincian Status Order Consumable
-                </h6>
-                <Row className="text-center">
-                  <Col xs={3}>
-                    <div className="text-secondary small mb-1">Belum Dibeli</div>
-                    <div className="h4 mb-0 text-secondary">{orderConsumableStatus.belum_dibeli ?? 0}</div>
-                  </Col>
-                  <Col xs={3}>
-                    <div className="text-secondary small mb-1">On Progres</div>
-                    <div className="h4 mb-0 text-primary">{orderConsumableStatus.on_progres ?? 0}</div>
-                  </Col>
-                  <Col xs={3}>
-                    <div className="text-secondary small mb-1">Sudah Dibeli</div>
-                    <div className="h4 mb-0 text-success">{orderConsumableStatus.sudah_dibeli ?? 0}</div>
-                  </Col>
-                  <Col xs={3}>
-                    <div className="text-secondary small mb-1">Ditolak</div>
-                    <div className="h4 mb-0 text-danger">{orderConsumableStatus.ditolak ?? 0}</div>
+                    <div className="h4 mb-0 text-danger">{orderAlatUkurStatus.ditolak ?? 0}</div>
                   </Col>
                 </Row>
               </CardBody>

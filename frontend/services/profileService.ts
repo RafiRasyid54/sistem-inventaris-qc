@@ -41,9 +41,28 @@ function mapProfileFromApi(item: UserApiResponse): ProfileApiData {
   };
 }
 
-export async function getProfile(): Promise<ProfileApiData> {
-  const data: UserApiResponse = await apiFetch("/profile");
-  return mapProfileFromApi(data);
+// Variabel untuk mencegah request ganda (deduplication)
+let profilePromise: Promise<ProfileApiData> | null = null;
+
+export async function getProfile(forceRefresh = false): Promise<ProfileApiData> {
+  // Jika sedang ada request yang berjalan dan tidak dipaksa refresh, gunakan promise yang sama
+  if (profilePromise && !forceRefresh) {
+    return profilePromise;
+  }
+
+  profilePromise = (async () => {
+    try {
+      const data: UserApiResponse = await apiFetch("/profile");
+      return mapProfileFromApi(data);
+    } finally {
+      // Reset cache promise setelah selesai agar bisa di-fetch ulang jika diperlukan nanti
+      setTimeout(() => {
+        profilePromise = null;
+      }, 5000); // Cache aktif selama 5 detik untuk mencegah spam request
+    }
+  })();
+
+  return profilePromise;
 }
 
 export async function updateProfile(values: UpdateProfilePayload): Promise<ProfileApiData> {
@@ -54,6 +73,7 @@ export async function updateProfile(values: UpdateProfilePayload): Promise<Profi
       divisi: values.divisi,
     }),
   });
+  profilePromise = null; // Reset cache saat data diubah
   return mapProfileFromApi(data);
 }
 
@@ -80,7 +100,6 @@ export async function uploadAvatar(file: File): Promise<{ avatar_path: string; a
     headers: {
       Accept: "application/json",
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      // Jangan set Content-Type manual — biar browser yang atur boundary multipart otomatis
     },
     body: formData,
   });
@@ -89,5 +108,6 @@ export async function uploadAvatar(file: File): Promise<{ avatar_path: string; a
     throw new Error("Gagal mengunggah foto profil");
   }
 
+  profilePromise = null; // Reset cache saat avatar diubah
   return res.json();
 }

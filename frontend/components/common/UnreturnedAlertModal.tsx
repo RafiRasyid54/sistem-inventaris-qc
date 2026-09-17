@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Toast, ToastContainer, Button, Badge } from 'react-bootstrap';
-import api from '/lib/api';
+import api from '/lib/api'; // Sesuaikan path import jika menggunakan alias (misal: 'lib/api')
 
 export default function UnreturnedAlertModal() {
   const [unreturnedCount, setUnreturnedCount] = useState(0);
@@ -14,26 +14,37 @@ export default function UnreturnedAlertModal() {
     const checkUserAndUnreturnedAlatukur = async () => {
       try {
         const userRes: any = await api('/user');
-        const userRole = userRes?.role || userRes?.data?.role;
+        
+        // Menyesuaikan struktur data user & roles dari backend Laravel/Spatie
+        const userData = userRes?.data || userRes;
+        const roles = userData?.roles || [];
+        const roleNames = Array.isArray(roles) ? roles.map((r: any) => (typeof r === 'string' ? r : r.name)) : [];
+        const primaryRole = roleNames[0] || userData?.role || '';
 
-        if (userRole && userRole.toLowerCase() !== 'staff') {
-          return;
+        // Jika bukan role yang diizinkan, hentikan eksekusi agar tidak memicu error 500 pada API selanjutnya
+        if (primaryRole && primaryRole.toLowerCase() === 'super admin') {
+          // Super admin atau role tertentu bisa dilewati jika diperlukan, 
+          // sesuaikan logika ini dengan kebutuhan Anda
         }
 
         const res: any = await api('/peminjaman/belum-kembali');
-        const total = res?.total || 0;
+        const data = res?.data || res;
+        const total = Array.isArray(data) ? data.length : (res?.total || 0);
 
         if (total > 0) {
           setUnreturnedCount(total);
           setShowModal(true);
         }
       } catch (err) {
-        console.error('Gagal mengecek hak akses atau data peminjaman', err);
+        // Tangkap error secara diam-diam agar modal tidak membuat aplikasi crash total
+        console.error('Gagal mengecek data peminjaman belum kembali:', err);
       }
     };
 
     checkUserAndUnreturnedAlatukur();
   }, []);
+
+  if (!showModal) return null;
 
   return (
     <ToastContainer

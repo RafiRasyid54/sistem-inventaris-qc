@@ -1112,32 +1112,29 @@ $accordion-icon-transform: rotate(-180deg) !default;
 
 // Alatukurtips
 
-// scss-docs-start alat ukurtip-variables
-$alat ukurtip-font-size: $font-size-sm !default;
-$alat ukurtip-max-width: 200px !default;
-$alat ukurtip-color: var(--#{$prefix}white) !default;
-$alat ukurtip-bg: var(--#{$prefix}gray-900) !default;
-$alat ukurtip-border-radius: $border-radius !default;
-$alat ukurtip-opacity: 0.9 !default;
-$alat ukurtip-padding-y: $spacer * 0.25 !default;
-$alat ukurtip-padding-x: $spacer * 0.5 !default;
-$alat ukurtip-margin: null !default; // TODO: remove this in v6
-$alat ukurtip-arrow-width: 0.8rem !default;
-$alat ukurtip-arrow-height: 0.4rem !default;
-// fusv-disable
-$alat ukurtip-arrow-color: null !default; // Deprecated in Bootstrap 5.2.0 for CSS variables
-// fusv-enable
-// scss-docs-end alat ukurtip-variables
+$alatukurtips-font-size: $font-size-sm !default;
+$alatukurtips-max-width: 200px !default;
+$alatukurtips-color: var(--#{$prefix}white) !default;
+$alatukurtips-bg: var(--#{$prefix}gray-900) !default;
+$alatukurtips-border-radius: $border-radius !default;
+$alatukurtips-opacity: 0.9 !default;
+$alatukurtips-padding-y: $spacer * 0.25 !default;
+$alatukurtips-padding-x: $spacer * 0.5 !default;
+$alatukurtips-margin: null !default;
+$alatukurtips-arrow-width: 0.8rem !default;
+$alatukurtips-arrow-height: 0.4rem !default;
 
-// Form alat ukurtips must come after regular alat ukurtips
-// scss-docs-start alat ukurtip-feedback-variables
-$form-feedback-alat ukurtip-padding-y: $alat ukurtip-padding-y !default;
-$form-feedback-alat ukurtip-padding-x: $alat ukurtip-padding-x !default;
-$form-feedback-alat ukurtip-font-size: $alat ukurtip-font-size !default;
-$form-feedback-alat ukurtip-line-height: null !default;
-$form-feedback-alat ukurtip-opacity: $alat ukurtip-opacity !default;
-$form-feedback-alat ukurtip-border-radius: $alat ukurtip-border-radius !default;
-// scss-docs-end alat ukurtip-feedback-variables
+// fusv-disable
+$alatukurtips-arrow-color: null !default;
+// fusv-enable
+
+// Form alatukurtips
+$form-feedback-alatukurtips-padding-y: $alatukurtips-padding-y !default;
+$form-feedback-alatukurtips-padding-x: $alatukurtips-padding-x !default;
+$form-feedback-alatukurtips-font-size: $alatukurtips-font-size !default;
+$form-feedback-alatukurtips-line-height: null !default;
+$form-feedback-alatukurtips-opacity: $alatukurtips-opacity !default;
+$form-feedback-alatukurtips-border-radius: $alatukurtips-border-radius !default;
 
 // Popovers
 

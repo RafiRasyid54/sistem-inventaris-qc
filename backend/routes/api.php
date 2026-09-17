@@ -5,107 +5,271 @@ use Illuminate\Support\Facades\Route;
 
 // --- Controller Imports ---
 use App\Http\Controllers\Api\AuthController;
-use App\Http\Controllers\Api\AlatUkurController; 
+use App\Http\Controllers\Api\AlatUkurController;
 use App\Http\Controllers\Api\PeminjamanController;
-use App\Http\Controllers\Api\RiwayatKalibrasiController; // Tambahan untuk Kalibrasi
+use App\Http\Controllers\Api\RiwayatKalibrasiController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\RolePermissionController;
+use App\Http\Controllers\Api\DashboardController;
 
 // ==========================================
-// 1. ROUTE PUBLIK (Tanpa Auth)
+// 1. ROUTE PUBLIK
 // ==========================================
+
 Route::post('/login', [AuthController::class, 'login']);
 
+
 // ==========================================
-// 2. ROUTE TERLINDUNG (WAJIB LOGIN & CEK HAK AKSES)
+// 2. ROUTE TEST AUTH SANCTUM
 // ==========================================
+// HANYA UNTUK DEBUGGING
+// Hapus route ini setelah masalah Sanctum selesai.
+
+Route::get('/test-auth', function (Request $request) {
+    return response()->json([
+        'authenticated' => $request->user() !== null,
+        'user' => $request->user(),
+        'token_received' => $request->bearerToken() !== null,
+        'token_prefix' => $request->bearerToken()
+            ? substr($request->bearerToken(), 0, 3) . '...'
+            : null,
+    ]);
+});
+
+
+// ==========================================
+// 3. ROUTE TERLINDUNG
+// WAJIB MENGGUNAKAN TOKEN SANCTUM
+// ==========================================
+
 Route::middleware('auth:sanctum')->group(function () {
 
-    // ------------------------------------------
-    // A. GENERAL (Bisa diakses siapapun yang login)
-    // ------------------------------------------
+    // ==========================================
+    // A. GENERAL
+    // ==========================================
+
+    // Logout
     Route::post('/logout', [AuthController::class, 'logout']);
 
+    // User yang sedang login
     Route::get('/user', function (Request $request) {
-        $user = $request->user()->load('roles', 'permissions');
-        $user->all_permissions = $user->getAllPermissions()->pluck('name');
-        return $user;
+
+        $user = $request->user();
+
+        $roles = method_exists($user, 'getRoleNames')
+            ? $user->getRoleNames()->map(
+                fn ($role) => ['name' => $role]
+            )
+            : [];
+
+        $permissions = method_exists($user, 'getAllPermissions')
+            ? $user->getAllPermissions()->pluck('name')
+            : [];
+
+        return response()->json([
+            'id' => $user->id,
+            'name' => $user->name ?? $user->full_name ?? null,
+            'email' => $user->email,
+            'roles' => $roles,
+            'all_permissions' => $permissions,
+        ]);
     });
+
+
+    // ==========================================
+    // B. PROFILE
+    // ==========================================
 
     Route::get('/profile', [UserController::class, 'profile']);
+
     Route::put('/profile', [UserController::class, 'updateProfile']);
+
     Route::patch('/profile', [UserController::class, 'updateProfile']);
+
     Route::post('/profile/photo', [UserController::class, 'uploadPhoto']);
+
     Route::patch('/profile/password', [UserController::class, 'changePassword']);
 
-    // ------------------------------------------
-    // B. MODUL ALAT UKUR & KALIBRASI
-    // ------------------------------------------
-    Route::middleware('permission:view_inventaris')->group(function () {
-        Route::apiResource('alat-ukur', AlatUkurController::class)->only(['index', 'show']);
-        
-        // --- RIWAYAT KALIBRASI ---
-        // Mengambil semua riwayat kalibrasi dari satu alat ukur tertentu
-        Route::get('/alat-ukur/{alat_ukur_id}/riwayat-kalibrasi', [RiwayatKalibrasiController::class, 'getByAlatUkur']);
-    });
 
-    Route::middleware('permission:manage_inventaris')->group(function () {
-        Route::apiResource('alat-ukur', AlatUkurController::class)->except(['index', 'show']);
-        
-        // Menambah/merubah riwayat kalibrasi
-        Route::apiResource('riwayat-kalibrasi', RiwayatKalibrasiController::class)->except(['index', 'show']);
-    });
+    // ==========================================
+    // C. MODUL ALAT UKUR & KALIBRASI
+    // ==========================================
 
-    // ------------------------------------------
-    // C. MODUL TRANSAKSI (Peminjaman & Pengembalian)
-    // ------------------------------------------
-    // Rute Scan Peminjaman
-    Route::post('/peminjaman/scan', [PeminjamanController::class, 'scan']);
-    Route::get('/peminjaman/antrean', [PeminjamanController::class, 'antrean']);
-    Route::patch('/peminjaman/cart/{id}', [PeminjamanController::class, 'updateCartItem']);
-    Route::delete('/peminjaman/cart/{id}', [PeminjamanController::class, 'removeCartItem']);
+    Route::apiResource(
+        'alat-ukur',
+        AlatUkurController::class
+    );
 
-    // Riwayat Peminjaman (Aktif/Belum Kembali)
-    Route::middleware('permission:view_riwayat')->group(function () {
-        Route::get('/peminjaman/belum-kembali', [PeminjamanController::class, 'belumKembali']);
-    });
+    // Riwayat kalibrasi berdasarkan alat ukur
+    Route::get(
+        '/alat-ukur/{alat_ukur_id}/riwayat-kalibrasi',
+        [RiwayatKalibrasiController::class, 'getByAlatUkur']
+    );
 
-    Route::middleware('permission:view_transaksi|view_riwayat')->group(function () {
-        Route::apiResource('peminjaman', PeminjamanController::class)->only(['index', 'show']);
-    });
+    // CRUD riwayat kalibrasi
+    Route::apiResource(
+        'riwayat-kalibrasi',
+        RiwayatKalibrasiController::class
+    );
 
-    // Proses Peminjaman dan Pengembalian
-    Route::middleware('permission:process_transaksi')->group(function () {
-        Route::post('/peminjaman/proses', [PeminjamanController::class, 'prosesPeminjaman']);
-        Route::patch('/peminjaman/{id}/kembali', [PeminjamanController::class, 'kembali']);
-    });
 
-    Route::middleware('permission:manage_transaksi')->group(function () {
-        Route::apiResource('peminjaman', PeminjamanController::class)->except(['index', 'show', 'store']);
-    });
+    // ==========================================
+    // D. MODUL TRANSAKSI
+    // PEMINJAMAN & PENGEMBALIAN
+    // ==========================================
 
-    // ------------------------------------------
-    // D. MODUL ADMINISTRASI
-    // ------------------------------------------
-    Route::middleware('permission:view_users')->group(function () {
-        Route::apiResource('users', UserController::class)->only(['index', 'show']);
-    });
+    // Scan alat ukur
+    Route::post(
+        '/peminjaman/scan',
+        [PeminjamanController::class, 'scan']
+    );
 
-    Route::middleware('permission:manage_users')->group(function () {
-        Route::apiResource('users', UserController::class)->except(['index', 'show']);
-        Route::patch('/users/{id}/reset-password', [UserController::class, 'resetPassword']);
-        Route::patch('/users/{id}/aktifkan', [UserController::class, 'activate']);
-        Route::get('/roles', [RolePermissionController::class, 'index']);
-    });
+    // Antrean peminjaman
+    Route::get(
+        '/peminjaman/antrean',
+        [PeminjamanController::class, 'antrean']
+    );
 
-    Route::middleware('role:Super Admin')->group(function () {
-        Route::get('/permissions/matrix', [RolePermissionController::class, 'getMatrix']);
-        Route::put('/permissions/matrix', [RolePermissionController::class, 'updateMatrix']);
-        Route::post('/roles', [RolePermissionController::class, 'store']);
-        Route::patch('/roles/{id}/color', [RolePermissionController::class, 'updateColor']);
-        Route::delete('/roles/{id}', [RolePermissionController::class, 'destroy']);
-        Route::get('/roles/{id}/permissions', [RolePermissionController::class, 'getRolePermissions']);
-        Route::put('/roles/{id}/permissions', [RolePermissionController::class, 'updateRolePermissions']);
-    });
+    // Update item cart
+    Route::patch(
+        '/peminjaman/cart/{id}',
+        [PeminjamanController::class, 'updateCartItem']
+    );
 
+    // Hapus item cart
+    Route::delete(
+        '/peminjaman/cart/{id}',
+        [PeminjamanController::class, 'removeCartItem']
+    );
+
+    // Alat yang belum dikembalikan
+    Route::get(
+        '/peminjaman/belum-kembali',
+        [PeminjamanController::class, 'belumKembali']
+    );
+
+    // Proses peminjaman
+    Route::post(
+        '/peminjaman/proses',
+        [PeminjamanController::class, 'prosesPeminjaman']
+    );
+
+    // Pengembalian alat
+    Route::patch(
+        '/peminjaman/{id}/kembali',
+        [PeminjamanController::class, 'kembali']
+    );
+
+    // CRUD peminjaman
+    Route::apiResource(
+        'peminjaman',
+        PeminjamanController::class
+    );
+
+
+    // ==========================================
+    // E. MODUL ADMINISTRASI USER
+    // ==========================================
+
+    // CRUD user
+    Route::apiResource(
+        'users',
+        UserController::class
+    );
+
+    // Reset password
+    Route::patch(
+        '/users/{id}/reset-password',
+        [UserController::class, 'resetPassword']
+    );
+
+    // Aktifkan user
+    Route::patch(
+        '/users/{id}/aktifkan',
+        [UserController::class, 'activate']
+    );
+
+
+    // ==========================================
+    // F. MODUL ROLE & PERMISSION
+    // ==========================================
+
+    // Daftar roles
+    Route::get(
+        '/roles',
+        [RolePermissionController::class, 'index']
+    );
+
+    // Matrix permission
+    Route::get(
+        '/permissions/matrix',
+        [RolePermissionController::class, 'getMatrix']
+    );
+
+    Route::put(
+        '/permissions/matrix',
+        [RolePermissionController::class, 'updateMatrix']
+    );
+
+    // CRUD role
+    Route::post(
+        '/roles',
+        [RolePermissionController::class, 'store']
+    );
+
+    Route::patch(
+        '/roles/{id}/color',
+        [RolePermissionController::class, 'updateColor']
+    );
+
+    Route::delete(
+        '/roles/{id}',
+        [RolePermissionController::class, 'destroy']
+    );
+
+    // Permission berdasarkan role
+    Route::get(
+        '/roles/{id}/permissions',
+        [RolePermissionController::class, 'getRolePermissions']
+    );
+
+    Route::put(
+        '/roles/{id}/permissions',
+        [RolePermissionController::class, 'updateRolePermissions']
+    );
+
+
+    // ==========================================
+    // G. MODUL DASHBOARD
+    // ==========================================
+
+    Route::get(
+        '/dashboard/summary',
+        [DashboardController::class, 'summary']
+    );
+
+    Route::get(
+        '/dashboard/kalibrasi-mendekati',
+        [DashboardController::class, 'kalibrasiMendekati']
+    );
+
+    Route::get(
+        '/dashboard/telat-kembali',
+        [DashboardController::class, 'telatKembali']
+    );
+
+    Route::get(
+        '/dashboard/alat-terpopuler',
+        [DashboardController::class, 'alatTerpopuler']
+    );
+
+    Route::get(
+        '/dashboard/aktivitas-terbaru',
+        [DashboardController::class, 'aktivitasTerbaru']
+    );
+
+    Route::get(
+        '/dashboard/tren-peminjaman',
+        [DashboardController::class, 'trenPeminjaman']
+    );
 });
