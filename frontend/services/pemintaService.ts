@@ -1,97 +1,65 @@
-import apiFetch from "lib/api";
-import { PeminjamType } from "types/DataAlatukurTypes";
-import { PeminjamFormValues } from "components/ruangalat ukur/datapeminjam/PeminjamFormModal";
+import apiFetch from "../lib/apiFetch"; // Sesuaikan jalur relatif ke folder lib Anda
+import { PeminjamType } from "../types/DataAlatUkurTypes";
 
-interface PemintaApiResponse {
-  id: string; // Ini sekarang berisi nomor RFID atau UUID bawaan
-  nama: string;
-  divisi: string | null;
-  aktif: boolean;
-  role?: "user" | "inventory man"; // <-- Tambahkan properti role
-}
+// Helper untuk mapping data dari backend (nama_peminta -> nama)
+const mapResponseItem = (item: any): PeminjamType => ({
+  ...item,
+  nama: item.nama_peminta || item.nama || "",
+});
 
-interface PemintaApiPayload {
-  id?: string; // Tambahkan ini agar ID hasil scan dikirim ke Laravel
-  nama: string;
-  divisi: string;
-  role?: "user" | "inventory man"; // <-- Tambahkan properti role
-}
-
-function mapPemintaFromApi(item: PemintaApiResponse): PeminjamType {
-  return {
-    id: item.id,
-    nama: item.nama,
-    divisi: item.divisi ?? "-",
-    aktif: item.aktif,
-    role: item.role ?? "user", // <-- Petakan role dari API
-  };
-}
-
-function mapPemintaToApi(values: PeminjamFormValues & { role?: "user" | "inventory man" }): PemintaApiPayload {
-  const payload: PemintaApiPayload = {
-    nama: values.nama,
-    divisi: values.divisi,
-    role: values.role ?? "user", // <-- Kirim role ke API
-  };
-
-  // Jika kolom RFID di form diisi, masukkan ke paket data untuk dikirim ke API
-  if (values.id && values.id.trim() !== "") {
-    payload.id = values.id;
-  }
-
-  return payload;
-}
-
-// Semua peminjam (aktif + nonaktif) -- dipakai di halaman manajemen Data Peminjam
 export async function getPeminta(): Promise<PeminjamType[]> {
-  const data = await apiFetch<PemintaApiResponse[]>("/peminta");
-  return data.map(mapPemintaFromApi);
+  const res = await apiFetch<{ status: string; data: any[] }>("/peminta");
+  const rawData = res.data ?? [];
+  return rawData.map(mapResponseItem);
 }
 
-// Cuma peminjam yang AKTIF -- dipakai buat dropdown di form peminjaman
-export async function getPemintaAktif(): Promise<PeminjamType[]> {
-  const data = await apiFetch<PemintaApiResponse[]>("/peminta?aktif=1");
-  return data.map(mapPemintaFromApi);
-}
+export async function createPeminta(values: any): Promise<PeminjamType> {
+  const payload = {
+    id: values.id || undefined, // Biarkan kosong/undefined jika di-generate otomatis oleh backend
+    nama_peminta: values.nama || values.nama_peminta,
+    divisi: values.divisi,
+    role: values.role,
+  };
 
-export async function createPeminta(values: PeminjamFormValues): Promise<PeminjamType> {
-  const data = await apiFetch<PemintaApiResponse>("/peminta", {
+  const res = await apiFetch<{ status: string; data: any }>("/peminta", {
     method: "POST",
-    body: JSON.stringify(mapPemintaToApi(values)),
+    body: JSON.stringify(payload),
   });
-  return mapPemintaFromApi(data);
+  return mapResponseItem(res.data);
 }
 
-export async function updatePeminta(id: string, values: PeminjamFormValues): Promise<PeminjamType> {
-  const data = await apiFetch<PemintaApiResponse>(`/peminta/${id}`, {
+export async function updatePeminta(id: string, values: any): Promise<PeminjamType> {
+  const payload = {
+    nama_peminta: values.nama || values.nama_peminta,
+    divisi: values.divisi,
+    role: values.role,
+  };
+
+  const res = await apiFetch<{ status: string; data: any }>(`/peminta/${id}`, {
     method: "PUT",
-    body: JSON.stringify(mapPemintaToApi(values)),
+    body: JSON.stringify(payload),
   });
-  return mapPemintaFromApi(data);
+  return mapResponseItem(res.data);
 }
 
-// --- FUNGSI BARU: KHUSUS UNTUK MENGUBAH ROLE SAJA ---
-export async function updateRolePeminta(id: string, role: "user" | "inventory man"): Promise<PeminjamType> {
-  const data = await apiFetch<PemintaApiResponse>(`/peminta/${id}`, {
-    method: "PATCH",
-    body: JSON.stringify({ role }),
-  });
-  return mapPemintaFromApi(data);
-}
-
-// Ganti nama dari deletePeminta -> nonaktifkanPeminta
 export async function nonaktifkanPeminta(id: string): Promise<PeminjamType> {
-  const res = await apiFetch<{ message: string; data: PemintaApiResponse }>(
-    `/peminta/${id}`,
-    { method: "DELETE" }
-  );
-  return mapPemintaFromApi(res.data);
+  const res = await apiFetch<{ status: string; data: any }>(`/peminta/${id}`, {
+    method: "DELETE",
+  });
+  return mapResponseItem(res.data);
 }
 
 export async function aktifkanPeminta(id: string): Promise<PeminjamType> {
-  const res = await apiFetch<{ message: string; data: PemintaApiResponse }>(
-    `/peminta/${id}/aktifkan`,
-    { method: "PATCH" }
-  );
-  return mapPemintaFromApi(res.data);
+  const res = await apiFetch<{ status: string; data: any }>(`/peminta/${id}/aktifkan`, {
+    method: "PATCH",
+  });
+  return mapResponseItem(res.data);
+}
+
+export async function updateRolePeminta(id: string, roleBaru: string): Promise<PeminjamType> {
+  const res = await apiFetch<{ status: string; data: any }>(`/peminta/${id}`, {
+    method: "PUT",
+    body: JSON.stringify({ role: roleBaru }),
+  });
+  return mapResponseItem(res.data);
 }

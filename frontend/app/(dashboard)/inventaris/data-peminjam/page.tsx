@@ -2,7 +2,7 @@
 import { Metadata } from "next";
 
 // import custom components
-import DataPeminjamManager from "components/ruangalat ukur/datapeminjam/DataPeminjamManager";
+import DataPeminjamManager from "components/datapeminjam/DataPeminjamManager";
 
 export const metadata: Metadata = {
   title: "Data Peminjam | Ruang Alatukur - Admin Panel",

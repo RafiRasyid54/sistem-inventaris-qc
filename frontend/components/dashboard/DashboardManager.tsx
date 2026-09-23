@@ -50,13 +50,13 @@ const jenisLabel: Record<AktivitasItem["jenis"], { label: string; color: string 
   pengembalian: { label: "Pengembalian", color: "success" },
 };
 
-// --- DATA DUMMY (SESUAIKAN DENGAN INTERFACE TYPESCRIPT) ---
+// --- DATA DUMMY ---
 const dummySummary: DashboardSummary = {
   total_alat_ukur: 142,
   sedang_dipinjam: 12,
   peringatan_kalibrasi: 5,
   total_peminta_aktif: 28,
-  total_pekerjaan_aktif: 4, // Ditambahkan sesuai error TypeScript
+  total_pekerjaan_aktif: 4,
   order_alat_ukur_status: {
     belum_dibeli: 3,
     on_progres: 2,
@@ -76,8 +76,8 @@ const dummyTelat: TelatKembaliItem[] = [
     nama_alat: "Dial Indicator", 
     nama_peminjam: "Ahmad Fauzi", 
     hari_terlambat: 3,
-    kode_alat: "AL-022", // Ditambahkan sesuai error TypeScript
-    tanggal_pinjam: "2026-09-01" // Ditambahkan sesuai error TypeScript
+    kode_alat: "AL-022",
+    tanggal_pinjam: "2026-09-01"
   },
 ];
 
@@ -110,13 +110,13 @@ const DashboardManager = () => {
   const [error] = useState<string | null>(null);
 
   const PageHeader = (
-    <Row>
+    <Row className="mb-4 align-items-center">
       <Col>
-        <Flex justifyContent="between" alignItems="center" className="mb-4 w-100" breakpoint="md">
+        <Flex justifyContent="between" alignItems="center" className="w-100" breakpoint="md">
           <div>
-            <h1 className="mb-2 h2">Dashboard (Mode Dummy)</h1>
-            <p className="text-secondary mb-0">
-              Ringkasan aktivitas peminjaman dan status kalibrasi Alat Ukur.
+            <h1 className="h3 mb-1 fw-bold text-dark">Dashboard Pengelola</h1>
+            <p className="text-muted small mb-2">
+              Ringkasan aktivitas peminjaman dan status kalibrasi Alat Ukur secara real-time.
             </p>
             <DasherBreadcrumb />
           </div>
@@ -129,7 +129,7 @@ const DashboardManager = () => {
     return (
       <>
         {PageHeader}
-        <div className="text-center py-6">Memuat dashboard...</div>
+        <div className="text-center py-5 text-muted">Memuat data dashboard...</div>
       </>
     );
   }
@@ -146,15 +146,15 @@ const DashboardManager = () => {
   const orderAlatUkurStatus: Partial<OrderAlatUkurStatusCount> = summary?.order_alat_ukur_status ?? {};
 
   return (
-    <>
+    <div className="py-2">
       {PageHeader}
 
       {/* Baris 1: Ringkasan Utama */}
       <Row className="g-3 mb-4">
         <Col xs={6} md={6} xl={3}>
-          <Link href="/inventaris/data-alat-ukur" style={{ textDecoration: "none", color: "inherit", display: "block" }}>
+          <Link href="/inventaris/data-alat-ukur" className="text-decoration-none">
             <StatCard
-              icon={<IconRuler2 size={26} />}
+              icon={<IconRuler2 size={24} />}
               title="Total Alat Ukur"
               value={summary?.total_alat_ukur ?? 0}
               variant="primary"
@@ -162,9 +162,9 @@ const DashboardManager = () => {
           </Link>
         </Col>
         <Col xs={6} md={6} xl={3}>
-          <Link href="/transaksi/peminjaman-aktif" style={{ textDecoration: "none", color: "inherit", display: "block" }}>
+          <Link href="/transaksi/peminjaman-aktif" className="text-decoration-none">
             <StatCard
-              icon={<IconClockHour4 size={26} />}
+              icon={<IconClockHour4 size={24} />}
               title="Sedang Dipinjam"
               value={summary?.sedang_dipinjam ?? 0}
               variant="warning"
@@ -172,9 +172,9 @@ const DashboardManager = () => {
           </Link>
         </Col>
         <Col xs={6} md={6} xl={3}>
-          <Link href="/inventaris/data-alat-ukur" style={{ textDecoration: "none", color: "inherit", display: "block" }}>
+          <Link href="/inventaris/data-alat-ukur" className="text-decoration-none">
             <StatCard
-              icon={<IconAlertTriangle size={26} />}
+              icon={<IconAlertTriangle size={24} />}
               title="Peringatan Kalibrasi"
               value={summary?.peringatan_kalibrasi ?? 0}
               variant="danger"
@@ -182,9 +182,9 @@ const DashboardManager = () => {
           </Link>
         </Col>
         <Col xs={6} md={6} xl={3}>
-          <Link href="/inventaris/data-peminjam" style={{ textDecoration: "none", color: "inherit", display: "block" }}>
+          <Link href="/inventaris/data-peminjam" className="text-decoration-none">
             <StatCard
-              icon={<IconUsers size={26} />}
+              icon={<IconUsers size={24} />}
               title="Total Peminjam Aktif"
               value={summary?.total_peminta_aktif ?? 0}
               variant="success"
@@ -196,32 +196,32 @@ const DashboardManager = () => {
       {/* Baris 2: Alert (Kalibrasi & Telat) */}
       <Row className="g-3 mb-4">
         <Col md={6}>
-          <Card className="card-lg h-100">
-            <CardBody>
+          <Card className="border-0 shadow-sm rounded-3 h-100">
+            <CardBody className="p-4">
               <div className="d-flex align-items-center gap-2 mb-3">
                 <IconAlertTriangle className="text-danger" size={20} />
-                <h5 className="mb-0">Kalibrasi Jatuh Tempo / Mendekati</h5>
+                <h5 className="mb-0 fs-6 fw-bold">Kalibrasi Jatuh Tempo / Mendekati</h5>
               </div>
               {kalibrasiMendekati.length === 0 ? (
-                <p className="text-secondary small mb-0">Semua alat masih dalam masa kalibrasi aman.</p>
+                <p className="text-muted small mb-0">Semua alat masih dalam masa kalibrasi aman.</p>
               ) : (
-                <ul className="list-unstyled mb-0 dash-list">
+                <ul className="list-unstyled mb-0">
                   {kalibrasiMendekati.map((item, idx) => (
                     <li
                       key={item.id ?? idx}
-                      className="d-flex justify-content-between align-items-center px-2 py-2 rounded small border-bottom"
+                      className="d-flex justify-content-between align-items-center py-2 px-2 rounded-2 border-bottom hover-bg"
                     >
                       <div>
-                        <div className="fw-semibold">
-                          {item.nama_alat} <span className="text-secondary fw-normal">({item.kode_alat})</span>
+                        <div className="fw-semibold small text-dark">
+                          {item.nama_alat} <span className="text-muted fw-normal">({item.kode_alat})</span>
                         </div>
                         {item.sn && (
-                          <div className="text-secondary" style={{ fontSize: "0.75rem" }}>
+                          <div className="text-muted" style={{ fontSize: "0.75rem" }}>
                             SN: {item.sn}
                           </div>
                         )}
                       </div>
-                      <Badge bg="warning">
+                      <Badge bg="warning" text="dark" className="px-2 py-1">
                         {item.tanggal_kalibrasi_selanjutnya
                           ? new Date(item.tanggal_kalibrasi_selanjutnya).toLocaleDateString("id-ID", {
                               day: "2-digit",
@@ -238,22 +238,22 @@ const DashboardManager = () => {
           </Card>
         </Col>
         <Col md={6}>
-          <Card className="card-lg h-100">
-            <CardBody>
+          <Card className="border-0 shadow-sm rounded-3 h-100">
+            <CardBody className="p-4">
               <div className="d-flex align-items-center gap-2 mb-3">
                 <IconClockHour4 className="text-warning" size={20} />
-                <h5 className="mb-0">Belum Dikembalikan (Telat)</h5>
+                <h5 className="mb-0 fs-6 fw-bold">Belum Dikembalikan (Telat)</h5>
               </div>
               {telatKembali.length === 0 ? (
-                <p className="text-secondary small mb-0">Tidak ada yang terlambat.</p>
+                <p className="text-muted small mb-0">Tidak ada peminjaman yang terlambat.</p>
               ) : (
-                <ul className="list-unstyled mb-0 dash-list">
+                <ul className="list-unstyled mb-0">
                   {telatKembali.map((item, idx) => (
-                    <li key={item.id ?? idx} className="d-flex justify-content-between align-items-center px-2 py-2 rounded small border-bottom">
-                      <span>
-                        {item.nama_alat} — {item.nama_peminjam}
+                    <li key={item.id ?? idx} className="d-flex justify-content-between align-items-center py-2 px-2 rounded-2 border-bottom">
+                      <span className="small text-dark fw-medium">
+                        {item.nama_alat} <span className="text-muted">— {item.nama_peminjam}</span>
                       </span>
-                      <Badge bg="danger">{item.hari_terlambat} hari</Badge>
+                      <Badge bg="danger" className="px-2 py-1">{item.hari_terlambat} hari</Badge>
                     </li>
                   ))}
                 </ul>
@@ -266,44 +266,46 @@ const DashboardManager = () => {
       {/* Baris 3: Grafik Tren Peminjaman */}
       <Row className="g-3 mb-4">
         <Col xs={12}>
-          <Card className="card-lg h-100">
-            <CardBody>
+          <Card className="border-0 shadow-sm rounded-3">
+            <CardBody className="p-4">
               <div className="d-flex align-items-center gap-2 mb-3">
                 <IconTrendingUp className="text-primary" size={20} />
-                <h5 className="mb-0">Tren Peminjaman Alat Ukur (30 Hari Terakhir)</h5>
+                <h5 className="mb-0 fs-6 fw-bold">Tren Peminjaman Alat Ukur (30 Hari Terakhir)</h5>
               </div>
               {tren.length === 0 ? (
-                <p className="text-secondary small mb-0">Belum ada data.</p>
+                <p className="text-muted small mb-0">Belum ada data tren.</p>
               ) : (
-                <ResponsiveContainer width="100%" height={280}>
-                  <LineChart data={tren}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#555" opacity={0.3} />
-                    <XAxis
-                      dataKey="tanggal"
-                      tickFormatter={(val) => {
-                        if (!val) return "";
-                        return new Date(String(val)).toLocaleDateString("id-ID", { day: "2-digit", month: "short" });
-                      }}
-                      fontSize={12}
-                      stroke="#a0a0a0"
-                    />
-                    <YAxis allowDecimals={false} fontSize={12} stroke="#a0a0a0" />
-                    <Tooltip
-                      labelFormatter={(val) => {
-                        if (!val) return "";
-                        return new Date(String(val)).toLocaleDateString("id-ID", { day: "2-digit", month: "long", year: "numeric" });
-                      }}
-                    />
-                    <Line
-                      type="monotone"
-                      dataKey="total"
-                      stroke="#006492"
-                      strokeWidth={2.5}
-                      dot={{ r: 3, fill: "#006492" }}
-                      activeDot={{ r: 5 }}
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
+                <div style={{ width: "100%", height: 260 }}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={tren}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#e9ecef" />
+                      <XAxis
+                        dataKey="tanggal"
+                        tickFormatter={(val) => {
+                          if (!val) return "";
+                          return new Date(String(val)).toLocaleDateString("id-ID", { day: "2-digit", month: "short" });
+                        }}
+                        fontSize={12}
+                        stroke="#6c757d"
+                      />
+                      <YAxis allowDecimals={false} fontSize={12} stroke="#6c757d" />
+                      <Tooltip
+                        labelFormatter={(val) => {
+                          if (!val) return "";
+                          return new Date(String(val)).toLocaleDateString("id-ID", { day: "2-digit", month: "long", year: "numeric" });
+                        }}
+                      />
+                      <Line
+                        type="monotone"
+                        dataKey="total"
+                        stroke="#0d6efd"
+                        strokeWidth={2.5}
+                        dot={{ r: 3, fill: "#0d6efd" }}
+                        activeDot={{ r: 5 }}
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
               )}
             </CardBody>
           </Card>
@@ -313,25 +315,25 @@ const DashboardManager = () => {
       {/* Baris 4: Alat Paling Sering Dipinjam */}
       <Row className="g-3 mb-4">
         <Col xs={12}>
-          <Card className="card-lg h-100">
-            <CardBody>
-              <h6 className="mb-3">Alat Paling Sering Dipinjam</h6>
+          <Card className="border-0 shadow-sm rounded-3">
+            <CardBody className="p-4">
+              <h6 className="mb-3 fs-6 fw-bold">Alat Paling Sering Dipinjam</h6>
               {alatTerpopuler.length === 0 ? (
-                <p className="text-secondary small mb-0">Belum ada data.</p>
+                <p className="text-muted small mb-0">Belum ada data.</p>
               ) : (
-                <ul className="list-unstyled mb-0 dash-list">
+                <ul className="list-unstyled mb-0">
                   {alatTerpopuler.map((item, idx) => (
-                    <li key={item.kode_alat || idx} className="d-flex justify-content-between align-items-center px-2 py-2 rounded small border-bottom">
+                    <li key={item.kode_alat || idx} className="d-flex justify-content-between align-items-center py-2 px-2 border-bottom">
                       <div>
-                        <div className="fw-semibold">
-                          {item.nama_alat} <span className="text-secondary fw-normal">({item.kode_alat || "-"})</span>
+                        <div className="fw-semibold small text-dark">
+                          {item.nama_alat} <span className="text-muted fw-normal">({item.kode_alat || "-"})</span>
                         </div>
-                        <div className="text-secondary" style={{ fontSize: "0.75rem" }}>
+                        <div className="text-muted" style={{ fontSize: "0.75rem" }}>
                           {item.merk || "-"} {item.sn ? ` • SN: ${item.sn}` : ""}
                         </div>
                       </div>
-                      <Badge bg="primary" className="rounded-pill px-2">
-                        {item.total_dipinjam}x
+                      <Badge bg="light" text="primary" className="border px-2 py-1 rounded-pill fw-semibold">
+                        {item.total_dipinjam}x dipinjam
                       </Badge>
                     </li>
                   ))}
@@ -345,24 +347,24 @@ const DashboardManager = () => {
       {/* Baris 5: Aktivitas Terbaru */}
       <Row className="g-3 mb-4">
         <Col md={12}>
-          <Card className="card-lg h-100">
-            <CardBody>
-              <h5 className="mb-3">Aktivitas Terbaru</h5>
+          <Card className="border-0 shadow-sm rounded-3">
+            <CardBody className="p-4">
+              <h5 className="mb-3 fs-6 fw-bold">Aktivitas Terbaru</h5>
               {aktivitas.length === 0 ? (
-                <p className="text-secondary small mb-0">Belum ada aktivitas.</p>
+                <p className="text-muted small mb-0">Belum ada aktivitas.</p>
               ) : (
                 <div style={{ maxHeight: 260, overflowY: "auto", paddingRight: "5px" }}>
-                  <ul className="list-unstyled mb-0 dash-list">
+                  <ul className="list-unstyled mb-0">
                     {aktivitas.map((item, idx) => (
-                      <li key={`${item.waktu}-${idx}`} className="px-2 py-3 rounded border-bottom">
+                      <li key={`${item.waktu}-${idx}`} className="py-2 px-2 border-bottom">
                         <div className="d-flex justify-content-between align-items-center gap-2">
                           <div>
-                            <div className="small fw-semibold">{item.deskripsi}</div>
-                            <div className="text-secondary mt-1" style={{ fontSize: "0.75rem" }}>
+                            <div className="small fw-semibold text-dark">{item.deskripsi}</div>
+                            <div className="text-muted mt-1" style={{ fontSize: "0.75rem" }}>
                               {formatWaktu(item.waktu)}
                             </div>
                           </div>
-                          <Badge bg={jenisLabel[item.jenis]?.color || "secondary"} className="flex-shrink-0 px-2 py-1">
+                          <Badge bg={jenisLabel[item.jenis]?.color || "secondary"} className="px-2 py-1">
                             {jenisLabel[item.jenis]?.label || item.jenis}
                           </Badge>
                         </div>
@@ -377,36 +379,34 @@ const DashboardManager = () => {
       </Row>
 
       {/* Baris 6: Rincian Order Alat Ukur */}
-      <Row className="g-3">
+      <Row className="g-3 mb-4">
         <Col xs={12}>
           <Link
             href="/order/order-alat-ukur"
-            style={{ textDecoration: "none", color: "inherit" }}
-            className="d-block h-100"
-            title="Ke Halaman Order Alat Ukur"
+            className="text-decoration-none d-block"
           >
-            <Card className="card-lg h-100 border-primary border-opacity-25 shadow-sm" style={{ cursor: "pointer" }}>
-              <CardBody>
-                <h6 className="mb-4 d-flex align-items-center gap-2">
+            <Card className="border border-primary border-opacity-25 shadow-sm rounded-3 hover-shadow transition-all">
+              <CardBody className="p-4">
+                <h6 className="mb-3 d-flex align-items-center gap-2 fs-6 fw-bold text-dark">
                   <IconShoppingCart size={20} className="text-primary" />
                   Rincian Status Order Alat Ukur
                 </h6>
-                <Row className="text-center">
+                <Row className="text-center g-2">
                   <Col xs={3}>
-                    <div className="text-secondary small mb-1">Belum Dibeli</div>
-                    <div className="h4 mb-0 text-secondary">{orderAlatUkurStatus.belum_dibeli ?? 0}</div>
+                    <div className="text-muted small mb-1">Belum Dibeli</div>
+                    <div className="h5 mb-0 text-secondary fw-bold">{orderAlatUkurStatus.belum_dibeli ?? 0}</div>
                   </Col>
                   <Col xs={3}>
-                    <div className="text-secondary small mb-1">On Progres</div>
-                    <div className="h4 mb-0 text-primary">{orderAlatUkurStatus.on_progres ?? 0}</div>
+                    <div className="text-muted small mb-1">On Progres</div>
+                    <div className="h5 mb-0 text-primary fw-bold">{orderAlatUkurStatus.on_progres ?? 0}</div>
                   </Col>
                   <Col xs={3}>
-                    <div className="text-secondary small mb-1">Sudah Dibeli</div>
-                    <div className="h4 mb-0 text-success">{orderAlatUkurStatus.sudah_dibeli ?? 0}</div>
+                    <div className="text-muted small mb-1">Sudah Dibeli</div>
+                    <div className="h5 mb-0 text-success fw-bold">{orderAlatUkurStatus.sudah_dibeli ?? 0}</div>
                   </Col>
                   <Col xs={3}>
-                    <div className="text-secondary small mb-1">Ditolak</div>
-                    <div className="h4 mb-0 text-danger">{orderAlatUkurStatus.ditolak ?? 0}</div>
+                    <div className="text-muted small mb-1">Ditolak</div>
+                    <div className="h5 mb-0 text-danger fw-bold">{orderAlatUkurStatus.ditolak ?? 0}</div>
                   </Col>
                 </Row>
               </CardBody>
@@ -414,8 +414,7 @@ const DashboardManager = () => {
           </Link>
         </Col>
       </Row>
-      <div className="mb-5"></div>
-    </>
+    </div>
   );
 };
 

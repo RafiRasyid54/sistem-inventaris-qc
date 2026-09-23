@@ -1,13 +1,11 @@
 "use client";
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Modal, Form, Row, Col, Button, Spinner } from "react-bootstrap";
 import { IconClipboardList, IconCheck } from "@tabler/icons-react";
 
-import { PeminjamType } from "types/DataAlatukurTypes";
-import { getPemintaAktif } from "services/pemintaService";
-import apiFetch from "lib/api";
-// Jika Anda memiliki service untuk pekerjaan, Anda bisa mengimpornya di sini.
-// import { getPekerjaanAktif } from "services/pekerjaanService";
+import { PeminjamType } from "/types/DataAlatUkurTypes";
+import { getPeminta } from "/services/pemintaService";
+import apiFetch from "/lib/api";
 
 const formatToday = () =>
   new Date().toLocaleDateString("id-ID", {
@@ -48,6 +46,7 @@ interface LoanFormModalProps {
   cartItems: any[];
   submitting?: boolean;
   error?: string | null;
+  peminjam?: PeminjamType | null; // <-- Ditambahkan untuk menerima data peminjam dari scan awal
 }
 
 const LoanFormModal = ({
@@ -57,6 +56,7 @@ const LoanFormModal = ({
   cartItems,
   submitting = false,
   error = null,
+  peminjam = null, // <-- Ditambahkan di parameter komponen
 }: LoanFormModalProps) => {
   const [searchText, setSearchText] = useState("");
   const [form, setForm] = useState<UniversalFormValues>(emptyForm());
@@ -64,24 +64,41 @@ const LoanFormModal = ({
   const [peminjamList, setPeminjamList] = useState<PeminjamType[]>([]);
   const [loadingPeminjam, setLoadingPeminjam] = useState(false);
 
-  // State untuk Data Pekerjaan
   const [pekerjaanList, setPekerjaanList] = useState<any[]>([]);
   const [loadingPekerjaan, setLoadingPekerjaan] = useState(false);
 
   useEffect(() => {
     if (show) {
-      setForm(emptyForm());
-      setSearchText("");
+      // Jika ada data peminjam dari scan awal, langsung set ke form secara otomatis
+      if (peminjam) {
+        const idVal = peminjam.id || (peminjam as any).rfid || "";
+        const namaVal = peminjam.nama || (peminjam as any).nama_peminta || (peminjam as any).name || "";
+        const divisiVal = peminjam.divisi || (peminjam as any).department || "";
+
+        setForm({
+          ...emptyForm(),
+          peminjamId: idVal,
+          pemintaId: idVal,
+          namaPeminjam: namaVal,
+          namaPeminta: namaVal,
+          divisi: divisiVal,
+        });
+        setSearchText("");
+      } else {
+        setForm(emptyForm());
+        setSearchText("");
+      }
       
-      // Fetch Peminta
       setLoadingPeminjam(true);
-      getPemintaAktif()
-        .then(setPeminjamList)
+      getPeminta()
+        .then((data) => {
+          const aktifOnly = data.filter((p: any) => p.aktif !== false);
+          setPeminjamList(aktifOnly);
+        })
         .catch(() => setPeminjamList([]))
         .finally(() => setLoadingPeminjam(false));
 
-      // Fetch Pekerjaan Aktif
-    setLoadingPekerjaan(true);
+      setLoadingPekerjaan(true);
       apiFetch<{ success: boolean; data: any[] }>("/pekerjaan/active")
         .then((data) => {
           if (data.success) {
@@ -91,14 +108,14 @@ const LoanFormModal = ({
         .catch((err) => console.error("Gagal memuat data pekerjaan:", err))
         .finally(() => setLoadingPekerjaan(false));
     }
-  }, [show]);
+  }, [show, peminjam]);
 
   const handleSelectPeminjam = (id: string) => {
     const selected = peminjamList.find((p) => p.id === id);
     setForm((prev) => ({
       ...prev,
       peminjamId: id,
-      pemintaId: id, // Mapping ganda untuk support kedua tipe manager
+      pemintaId: id,
       namaPeminjam: selected?.nama || "",
       namaPeminta: selected?.nama || "",
       divisi: selected?.divisi || "",
@@ -117,7 +134,14 @@ const LoanFormModal = ({
   };
 
   return (
-    <Modal show={show} onHide={submitting ? undefined : onClose} centered size="lg" backdrop={submitting ? "static" : true} className="loan-form-modal">
+    <Modal 
+      show={show} 
+      onHide={submitting ? undefined : onClose} 
+      centered 
+      size="lg" 
+      backdrop={submitting ? "static" : true} 
+      className="loan-form-modal"
+    >
       <Form onSubmit={handleSubmit}>
         <Modal.Header closeButton={!submitting}>
           <Modal.Title as="h5" className="d-flex align-items-center gap-2">
@@ -127,6 +151,7 @@ const LoanFormModal = ({
             Form Peminjaman &amp; Pengambilan Inventaris
           </Modal.Title>
         </Modal.Header>
+        
         <Modal.Body>
           {error && (
             <div className="alert alert-danger" role="alert">
@@ -134,7 +159,6 @@ const LoanFormModal = ({
             </div>
           )}
 
-          {/* Section: Data Peminjam / Pemakai */}
           <div className="loan-form-section mb-4">
             <div className="text-secondary small text-uppercase fw-semibold mb-3">
               Data Peminjam / Pemakai
@@ -150,18 +174,25 @@ const LoanFormModal = ({
               
               <Col md={6}>
                 <Form.Label>
-                  Nama Peminjam / Tap Kartu RFID <span className="text-danger">*</span>
+                  Nama Peminjam <span className="text-danger">*</span>
                 </Form.Label>
                 <Form.Control
                   required
                   list="peminjam-options"
-                  placeholder={loadingPeminjam ? "Memuat..." : "Ketik nama atau tap kartu RFID di sini..."}
+                  placeholder={loadingPeminjam ? "Memuat..." : "Nama peminjam..."}
                   disabled={loadingPeminjam || submitting}
                   value={form.peminjamId ? `${form.namaPeminjam} (${form.peminjamId})` : searchText}
                   onFocus={() => {
                     if (form.peminjamId) {
                       setSearchText("");
-                      setForm((prev) => ({ ...prev, peminjamId: "", pemintaId: "", namaPeminjam: "", namaPeminta: "", divisi: "" }));
+                      setForm((prev) => ({ 
+                        ...prev, 
+                        peminjamId: "", 
+                        pemintaId: "", 
+                        namaPeminjam: "", 
+                        namaPeminta: "", 
+                        divisi: "" 
+                      }));
                     }
                   }}
                   onChange={(e) => {
@@ -199,7 +230,7 @@ const LoanFormModal = ({
                   ))}
                 </datalist>
                 <Form.Text className="text-muted small">
-                  Silakan ketik nama manual, pilih dari dropdown, atau langsung tap kartu RFID.
+                  Peminjam sudah otomatis terisi dari scan kartu di awal.
                 </Form.Text>
               </Col>
 
@@ -213,7 +244,6 @@ const LoanFormModal = ({
             </Row>
           </div>
 
-          {/* Section: Detail Pekerjaan */}
           <div className="loan-form-section mb-4">
             <div className="text-secondary small text-uppercase fw-semibold mb-3">
               Detail Pekerjaan
@@ -241,6 +271,7 @@ const LoanFormModal = ({
                   Silakan ketik nama manual atau pilih dari dropdown pekerjaan aktif.
                 </Form.Text>
               </Col>
+              
               <Col md={12}>
                 <Form.Label>
                   Area Kerja <span className="text-secondary fw-normal">(opsional)</span>
@@ -258,6 +289,7 @@ const LoanFormModal = ({
                   <option value="BU">BU</option>
                 </Form.Select>
               </Col>
+              
               <Col md={12}>
                 <Form.Label>
                   Keterangan <span className="text-secondary fw-normal">(opsional)</span>
@@ -274,16 +306,15 @@ const LoanFormModal = ({
             </Row>
           </div>
 
-          {/* Section: Ringkasan Item */}
           <div className="loan-form-summary">
             <div className="text-secondary small text-uppercase fw-semibold mb-2">
               Ringkasan Item Dipilih ({cartItems.length} jenis)
             </div>
             <ul className="list-unstyled mb-0 loan-summary-list" style={{ maxHeight: '180px', overflowY: 'auto' }}>
               {cartItems.map((item, index) => {
-                const displayName = item.namaBarang || item.nama || "Nama Barang Tidak Diketahui";
-                const displayCode = item.kodeBarang || item.kode_barang || "";
-                const uniqueKey = item.alat ukurId || item.consumable_id || item.cartId || item.id || index;
+                const displayName = item.namaBarang || item.nama_alat || item.nama || "Nama Barang Tidak Diketahui";
+                const displayCode = item.kodeBarang || item.kode_alat || item.kode_barang || "";
+                const uniqueKey = item.alatUkurId || item.consumable_id || item.cartId || item.id || index;
 
                 return (
                   <li key={uniqueKey} className="d-flex justify-content-between align-items-center px-2 py-2 rounded small border-bottom">
@@ -297,7 +328,7 @@ const LoanFormModal = ({
                           {item.item_type.toUpperCase()}
                         </span>
                       )}
-                      <span className="fw-semibold">{item.jumlah || item.qty} unit</span>
+                      <span className="fw-semibold">{item.jumlah || item.qty || 1} unit</span>
                     </div>
                   </li>
                 );
@@ -305,6 +336,7 @@ const LoanFormModal = ({
             </ul>
           </div>
         </Modal.Body>
+
         <Modal.Footer>
           <Button variant="outline-secondary" onClick={onClose} disabled={submitting}>
             Batal

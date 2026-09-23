@@ -13,6 +13,7 @@ interface CustomToggleProps {
   icon?: ReactNode;
   callback?: (eventKey: string) => void;
   isActive?: boolean;
+  isCollapsed?: boolean; // <-- Tambahkan ini agar tidak error TypeScript
 }
 
 export default function CustomToggle({
@@ -21,6 +22,7 @@ export default function CustomToggle({
   icon,
   callback,
   isActive = false,
+  isCollapsed = false,
 }: CustomToggleProps) {
   const { activeEventKey } = useContext(AccordionContext);
   const decoratedOnClick = useAccordionButton(
@@ -30,16 +32,21 @@ export default function CustomToggle({
 
   const isCurrentEventKey = activeEventKey === eventKey;
   return (
-    <Nav.Item as="li" className="dropdown">
+    <Nav.Item as="li" className={`dropdown ${isCollapsed ? "px-1" : "px-2"} my-1`}>
       <Nav.Link
         href="#"
         onClick={decoratedOnClick}
         data-bs-toggle="dropdown"
         aria-expanded={isCurrentEventKey ? true : false}
-        className={`dropdown-toggle${isActive ? " active" : ""}`}
+        title={isCollapsed ? (typeof children === "string" ? children : undefined) : undefined}
+        className={`dropdown-toggle rounded-3 d-flex align-items-center ${
+          isCollapsed ? "justify-content-center py-2 px-0" : "gap-2 py-2 px-3"
+        } text-dark ${
+          isActive ? "active fw-semibold bg-light text-primary" : ""
+        }`}
       >
-        <span className="nav-icon">{icon}</span>
-        <span className="text">{children}</span>
+        <span className="nav-icon d-flex align-items-center justify-content-center">{icon}</span>
+        {!isCollapsed && <span className="text">{children}</span>}
       </Nav.Link>
     </Nav.Item>
   );
@@ -48,7 +55,7 @@ export default function CustomToggle({
 export function CustomToggleLevel2({
   children,
   eventKey,
-  className = "nav-link",
+  className = "nav-link rounded-3 py-2 px-3 text-dark",
   href = "#",
   dataBsTarget = "",
   ariaControls = "",

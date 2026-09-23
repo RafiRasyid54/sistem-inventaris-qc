@@ -133,6 +133,20 @@ export interface TransaksiPeminjamanType {
 // PENGEMBALIAN
 // ============================================================
 
+// ============================================================
+// PEMINJAM / PEMINTA
+// ============================================================
+
+export interface PeminjamType {
+  id: string;
+  nama: string;
+  divisi: string;
+  jabatan?: string;
+  role?: string;   // Tambahkan ini
+  aktif?: boolean; // Tambahkan ini
+  rfid_uid?: string;
+}
+
 export interface PengembalianItemInput {
   alatUkurId: string;
   kondisi: string;

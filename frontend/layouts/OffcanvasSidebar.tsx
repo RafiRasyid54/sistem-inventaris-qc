@@ -14,30 +14,28 @@ import { getAssetPath } from "helper/assetPath";
 const OffcanvasSidebar = () => {
   const { showMenu, toggleMenuHandler } = useMenu();
 
-  console.log("OFFCANVAS SHOW:", showMenu);
-
   return (
     <Offcanvas
       show={showMenu}
       onHide={() => toggleMenuHandler(false)}
       placement="start"
       backdrop={true}
-      className="offcanvasNav"
+      className="offcanvasNav border-0 shadow-lg"
     >
-      <OffcanvasHeader closeButton>
+      <OffcanvasHeader closeButton className="border-bottom px-4 py-3 bg-white">
         <Link
           href="/"
-          className="d-flex align-items-center gap-2 pln-brand"
+          className="d-flex align-items-center gap-2 pln-brand text-decoration-none"
         >
           <Image
-            src={getAssetPath("/images/png/PLN-logo.png")}
+            src={getAssetPath("/images/png/PLN_Logo_QC.png")}
             alt="PT PLN (Persero)"
             className="pln-logo"
           />
         </Link>
       </OffcanvasHeader>
 
-      <OffcanvasBody className="p-0">
+      <OffcanvasBody className="p-0 bg-white">
         <Sidebar hideLogo />
       </OffcanvasBody>
     </Offcanvas>

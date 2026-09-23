@@ -66,12 +66,6 @@ export const DashboardMenu: MenuItemType[] = [
 
       {
         id: uuid(),
-        name: "Data Consumable",
-        link: "/inventaris/data-consumable",
-      },
-
-      {
-        id: uuid(),
         name: "Data Peminjam",
         link: "/inventaris/data-peminjam",
       },
@@ -111,18 +105,6 @@ export const DashboardMenu: MenuItemType[] = [
         name: "Pengembalian Alat",
         link: "/transaksi/pengembalian",
       },
-
-      {
-        id: uuid(),
-        name: "Consumable Masuk",
-        link: "/transaksi/consumable-masuk",
-      },
-
-      {
-        id: uuid(),
-        name: "Alat Ukur Masuk",
-        link: "/transaksi/alat-ukur-masuk",
-      },
     ],
   },
 
@@ -147,48 +129,6 @@ export const DashboardMenu: MenuItemType[] = [
         name: "Peminjaman Alat Ukur",
         link: "/riwayat/peminjaman-alat-ukur",
       },
-
-      {
-        id: uuid(),
-        name: "Consumable Keluar",
-        link: "/riwayat/consumable-keluar",
-      },
-
-      {
-        id: uuid(),
-        name: "Riwayat Perbaikan",
-        link: "/riwayat/perbaikan",
-      },
-    ],
-  },
-
-  // ==========================================================
-  // PENGAJUAN ORDER
-  // ==========================================================
-
-  {
-    id: uuid(),
-    title: "Pengajuan Order",
-
-    icon: (
-      <IconShoppingCart
-        size={20}
-        strokeWidth={1.5}
-      />
-    ),
-
-    children: [
-      {
-        id: uuid(),
-        name: "Order Consumable",
-        link: "/order/order-consumable",
-      },
-
-      {
-        id: uuid(),
-        name: "Order Alat Ukur",
-        link: "/order/order-alat-ukur",
-      },
     ],
   },
 
@@ -208,64 +148,7 @@ export const DashboardMenu: MenuItemType[] = [
       />
     ),
   },
-
-  // ==========================================================
-  // PEMELIHARAAN MESIN
-  // ==========================================================
-
-  {
-    id: uuid(),
-    title: "Pemeliharaan Mesin",
-    grouptitle: true,
-  },
-
-  // ==========================================================
-  // DASHBOARD PEMELIHARAAN
-  // ==========================================================
-
-  {
-    id: uuid(),
-    title: "Dashboard Pemeliharaan",
-    link: "/pemeliharaan/dashboard",
-
-    icon: (
-      <IconLayoutDashboard
-        size={20}
-        strokeWidth={1.5}
-      />
-    ),
-  },
-
-  // ==========================================================
-  // PEMELIHARAAN
-  // ==========================================================
-
-  {
-    id: uuid(),
-    title: "Pemeliharaan",
-
-    icon: (
-      <IconTool
-        size={20}
-        strokeWidth={1.5}
-      />
-    ),
-
-    children: [
-      {
-        id: uuid(),
-        name: "Pemeliharaan Mesin",
-        link: "/pemeliharaan/data-mesin",
-      },
-
-      {
-        id: uuid(),
-        name: "Pemeliharaan Motor Konversi",
-        link: "/pemeliharaan/motor-konversi",
-      },
-    ],
-  },
-
+  
   // ==========================================================
   // ADMINISTRASI
   // ==========================================================

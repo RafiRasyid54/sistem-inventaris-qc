@@ -2,7 +2,7 @@
 import { Metadata } from "next";
 
 // import custom components
-import ProfileManager from "components/ruangalat ukur/profile/ProfileManager";
+import ProfileManager from "components/profile/ProfileManager";
 
 export const metadata: Metadata = {
   title: "Profil Saya | Ruang Alatukur",
