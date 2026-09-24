@@ -40,11 +40,12 @@ import { ColumnDefinition } from "./ColumnDefination";
 import { AlatUkurDetailModal } from "./AlatUkurDetailModal";
 import { AlatUkurFormModal } from "./AlatUkurFormModal";
 import { DeleteConfirmModal } from "./DeleteConfirmModal";
-import LoanFormModal from "components/common/LoanFormModal"; 
+import LoanFormModal from "components/common/LoanFormModal";
 import { CartFAB } from "./CartFAB";
 
 import apiFetch from "/lib/apiFetch";
 import { AlatUkur } from "../../types/DataAlatUkurTypes";
+import { prosesPeminjamanApi } from "services/peminjamanService"; // <-- DITAMBAHKAN
 
 interface AlatUkurApiResponse {
   status: string;
@@ -61,8 +62,8 @@ const DataAlatUkurManager = () => {
   const [formModalOpen, setFormModalOpen] = useState(false);
   const [detailModalOpen, setDetailModalOpen] = useState(false);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
-  const [loanModalOpen, setLoanModalOpen] = useState(false); 
-  
+  const [loanModalOpen, setLoanModalOpen] = useState(false);
+
   // =======================================================
   // ALUR UTAMA: PEMINJAM HARUS SCAN KARTU DI AWAL
   // =======================================================
@@ -74,6 +75,12 @@ const DataAlatUkurManager = () => {
   const [activeAlatUkur, setActiveAlatUkur] = useState<AlatUkur | null>(null);
   const [cart, setCart] = useState<AlatUkur[]>([]);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
+  // =======================================================
+  // STATE BARU: submit & error untuk proses peminjaman (checkout)
+  // =======================================================
+  const [loanSubmitting, setLoanSubmitting] = useState(false);
+  const [loanError, setLoanError] = useState<string | null>(null);
 
   const loadAlatUkur = useCallback(async () => {
     try {
@@ -112,37 +119,45 @@ const DataAlatUkurManager = () => {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [scanCardModalOpen, rfidInputBuffer]);
 
- const verifyCard = async (rfidCode: string) => {
+  const verifyCard = async (rfidCode: string) => {
     try {
       setIsVerifyingCard(true);
       setError(null);
 
       const res = await apiFetch<any>(`/peminta?rfid=${rfidCode}`);
-      
-      // Cek isi data yang dikembalikan oleh backend di Console (F12)
       console.log("RESPONSE API PEMINTA:", res);
 
-      let pemintaData = null;
+      // 1. Jadikan response sebagai array
+      let rawList: any[] = [];
       if (Array.isArray(res)) {
-        pemintaData = res[0];
+        rawList = res;
       } else if (res?.data && Array.isArray(res.data)) {
-        pemintaData = res.data[0];
+        rawList = res.data;
       } else if (res?.data) {
-        pemintaData = res.data;
-      } else {
-        pemintaData = res;
+        rawList = [res.data];
+      } else if (res) {
+        rawList = [res];
       }
+
+      // 2. KUNCI UTAMANYA DI SINI: Cari spesifik yang RFID-nya SAMA PERSIS
+      const pemintaData = rawList.find(
+        (p: any) =>
+          String(p.rfid_uid || "").trim() === String(rfidCode).trim() ||
+          String(p.rfid || "").trim() === String(rfidCode).trim() ||
+          String(p.id || "").trim() === String(rfidCode).trim() ||
+          String(p.kode_identitas || "").trim() === String(rfidCode).trim()
+      );
 
       if (pemintaData) {
         setPeminjamAktif(pemintaData);
-        
+
         const namaPeminjam = pemintaData.nama || pemintaData.nama_peminta || pemintaData.name || pemintaData.username || pemintaData.nama_lengkap || "Pengguna";
-        
+
         setScanCardModalOpen(false);
         setSuccessMessage(`Berhasil mengidentifikasi: ${namaPeminjam}`);
         setTimeout(() => setSuccessMessage(null), 4000);
       } else {
-        setError("Kartu Identitas tidak dikenali atau belum terdaftar.");
+        setError(`Kartu Identitas (${rfidCode}) tidak terdaftar dalam sistem.`);
       }
     } catch (err: any) {
       setError(err?.message || "Gagal memverifikasi kartu identitas.");
@@ -166,7 +181,7 @@ const DataAlatUkurManager = () => {
   }, [data, searchTerm]);
 
   // =======================================================
-  // TAMBAH KE KERANJANG (Hanya bisa jika sudah scan kartu)
+  // TAMBAH KE KERANJANG (Mencegah barang kembar/double masuk cart)
   // =======================================================
   const handleAddToCart = useCallback((item: AlatUkur) => {
     if (!peminjamAktif) {
@@ -175,14 +190,63 @@ const DataAlatUkurManager = () => {
       return;
     }
 
-    setCart((prevCart) => {
-      if (prevCart.some((ci) => ci.id === item.id)) return prevCart;
-      return [...prevCart, item];
-    });
+    // Cek apakah barang dengan ID yang sama sudah ada di dalam keranjang
+    const isAlreadyInCart = cart.some((ci) => ci.id === item.id);
+    if (isAlreadyInCart) {
+      alert(`⚠️ Alat "${item.nama_alat}" (${item.kode_alat || item.sn || 'No. Seri'}) sudah ada di dalam keranjang.`);
+      return;
+    }
 
-    setSuccessMessage(`${item.nama_alat} ditambahkan ke keranjang (${peminjamAktif.nama || peminjamAktif.name}).`);
+    setCart((prevCart) => [...prevCart, item]);
+
+    const namaPeminjamAktif =
+      peminjamAktif.nama ||
+      peminjamAktif.nama_peminta ||
+      peminjamAktif.name ||
+      peminjamAktif.username ||
+      peminjamAktif.nama_lengkap ||
+      "Pengguna";
+
+    setSuccessMessage(`${item.nama_alat} ditambahkan ke keranjang (${namaPeminjamAktif}).`);
     setTimeout(() => setSuccessMessage(null), 3000);
-  }, [peminjamAktif]);
+  }, [peminjamAktif, cart]);
+
+  // =======================================================
+  // HANDLER BARU: submit peminjaman -> loop cart, panggil API per item
+  // =======================================================
+  const handleLoanSubmit = useCallback(async (values: any) => {
+    setLoanSubmitting(true);
+    setLoanError(null);
+
+    try {
+      for (const item of cart) {
+        const kodeAlat = item.kode_alat;
+        if (!kodeAlat) {
+          throw new Error(`Alat "${item.nama_alat}" tidak memiliki kode_alat yang valid.`);
+        }
+
+        await prosesPeminjamanApi({
+          kodeAlat,
+          pemintaId: values?.peminjamId || peminjamAktif?.id,
+          pekerjaanId: values?.pekerjaanId,
+          keterangan: values?.keterangan,
+        });
+      }
+
+      setCart([]);
+      setPeminjamAktif(null);
+      setLoanModalOpen(false);
+      setSuccessMessage("Peminjaman berhasil diajukan!");
+      setTimeout(() => setSuccessMessage(null), 4000);
+    } catch (err: any) {
+      setLoanError(
+        err?.message ||
+        "Gagal menyimpan peminjaman. Pastikan pekerjaan dipilih dari daftar yang tersedia dan alat belum sedang dipinjam."
+      );
+    } finally {
+      setLoanSubmitting(false);
+    }
+  }, [cart, peminjamAktif]);
 
   return (
     <div className="datatools-page">
@@ -209,9 +273,21 @@ const DataAlatUkurManager = () => {
             <div>
               <span className="text-muted small d-block">Peminjam Aktif Saat Ini:</span>
               <h5 className="mb-0 fw-bold">
-                {peminjamAktif ? (peminjamAktif.nama || peminjamAktif.name) : <span className="text-danger italic">Belum ada kartu yang di-scan</span>}
+                {peminjamAktif ? (
+                  peminjamAktif.nama ||
+                  peminjamAktif.nama_peminta ||
+                  peminjamAktif.name ||
+                  peminjamAktif.username ||
+                  peminjamAktif.nama_lengkap
+                ) : (
+                  <span className="text-danger italic">Belum ada kartu yang di-scan</span>
+                )}
               </h5>
-              {peminjamAktif && <small className="text-muted">ID / RFID: {peminjamAktif.rfid || peminjamAktif.kode_identitas || '-'}</small>}
+              {peminjamAktif && (
+                <small className="text-muted">
+                  ID / RFID: {peminjamAktif.rfid || peminjamAktif.kode_identitas || peminjamAktif.id || '-'}
+                </small>
+              )}
             </div>
           </div>
 
@@ -316,7 +392,15 @@ const DataAlatUkurManager = () => {
       </Modal>
 
       {/* MODAL FORM / DETAIL */}
-      <AlatUkurFormModal isOpen={formModalOpen} item={activeAlatUkur} onClose={() => setFormModalOpen(false)} onSubmit={() => loadAlatUkur()} />
+      <AlatUkurFormModal
+        isOpen={formModalOpen}
+        item={activeAlatUkur}
+        onClose={() => setFormModalOpen(false)}
+        onSubmit={() => {
+          loadAlatUkur();
+          setFormModalOpen(false);
+        }}
+      />
       <AlatUkurDetailModal item={detailModalOpen ? activeAlatUkur : null} onClose={() => setDetailModalOpen(false)} />
       <DeleteConfirmModal isOpen={deleteModalOpen} onClose={() => setDeleteModalOpen(false)} onConfirm={() => loadAlatUkur()} />
 
@@ -324,13 +408,10 @@ const DataAlatUkurManager = () => {
       <LoanFormModal
         show={loanModalOpen}
         onClose={() => setLoanModalOpen(false)}
-        onSubmit={() => {
-          setCart([]);
-          setPeminjamAktif(null);
-          setLoanModalOpen(false);
-          setSuccessMessage("Peminjaman berhasil diajukan!");
-        }}
+        onSubmit={handleLoanSubmit}
         cartItems={cart}
+        submitting={loanSubmitting}
+        error={loanError}
         {...({ peminjam: peminjamAktif } as any)}
       />
 

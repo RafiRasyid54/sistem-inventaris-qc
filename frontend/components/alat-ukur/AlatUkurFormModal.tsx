@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X } from 'lucide-react';
+import { Modal, Form, Button, Row, Col } from 'react-bootstrap';
 import { AlatUkur } from '../../types/DataAlatUkurTypes';
 
 interface AlatUkurFormModalProps {
@@ -9,73 +9,197 @@ interface AlatUkurFormModalProps {
   onSubmit: (formData: Partial<AlatUkur>) => void;
 }
 
-export const AlatUkurFormModal: React.FC<AlatUkurFormModalProps> = ({ isOpen, item, onClose, onSubmit }) => {
-  const [form, setForm] = useState<Partial<AlatUkur>>({
-    kode_alat: '',
-    nama_alat: '',
-    kategori: '',
-    merk: '',
-    kondisi: 'Baik',
-    status_kalibrasi: 'Terkalibrasi',
-  });
+const defaultForm: Partial<AlatUkur> = {
+  kode_alat: '',
+  nama_alat: '',
+  kategori: '',
+  merk: '',
+  sn: '',
+  spesifikasi: '',
+  kondisi: 'Baik',
+  status_kalibrasi: 'Terkalibrasi',
+  kalibrasi: '',
+  rencana_kalibrasi: '',
+  lokasi: '',
+  keterangan: '',
+};
+
+export const AlatUkurFormModal: React.FC<AlatUkurFormModalProps> = ({
+  isOpen,
+  item,
+  onClose,
+  onSubmit,
+}) => {
+  const [form, setForm] = useState<Partial<AlatUkur>>(defaultForm);
 
   useEffect(() => {
-    if (item) setForm(item);
-    else setForm({ kode_alat: '', nama_alat: '', kategori: '', merk: '', kondisi: 'Baik', status_kalibrasi: 'Terkalibrasi' });
+    if (item) {
+      setForm(item);
+    } else {
+      setForm(defaultForm);
+    }
   }, [item, isOpen]);
 
-  if (!isOpen) return null;
-
   return (
-    <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl relative">
-        <button onClick={onClose} className="absolute right-4 top-4 text-gray-400 hover:text-gray-600">
-          <X size={20} />
-        </button>
-        <h3 className="text-lg font-bold text-gray-800 mb-4">{item ? 'Edit Alat Ukur' : 'Tambah Alat Ukur'}</h3>
+    <Modal show={isOpen} onHide={onClose} centered size="lg" backdrop="static">
+      <Form
+        onSubmit={(e) => {
+          e.preventDefault();
+          onSubmit(form);
+        }}
+      >
+        <Modal.Header closeButton>
+          <Modal.Title as="h5">
+            {item ? 'Edit Data Alat Ukur' : 'Tambah Data Alat Ukur'}
+          </Modal.Title>
+        </Modal.Header>
 
-        <form onSubmit={(e) => { e.preventDefault(); onSubmit(form); }} className="space-y-3">
-          <input
-            type="text"
-            placeholder="Kode Alat"
-            value={form.kode_alat || ''}
-            onChange={(e) => setForm({ ...form, kode_alat: e.target.value })}
-            className="w-full p-2.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
-            required
-          />
-          <input
-            type="text"
-            placeholder="Nama Alat Ukur"
-            value={form.nama_alat || ''}
-            onChange={(e) => setForm({ ...form, nama_alat: e.target.value })}
-            className="w-full p-2.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
-            required
-          />
-          <div className="grid grid-cols-2 gap-2">
-            <select
-              value={form.kondisi || 'Baik'}
-              onChange={(e) => setForm({ ...form, kondisi: e.target.value as any })}
-              className="p-2.5 border border-gray-200 rounded-lg text-sm outline-none"
-            >
-              <option value="Baik">Baik</option>
-              <option value="Perlu Perbaikan">Perlu Perbaikan</option>
-              <option value="Rusak">Rusak</option>
-            </select>
-            <select
-              value={form.status_kalibrasi || 'Terkalibrasi'}
-              onChange={(e) => setForm({ ...form, status_kalibrasi: e.target.value as any })}
-              className="p-2.5 border border-gray-200 rounded-lg text-sm outline-none"
-            >
-              <option value="Terkalibrasi">Terkalibrasi</option>
-              <option value="Perlu Kalibrasi">Perlu Kalibrasi</option>
-              <option value="Expired">Expired</option>
-            </select>
-          </div>
-          <button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 rounded-lg text-sm transition-colors mt-2">
+        <Modal.Body>
+          <Row className="g-3">
+            <Col md={6}>
+              <Form.Label className="small font-weight-bold">
+                Kode Alat <span className="text-danger">*</span>
+              </Form.Label>
+              <Form.Control
+                type="text"
+                placeholder="misal: 3MMC001"
+                value={form.kode_alat || ''}
+                onChange={(e) => setForm({ ...form, kode_alat: e.target.value })}
+                required
+              />
+            </Col>
+            <Col md={6}>
+              <Form.Label className="small font-weight-bold">
+                Serial Number (SN)
+              </Form.Label>
+              <Form.Control
+                type="text"
+                placeholder="misal: SN-12345"
+                value={form.sn || ''}
+                onChange={(e) => setForm({ ...form, sn: e.target.value })}
+              />
+            </Col>
+
+            <Col md={12}>
+              <Form.Label className="small font-weight-bold">
+                Nama Alat Ukur <span className="text-danger">*</span>
+              </Form.Label>
+              <Form.Control
+                type="text"
+                placeholder="misal: Outside Micrometer"
+                value={form.nama_alat || ''}
+                onChange={(e) => setForm({ ...form, nama_alat: e.target.value })}
+                required
+              />
+            </Col>
+
+            <Col md={6}>
+              <Form.Label className="small font-weight-bold">Merk</Form.Label>
+              <Form.Control
+                type="text"
+                placeholder="misal: Mitutoyo"
+                value={form.merk || ''}
+                onChange={(e) => setForm({ ...form, merk: e.target.value })}
+              />
+            </Col>
+
+            <Col md={6}>
+              <Form.Label className="small font-weight-bold">Kategori / Bidang</Form.Label>
+              <Form.Select
+                value={form.kategori || ''}
+                onChange={(e) => setForm({ ...form, kategori: e.target.value })}
+              >
+                <option value="">Pilih Kategori...</option>
+                <option value="Mekanik">Mekanik</option>
+                <option value="Elektrik">Elektrik</option>
+                <option value="Sipil">Sipil</option>
+              </Form.Select>
+            </Col>
+
+            <Col md={6}>
+              <Form.Label className="small font-weight-bold">Kondisi</Form.Label>
+              <Form.Select
+                value={form.kondisi || 'Baik'}
+                onChange={(e) => setForm({ ...form, kondisi: e.target.value })}
+              >
+                <option value="Baik">Baik</option>
+                <option value="Perlu Perbaikan">Perlu Perbaikan</option>
+                <option value="Rusak">Rusak</option>
+              </Form.Select>
+            </Col>
+
+            <Col md={6}>
+              <Form.Label className="small font-weight-bold">Status Kalibrasi</Form.Label>
+              <Form.Select
+                value={form.status_kalibrasi || 'Terkalibrasi'}
+                onChange={(e) => setForm({ ...form, status_kalibrasi: e.target.value })}
+              >
+                <option value="Terkalibrasi">Terkalibrasi</option>
+                <option value="Perlu Kalibrasi">Perlu Kalibrasi</option>
+                <option value="Expired">Expired</option>
+              </Form.Select>
+            </Col>
+
+            <Col md={6}>
+              <Form.Label className="small font-weight-bold">Spesifikasi</Form.Label>
+              <Form.Control
+                type="text"
+                placeholder="misal: 0-25mm 0.001mm"
+                value={form.spesifikasi || ''}
+                onChange={(e) => setForm({ ...form, spesifikasi: e.target.value })}
+              />
+            </Col>
+
+            <Col md={6}>
+              <Form.Label className="small font-weight-bold">Lokasi Penyimpanan</Form.Label>
+              <Form.Control
+                type="text"
+                placeholder="misal: Lemari A1"
+                value={form.lokasi || ''}
+                onChange={(e) => setForm({ ...form, lokasi: e.target.value })}
+              />
+            </Col>
+
+            <Col md={6}>
+              <Form.Label className="small font-weight-bold">Tanggal Kalibrasi</Form.Label>
+              <Form.Control
+                type="date"
+                value={form.kalibrasi || ''}
+                onChange={(e) => setForm({ ...form, kalibrasi: e.target.value })}
+              />
+            </Col>
+
+            <Col md={6}>
+              <Form.Label className="small font-weight-bold">Rencana Kalibrasi</Form.Label>
+              <Form.Control
+                type="date"
+                value={form.rencana_kalibrasi || ''}
+                onChange={(e) => setForm({ ...form, rencana_kalibrasi: e.target.value })}
+              />
+            </Col>
+
+            <Col md={12}>
+              <Form.Label className="small font-weight-bold">Keterangan</Form.Label>
+              <Form.Control
+                as="textarea"
+                rows={2}
+                placeholder="Catatan tambahan..."
+                value={form.keterangan || ''}
+                onChange={(e) => setForm({ ...form, keterangan: e.target.value })}
+              />
+            </Col>
+          </Row>
+        </Modal.Body>
+
+        <Modal.Footer>
+          <Button variant="outline-secondary" onClick={onClose}>
+            Batal
+          </Button>
+          <Button variant="primary" type="submit">
             Simpan Data
-          </button>
-        </form>
-      </div>
-    </div>
+          </Button>
+        </Modal.Footer>
+      </Form>
+    </Modal>
   );
 };

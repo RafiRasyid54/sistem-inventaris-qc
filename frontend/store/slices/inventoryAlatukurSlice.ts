@@ -10,7 +10,7 @@ import {
   AlatUkur,
   AlatUkurFormValues,
   CartItemType,
-  LoanFormValues,
+  LoanFormValues as BaseLoanFormValues,
   TransaksiPeminjamanType,
   PengembalianItemInput,
 } from "../../types/DataAlatUkurTypes";
@@ -22,7 +22,12 @@ import {
   deleteAlatUkur as deleteAlatUkurApi,
 } from "../../services/alatukurService";
 
-import { submitPeminjaman } from "../../services/peminjamanService";
+import { prosesPeminjamanApi } from "../../services/peminjamanService";
+
+// Perluas tipe LoanFormValues untuk menyertakan pekerjaanId secara aman
+export interface LoanFormValues extends BaseLoanFormValues {
+  pekerjaanId?: string | number;
+}
 
 // ============================================================
 // STATE
@@ -30,13 +35,9 @@ import { submitPeminjaman } from "../../services/peminjamanService";
 
 interface InventoryAlatukurState {
   alatUkur: AlatUkur[];
-
   transaksiList: TransaksiPeminjamanType[];
-
   loadingAlatukur: boolean;
-
   alatukurError: string | null;
-
   checkoutError: string | null;
 }
 
@@ -46,13 +47,9 @@ interface InventoryAlatukurState {
 
 const initialState: InventoryAlatukurState = {
   alatUkur: [],
-
   transaksiList: [],
-
   loadingAlatukur: false,
-
   alatukurError: null,
-
   checkoutError: null,
 };
 
@@ -62,7 +59,6 @@ const initialState: InventoryAlatukurState = {
 
 export const fetchAlatukur = createAsyncThunk(
   "inventoryAlatukur/fetchAlatukur",
-
   async (_, { rejectWithValue }) => {
     try {
       return await getSemuaAlatUkur();
@@ -80,7 +76,6 @@ export const fetchAlatukur = createAsyncThunk(
 
 export const addAlatukurThunk = createAsyncThunk(
   "inventoryAlatukur/addAlatukur",
-
   async (
     values: AlatUkurFormValues,
     { rejectWithValue }
@@ -101,7 +96,6 @@ export const addAlatukurThunk = createAsyncThunk(
 
 export const updateAlatukurThunk = createAsyncThunk(
   "inventoryAlatukur/updateAlatukur",
-
   async (
     {
       id,
@@ -110,7 +104,6 @@ export const updateAlatukurThunk = createAsyncThunk(
       id: string | number;
       values: AlatUkurFormValues;
     },
-
     { rejectWithValue }
   ) => {
     try {
@@ -133,14 +126,12 @@ export const updateAlatukurThunk = createAsyncThunk(
 
 export const deleteAlatukurThunk = createAsyncThunk(
   "inventoryAlatukur/deleteAlatukur",
-
   async (
     id: string | number,
     { rejectWithValue }
   ) => {
     try {
       await deleteAlatUkurApi(String(id));
-
       return id;
     } catch (err: any) {
       return rejectWithValue(
@@ -158,7 +149,6 @@ export const deleteAlatukurThunk = createAsyncThunk(
 export const checkoutPeminjamanThunk =
   createAsyncThunk(
     "inventoryAlatukur/checkoutPeminjaman",
-
     async (
       {
         loanForm,
@@ -167,23 +157,14 @@ export const checkoutPeminjamanThunk =
         loanForm: LoanFormValues;
         cartItems: CartItemType[];
       },
-
       { getState, rejectWithValue }
     ) => {
       try {
-        // ------------------------------------------------------
-        // VALIDASI CART
-        // ------------------------------------------------------
-
         if (!cartItems || cartItems.length === 0) {
           throw new Error(
             "Tidak ada alat ukur yang dipilih"
           );
         }
-
-        // ------------------------------------------------------
-        // VALIDASI PEMINJAM
-        // ------------------------------------------------------
 
         if (!loanForm.peminjamId) {
           throw new Error(
@@ -191,65 +172,28 @@ export const checkoutPeminjamanThunk =
           );
         }
 
-        // ------------------------------------------------------
-        // VALIDASI NAMA PEKERJAAN
-        // ------------------------------------------------------
-
         if (!loanForm.namaPekerjaan) {
           throw new Error(
             "Nama pekerjaan belum diisi"
           );
         }
 
-        // ------------------------------------------------------
-        // VALIDASI DICATAT OLEH
-        // ------------------------------------------------------
-
-        if (!loanForm.dicatatOleh) {
-          throw new Error(
-            "Data pencatat peminjaman belum tersedia"
-          );
+        for (const item of cartItems) {
+          await prosesPeminjamanApi({
+            kodeAlat: item.kodeAlat,
+            pemintaId: loanForm.peminjamId,
+            pekerjaanId: loanForm.pekerjaanId ?? "", // <-- Berikan fallback jika undefined
+            keterangan: loanForm.keterangan,
+          });
         }
-
-        // ------------------------------------------------------
-        // SUBMIT PEMINJAMAN
-        // ------------------------------------------------------
-
-        await submitPeminjaman(
-          cartItems,
-
-          loanForm.peminjamId,
-
-          loanForm.areaKerja,
-
-          loanForm.namaPekerjaan,
-
-          loanForm.dicatatOleh,
-
-          loanForm.spesifikasi,
-
-          loanForm.keterangan
-        );
-
-        // ------------------------------------------------------
-        // REFRESH DATA ALAT UKUR
-        // ------------------------------------------------------
 
         const freshAlatUkur =
           await getSemuaAlatUkur();
-
-        // ------------------------------------------------------
-        // AMBIL STATE
-        // ------------------------------------------------------
-
+ 
         const state =
           getState() as {
             inventoryAlatukur: InventoryAlatukurState;
           };
-
-        // ------------------------------------------------------
-        // BUAT ITEM TRANSAKSI
-        // ------------------------------------------------------
 
         const items =
           cartItems.map(
@@ -270,13 +214,10 @@ export const checkoutPeminjamanThunk =
                   String(
                     cartItem.alatUkurId
                   ),
-
                 kodeAlat:
                   cartItem.kodeAlat,
-
                 namaAlat:
                   cartItem.namaAlat,
-
                 kondisiSaatDipinjam:
                   unit?.kondisi ||
                   "Baik",
@@ -284,39 +225,24 @@ export const checkoutPeminjamanThunk =
             }
           );
 
-        // ------------------------------------------------------
-        // BUAT TRANSAKSI LOCAL REDUX
-        // ------------------------------------------------------
-
         const transaksi: TransaksiPeminjamanType =
           {
             id: uuid(),
-
             tanggalPeminjaman:
               loanForm.tanggalPeminjaman,
-
             namaPeminjam:
               loanForm.namaPeminjam,
-
             divisi:
               loanForm.divisi,
-
             areaKerja:
               loanForm.areaKerja,
-
             status:
               "Sedang Dipinjam",
-
             items,
           };
 
-        // ------------------------------------------------------
-        // RETURN
-        // ------------------------------------------------------
-
         return {
           freshAlatUkur,
-
           transaksi,
         };
       } catch (err: any) {
@@ -335,20 +261,12 @@ export const checkoutPeminjamanThunk =
 const inventoryAlatukurSlice =
   createSlice({
     name: "inventoryAlatukur",
-
     initialState,
-
     reducers: {
-      // ======================================================
-      // PROSES PENGEMBALIAN
-      // ======================================================
-
       prosesPengembalian: (
         state,
-
         action: PayloadAction<{
           transaksiId: string;
-
           returns: PengembalianItemInput[];
         }>
       ) => {
@@ -356,10 +274,6 @@ const inventoryAlatukurSlice =
           transaksiId,
           returns,
         } = action.payload;
-
-        // ----------------------------------------------------
-        // CARI TRANSAKSI
-        // ----------------------------------------------------
 
         const transaksi =
           state.transaksiList.find(
@@ -370,10 +284,6 @@ const inventoryAlatukurSlice =
         if (!transaksi) {
           return;
         }
-
-        // ----------------------------------------------------
-        // UPDATE KONDISI ALAT
-        // ----------------------------------------------------
 
         returns.forEach(
           (ret) => {
@@ -395,32 +305,19 @@ const inventoryAlatukurSlice =
           }
         );
 
-        // ----------------------------------------------------
-        // UPDATE STATUS TRANSAKSI
-        // ----------------------------------------------------
-
         transaksi.status =
           "Selesai";
       },
     },
 
-    // ========================================================
-    // EXTRA REDUCERS
-    // ========================================================
-
     extraReducers: (
       builder
     ) => {
-      // ======================================================
-      // FETCH ALAT UKUR
-      // ======================================================
-
       builder.addCase(
         fetchAlatukur.pending,
         (state) => {
           state.loadingAlatukur =
             true;
-
           state.alatukurError =
             null;
         }
@@ -434,7 +331,6 @@ const inventoryAlatukurSlice =
         ) => {
           state.loadingAlatukur =
             false;
-
           state.alatUkur =
             action.payload;
         }
@@ -448,15 +344,10 @@ const inventoryAlatukurSlice =
         ) => {
           state.loadingAlatukur =
             false;
-
           state.alatukurError =
             action.payload as string;
         }
       );
-
-      // ======================================================
-      // ADD ALAT UKUR
-      // ======================================================
 
       builder.addCase(
         addAlatukurThunk.fulfilled,
@@ -469,10 +360,6 @@ const inventoryAlatukurSlice =
           );
         }
       );
-
-      // ======================================================
-      // UPDATE ALAT UKUR
-      // ======================================================
 
       builder.addCase(
         updateAlatukurThunk.fulfilled,
@@ -496,10 +383,6 @@ const inventoryAlatukurSlice =
         }
       );
 
-      // ======================================================
-      // DELETE ALAT UKUR
-      // ======================================================
-
       builder.addCase(
         deleteAlatukurThunk.fulfilled,
         (
@@ -517,10 +400,6 @@ const inventoryAlatukurSlice =
         }
       );
 
-      // ======================================================
-      // CHECKOUT PENDING
-      // ======================================================
-
       builder.addCase(
         checkoutPeminjamanThunk.pending,
         (state) => {
@@ -528,10 +407,6 @@ const inventoryAlatukurSlice =
             null;
         }
       );
-
-      // ======================================================
-      // CHECKOUT SUCCESS
-      // ======================================================
 
       builder.addCase(
         checkoutPeminjamanThunk.fulfilled,
@@ -548,10 +423,6 @@ const inventoryAlatukurSlice =
         }
       );
 
-      // ======================================================
-      // CHECKOUT ERROR
-      // ======================================================
-
       builder.addCase(
         checkoutPeminjamanThunk.rejected,
         (
@@ -565,17 +436,9 @@ const inventoryAlatukurSlice =
     },
   });
 
-// ============================================================
-// EXPORT ACTION
-// ============================================================
-
 export const {
   prosesPengembalian,
 } =
   inventoryAlatukurSlice.actions;
-
-// ============================================================
-// EXPORT REDUCER
-// ============================================================
 
 export default inventoryAlatukurSlice.reducer;

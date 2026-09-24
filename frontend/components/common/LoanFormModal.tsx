@@ -3,7 +3,7 @@ import React, { useEffect, useState } from "react";
 import { Modal, Form, Row, Col, Button, Spinner } from "react-bootstrap";
 import { IconClipboardList, IconCheck } from "@tabler/icons-react";
 
-import { PeminjamType } from "/types/DataAlatUkurTypes";
+import { PeminjamType } from "/types/DataAlatUkurTypes"; 
 import { getPeminta } from "/services/pemintaService";
 import apiFetch from "/lib/api";
 
@@ -23,9 +23,38 @@ export interface UniversalFormValues {
   namaPeminta?: string;
   divisi: string;
   namaPekerjaan: string;
+  pekerjaanId?: string | number; // ID pekerjaan untuk backend
   areaKerja: string;
   spesifikasi?: string;
   keterangan: string;
+}
+
+export interface Pekerjaan {
+  id: string | number;
+  nama_pekerjaan: string;
+}
+
+export interface CartItem {
+  id?: string;
+  cartId?: string;
+  alatUkurId?: string;
+  consumable_id?: string;
+  namaBarang?: string;
+  nama_alat?: string;
+  nama?: string;
+  kodeBarang?: string;
+  kode_alat?: string;
+  kode_barang?: string;
+  item_type?: 'alat ukur' | 'consumable';
+  jumlah?: number;
+  qty?: number;
+}
+
+export interface ExtendedPeminjamType extends PeminjamType {
+  rfid?: string;
+  nama_peminta?: string;
+  name?: string;
+  department?: string;
 }
 
 const emptyForm = (): UniversalFormValues => ({
@@ -34,6 +63,7 @@ const emptyForm = (): UniversalFormValues => ({
   namaPeminjam: "",
   divisi: "",
   namaPekerjaan: "",
+  pekerjaanId: "",
   areaKerja: "",
   spesifikasi: "",
   keterangan: "",
@@ -43,10 +73,10 @@ interface LoanFormModalProps {
   show: boolean;
   onClose: () => void;
   onSubmit: (values: UniversalFormValues) => void;
-  cartItems: any[];
+  cartItems: CartItem[];
   submitting?: boolean;
   error?: string | null;
-  peminjam?: PeminjamType | null; // <-- Ditambahkan untuk menerima data peminjam dari scan awal
+  peminjam?: ExtendedPeminjamType | null; 
 }
 
 const LoanFormModal = ({
@@ -56,7 +86,7 @@ const LoanFormModal = ({
   cartItems,
   submitting = false,
   error = null,
-  peminjam = null, // <-- Ditambahkan di parameter komponen
+  peminjam = null,
 }: LoanFormModalProps) => {
   const [searchText, setSearchText] = useState("");
   const [form, setForm] = useState<UniversalFormValues>(emptyForm());
@@ -64,16 +94,15 @@ const LoanFormModal = ({
   const [peminjamList, setPeminjamList] = useState<PeminjamType[]>([]);
   const [loadingPeminjam, setLoadingPeminjam] = useState(false);
 
-  const [pekerjaanList, setPekerjaanList] = useState<any[]>([]);
+  const [pekerjaanList, setPekerjaanList] = useState<Pekerjaan[]>([]);
   const [loadingPekerjaan, setLoadingPekerjaan] = useState(false);
 
   useEffect(() => {
     if (show) {
-      // Jika ada data peminjam dari scan awal, langsung set ke form secara otomatis
       if (peminjam) {
-        const idVal = peminjam.id || (peminjam as any).rfid || "";
-        const namaVal = peminjam.nama || (peminjam as any).nama_peminta || (peminjam as any).name || "";
-        const divisiVal = peminjam.divisi || (peminjam as any).department || "";
+        const idVal = peminjam.id || peminjam.rfid || "";
+        const namaVal = peminjam.nama || peminjam.nama_peminta || peminjam.name || "";
+        const divisiVal = peminjam.divisi || peminjam.department || "";
 
         setForm({
           ...emptyForm(),
@@ -91,7 +120,7 @@ const LoanFormModal = ({
       
       setLoadingPeminjam(true);
       getPeminta()
-        .then((data) => {
+        .then((data: PeminjamType[]) => {
           const aktifOnly = data.filter((p: any) => p.aktif !== false);
           setPeminjamList(aktifOnly);
         })
@@ -99,7 +128,7 @@ const LoanFormModal = ({
         .finally(() => setLoadingPeminjam(false));
 
       setLoadingPekerjaan(true);
-      apiFetch<{ success: boolean; data: any[] }>("/pekerjaan/active")
+      apiFetch<{ success: boolean; data: Pekerjaan[] }>("/pekerjaan/active")
         .then((data) => {
           if (data.success) {
             setPekerjaanList(data.data);
@@ -182,22 +211,20 @@ const LoanFormModal = ({
                   placeholder={loadingPeminjam ? "Memuat..." : "Nama peminjam..."}
                   disabled={loadingPeminjam || submitting}
                   value={form.peminjamId ? `${form.namaPeminjam} (${form.peminjamId})` : searchText}
-                  onFocus={() => {
-                    if (form.peminjamId) {
-                      setSearchText("");
-                      setForm((prev) => ({ 
-                        ...prev, 
-                        peminjamId: "", 
-                        pemintaId: "", 
-                        namaPeminjam: "", 
-                        namaPeminta: "", 
-                        divisi: "" 
-                      }));
-                    }
-                  }}
                   onChange={(e) => {
                     const typed = e.target.value;
                     setSearchText(typed);
+
+                    if (form.peminjamId && typed !== `${form.namaPeminjam} (${form.peminjamId})`) {
+                      setForm((prev) => ({
+                        ...prev,
+                        peminjamId: "",
+                        pemintaId: "",
+                        namaPeminjam: "",
+                        namaPeminta: "",
+                        divisi: "",
+                      }));
+                    }
 
                     const match = peminjamList.find(
                       (p) => 
@@ -208,15 +235,6 @@ const LoanFormModal = ({
                     if (match) {
                       handleSelectPeminjam(match.id);
                       setSearchText("");
-                    } else {
-                      setForm((prev) => ({
-                        ...prev,
-                        peminjamId: "",
-                        pemintaId: "",
-                        namaPeminjam: "",
-                        namaPeminta: "",
-                        divisi: "",
-                      }));
                     }
                   }}
                   onKeyDown={handleKeyDown}
@@ -258,7 +276,18 @@ const LoanFormModal = ({
                   list="pekerjaan-options"
                   placeholder={loadingPekerjaan ? "Memuat..." : "Ketik atau pilih nama pekerjaan..."}
                   value={form.namaPekerjaan}
-                  onChange={(e) => setForm((prev) => ({ ...prev, namaPekerjaan: e.target.value }))}
+                  onChange={(e) => {
+                    const typedValue = e.target.value;
+                    const matchedPekerjaan = pekerjaanList.find(
+                      (pek) => pek.nama_pekerjaan.toLowerCase() === typedValue.toLowerCase()
+                    );
+
+                    setForm((prev) => ({ 
+                      ...prev, 
+                      namaPekerjaan: typedValue,
+                      pekerjaanId: matchedPekerjaan ? matchedPekerjaan.id : "" 
+                    }));
+                  }}
                   disabled={loadingPekerjaan || submitting}
                   autoComplete="off"
                 />

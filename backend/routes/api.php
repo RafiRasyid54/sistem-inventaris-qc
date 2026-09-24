@@ -11,7 +11,8 @@ use App\Http\Controllers\Api\RiwayatKalibrasiController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\RolePermissionController;
 use App\Http\Controllers\Api\DashboardController;
-use App\Http\Controllers\Api\PemintaController; // <-- 1. TAMBAHKAN IMPORT INI
+use App\Http\Controllers\Api\PemintaController;
+use App\Http\Controllers\Api\PekerjaanController; // <-- DITAMBAHKAN IMPORT INI
 
 // ==========================================
 // 1. ROUTE PUBLIK
@@ -156,5 +157,12 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('peminta', PemintaController::class);
     Route::patch('/peminta/{id}/aktifkan', [PemintaController::class, 'aktifkan']);
 
+
+    // ==========================================
+    // I. MODUL MASTER PEKERJAAN
+    // ==========================================
+
     Route::get('/pekerjaan/active', [PekerjaanController::class, 'getActive']);
+    Route::patch('/pekerjaan/{id}/toggle-status', [PekerjaanController::class, 'toggleStatus']);
+    Route::apiResource('pekerjaan', PekerjaanController::class);
 });

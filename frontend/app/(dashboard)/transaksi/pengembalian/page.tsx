@@ -2,7 +2,7 @@
 import { Metadata } from "next";
 
 // import custom components
-import PengembalianManager from "components/ruangalat ukur/pengembalian/PengembalianManager";
+import PengembalianManager from "components/pengembalian/PengembalianManager";
 
 export const metadata: Metadata = {
   title: "Pengembalian Alat | Ruang Alatukur - Admin Panel",

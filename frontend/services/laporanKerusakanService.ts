@@ -1,8 +1,20 @@
 import apiFetch from "lib/api";
 import { LaporanKerusakanType } from "types/LaporanKerusakanTypes";
 
-function formatTanggalJam(isoString: string): string {
+/**
+ * Mengubah ISO date menjadi:
+ * DD Mon YYYY, HH:mm
+ * Diamankan dari nilai null, undefined, atau string kosong.
+ */
+function formatTanggalJam(isoString: string | null | undefined): string {
+  if (!isoString) return "-";
+
   const d = new Date(isoString);
+
+  if (isNaN(d.getTime())) {
+    return "-";
+  }
+
   const parts = new Intl.DateTimeFormat("en-GB", {
     timeZone: "Asia/Jakarta",
     day: "2-digit",
@@ -14,13 +26,22 @@ function formatTanggalJam(isoString: string): string {
   }).formatToParts(d);
 
   const get = (type: string) => parts.find((p) => p.type === type)?.value ?? "";
-  return `${get("day")} ${get("month")} ${get("year")}, ${get("hour")}:${get("minute")}`;
+  
+  const day = get("day");
+  const month = get("month");
+  const year = get("year");
+  const hour = get("hour");
+  const minute = get("minute");
+
+  if (!day || !month || !year) return "-";
+
+  return `${day} ${month} ${year}, ${hour}:${minute}`;
 }
 
 interface LaporanKerusakanApiResponse {
   id: string;
   tanggal: string;
-  alat ukur_id: string;
+  alat_ukur_id: string;
   peminjaman_id: string | null;
   jumlah: number;
   keterangan: string | null;
@@ -29,7 +50,7 @@ interface LaporanKerusakanApiResponse {
   tingkat_kerusakan: "ringan" | "berat" | null;
   perbaikan_ke: number | null;
   dilaporkan_oleh: string;
-    alat ukur: {
+  alat_ukur: {
     kode_barang: string;
     nama_barang: string;
     merk: string | null;
@@ -50,11 +71,11 @@ interface LaporanKerusakanApiResponse {
 
 interface CreateLaporanKerusakanPayload {
   tanggal: string;
-  alat ukur_id: string;
+  alat_ukur_id: string;
   peminjaman_id: string;
   jumlah: number;
   keterangan: string;
-  status: "bisa_diperbaiki" | "rusak_permanen";   // ← tambahkan
+  status: "bisa_diperbaiki" | "rusak_permanen";
   dilaporkan_oleh: string;
 }
 
@@ -62,12 +83,12 @@ function mapLaporanFromApi(item: LaporanKerusakanApiResponse): LaporanKerusakanT
   return {
     id: item.id,
     tanggal_pengembalian: formatTanggalJam(item.tanggal),
-    kode_barang: item.alat ukur?.kode_barang ?? "-",
-    nama_barang: item.alat ukur?.nama_barang ?? "-",
-    merk: item.alat ukur?.merk ?? "-",
-    tipe: item.alat ukur?.type ?? "-",
-    warna: item.alat ukur?.warna ?? "-",
-    ukuran: item.alat ukur?.ukuran ?? "-",
+    kode_barang: item.alat_ukur?.kode_barang ?? "-",
+    nama_barang: item.alat_ukur?.nama_barang ?? "-",
+    merk: item.alat_ukur?.merk ?? "-",
+    tipe: item.alat_ukur?.type ?? "-",
+    warna: item.alat_ukur?.warna ?? "-",
+    ukuran: item.alat_ukur?.ukuran ?? "-",
     jumlah_rusak: item.jumlah,
     nama_peminjam: item.peminjaman?.peminta?.nama ?? "-",
     divisi: item.peminjaman?.peminta?.divisi ?? "-",
@@ -78,13 +99,24 @@ function mapLaporanFromApi(item: LaporanKerusakanApiResponse): LaporanKerusakanT
     catatan_perbaikan: item.catatan_perbaikan ?? undefined,
     tingkat_kerusakan: item.tingkat_kerusakan ?? undefined,
     perbaikan_ke: item.perbaikan_ke ?? undefined,
-    kategori_alat: (item.alat ukur?.kategori as "mesin" | "alat_biasa" | undefined) ?? "alat_biasa",
+    kategori_alat: (item.alat_ukur?.kategori as "mesin" | "alat_biasa" | undefined) ?? "alat_biasa",
   };
 }
 
 export async function getLaporanKerusakan(): Promise<LaporanKerusakanType[]> {
-  const data = await apiFetch<LaporanKerusakanApiResponse[]>("/laporan-kerusakan");
-  return data.map(mapLaporanFromApi);
+  const response: any = await apiFetch("/laporan-kerusakan");
+  
+  // Normalisasi response data jika dibungkus di dalam objek paginasi (misal: { data: [...] })
+  let dataArray: LaporanKerusakanApiResponse[] = [];
+  if (Array.isArray(response)) {
+    dataArray = response;
+  } else if (Array.isArray(response?.data)) {
+    dataArray = response.data;
+  } else if (Array.isArray(response?.result)) {
+    dataArray = response.result;
+  }
+
+  return dataArray.filter(Boolean).map(mapLaporanFromApi);
 }
 
 export async function createLaporanKerusakan(

@@ -7,11 +7,11 @@ const mapResponseItem = (item: any): PeminjamType => ({
   nama: item.nama_peminta || item.nama || "",
 });
 
-export async function getPeminta(): Promise<PeminjamType[]> {
-  const res = await apiFetch<{ status: string; data: any[] }>("/peminta");
-  const rawData = res.data ?? [];
-  return rawData.map(mapResponseItem);
-}
+// di services/pemintaService.ts
+export const getPeminta = async () => {
+  const response = await apiFetch('/peminta'); // sesuaikan endpoint kamu
+  return response.data;
+};
 
 export async function createPeminta(values: any): Promise<PeminjamType> {
   const payload = {

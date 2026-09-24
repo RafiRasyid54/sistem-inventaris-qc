@@ -6,8 +6,8 @@ import {
   IconFileTypeXls,
   IconUser,
 } from "@tabler/icons-react";
-import DateRangePicker from "components/ruangtools/common/DateRangePicker";
-import { DateFilterValue } from "components/ruangtools/common/dateUtils";
+import DateRangePicker from "components/riwayat/common/DateRangePicker";
+import { DateFilterValue } from "components/riwayat/common/dateUtils";
 
 interface RiwayatFilterBarProps {
   tanggalFilter: DateFilterValue | null;

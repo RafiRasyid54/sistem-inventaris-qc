@@ -1,6 +1,6 @@
 import React from 'react';
 // Tambahkan karakter '@' di depan '/components'
-import DataPekerjaanManager from '/components/ruangalat ukur/datapekerjaan/DataPekerjaanManager';
+import DataPekerjaanManager from '/components/datapekerjaan/DataPekerjaanManager';
 
 export const metadata = {
   title: 'Data Pekerjaan - PULSE',

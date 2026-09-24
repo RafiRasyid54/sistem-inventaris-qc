@@ -11,47 +11,43 @@ import { RiwayatPeminjamanType } from "types/RiwayatTypes";
 
 export interface PeminjamanIndexApiResponse {
   id: string;
-  tanggal: string;
+  tanggal_pinjam: string;      // Disesuaikan dengan database Laravel
   tanggal_kembali: string | null;
-  jumlah: number;
-
-  nama_pekerjaan: string;
-
-  area_pekerjaan?: string;
-  spesifikasi?: string;
-  keterangan?: string;
+  jumlah?: number;
 
   alat_ukur?: {
     id: string;
-    kode_barang: string;
-    nama_barang: string;
-    merk: string;
-    type: string;
-    warna: string;
-    ukuran: string;
+    kode_alat: string;         // Kolom asli tabel alat_ukur
+    nama_alat: string;         // Kolom asli tabel alat_ukur
+    merk?: string;
+    type?: string;
+    warna?: string;
+    ukuran?: string;
   };
 
   peminta?: {
     id?: string;
-    nama: string;
-    divisi: string;
+    nama?: string;
+    nama_peminta?: string;     // Menyesuaikan kolom database Laravel
+    divisi?: string;
   };
 
-  // Backup jika backend mengembalikan peminta_id secara langsung
-  peminta_id?: string;
+  pekerjaan?: {
+    nama_pekerjaan?: string;
+  };
+
+  area_pekerjaan?: string;
+  spesifikasi?: string;
+  keterangan?: string;
 }
 
 // Payload untuk membuat peminjaman langsung
 interface CreatePeminjamanPayload {
-  tanggal: string;
+  tanggal_pinjam?: string;
   alat_ukur_id: string;
   peminta_id: string;
-  jumlah: number;
-  area_pekerjaan: string;
-  nama_pekerjaan: string;
-  spesifikasi?: string;
+  pekerjaan_id: string;
   keterangan?: string;
-  dicatat_oleh: string;
 }
 
 // ============================================================
@@ -61,12 +57,16 @@ interface CreatePeminjamanPayload {
 /**
  * Mengubah ISO date menjadi:
  * DD Mon YYYY, HH:mm
- *
- * Contoh:
- * 17 Sep 2026, 08:30
+ * Diamankan dari nilai null, undefined, atau string kosong.
  */
-function formatTanggalJam(isoString: string): string {
+function formatTanggalJam(isoString: string | null | undefined): string {
+  if (!isoString) return "-";
+
   const d = new Date(isoString);
+
+  if (isNaN(d.getTime())) {
+    return "-";
+  }
 
   const parts = new Intl.DateTimeFormat("en-GB", {
     timeZone: "Asia/Jakarta",
@@ -81,24 +81,27 @@ function formatTanggalJam(isoString: string): string {
   const get = (type: string) =>
     parts.find((p) => p.type === type)?.value ?? "";
 
-  return `${get("day")} ${get("month")} ${get("year")}, ${get(
-    "hour"
-  )}:${get("minute")}`;
+  const day = get("day");
+  const month = get("month");
+  const year = get("year");
+  const hour = get("hour");
+  const minute = get("minute");
+
+  if (!day || !month || !year) return "-";
+
+  return `${day} ${month} ${year}, ${hour}:${minute}`;
 }
 
 /**
  * Membuat nomor transaksi berdasarkan tanggal dan nama peminjam.
- *
- * Contoh:
- * TRX-1758067200000-RAFI
  */
 function buildNomorTransaksi(
   tanggalIso: string,
   pemintaNama: string
 ): string {
-  const timestamp = new Date(tanggalIso).getTime();
+  const timestamp = new Date(tanggalIso).getTime() || Date.now();
 
-  const pemintaCode = pemintaNama
+  const pemintaCode = (pemintaNama || "USER")
     .replace(/\s+/g, "")
     .slice(0, 4)
     .toUpperCase();
@@ -116,45 +119,38 @@ function buildNomorTransaksi(
 function mapPeminjamanFromApi(
   item: PeminjamanIndexApiResponse
 ): PeminjamanAktifItemType {
+  // Mengambil nama peminjam dengan fallback yang aman dari nama_peminta atau nama
+  const namaPeminjam = item.peminta?.nama_peminta ?? item.peminta?.nama ?? "-";
+
   return {
     id: item.id,
 
     // ID alat ukur
     alatUkurId: item.alat_ukur?.id ?? "-",
 
-    // Informasi waktu
-    tanggal: formatTanggalJam(item.tanggal),
+    // Informasi waktu (Menggunakan tanggal_pinjam)
+    tanggal: formatTanggalJam(item.tanggal_pinjam),
 
-    // Informasi alat ukur
-    kodeBarang: item.alat_ukur?.kode_barang ?? "-",
-    namaBarang: item.alat_ukur?.nama_barang ?? "-",
+    // Informasi alat ukur (Mapping ke kode_alat & nama_alat)
+    kodeBarang: item.alat_ukur?.kode_alat ?? "-",
+    namaBarang: item.alat_ukur?.nama_alat ?? "Alat Tidak Ditemukan",
     merk: item.alat_ukur?.merk ?? "-",
     tipe: item.alat_ukur?.type ?? "-",
     warna: item.alat_ukur?.warna ?? "-",
     ukuran: item.alat_ukur?.ukuran ?? "-",
 
     // Jumlah
-    jumlah: item.jumlah,
+    jumlah: item.jumlah ?? 1,
 
     // ID peminjam
-    //
-    // Prioritas:
-    // 1. peminta_id dari response
-    // 2. peminta.id dari relasi
-    // 3. string kosong
-    //
-    // Ini digunakan untuk pengecekan RFID.
-    peminjamId:
-      item.peminta_id ||
-      item.peminta?.id ||
-      "",
+    peminjamId: item.peminta?.id ?? "",
 
     // Informasi peminjam
-    namaPeminjam: item.peminta?.nama ?? "-",
+    namaPeminjam: namaPeminjam,
     divisi: item.peminta?.divisi ?? "-",
 
     // Informasi pekerjaan
-    namaPekerjaan: item.nama_pekerjaan ?? "-",
+    namaPekerjaan: item.pekerjaan?.nama_pekerjaan ?? item.area_pekerjaan ?? "-",
     areaKerja: item.area_pekerjaan ?? "-",
     spesifikasi: item.spesifikasi ?? "-",
     keterangan: item.keterangan ?? "-",
@@ -167,34 +163,35 @@ function mapPeminjamanFromApi(
 function mapRiwayatFromApi(
   item: PeminjamanIndexApiResponse
 ): RiwayatPeminjamanType {
-  const namaPeminjam = item.peminta?.nama ?? "-";
+  const namaPeminjam = item.peminta?.nama_peminta ?? item.peminta?.nama ?? "-";
+  const namaPekerjaan = item.pekerjaan?.nama_pekerjaan ?? "-";
 
   return {
     id: item.id,
 
     // Nomor transaksi
     nomor_transaksi: buildNomorTransaksi(
-      item.tanggal,
+      item.tanggal_pinjam,
       namaPeminjam
     ),
 
     // Tanggal
-    tanggal_pinjam: formatTanggalJam(item.tanggal),
+    tanggal_pinjam: formatTanggalJam(item.tanggal_pinjam),
 
     tanggal_kembali: item.tanggal_kembali
       ? formatTanggalJam(item.tanggal_kembali)
       : "-",
 
     // Informasi alat ukur
-    kode_barang: item.alat_ukur?.kode_barang ?? "-",
-    nama_barang: item.alat_ukur?.nama_barang ?? "-",
+    kode_barang: item.alat_ukur?.kode_alat ?? "-",
+    nama_barang: item.alat_ukur?.nama_alat ?? "-",
     merk: item.alat_ukur?.merk ?? "-",
     tipe: item.alat_ukur?.type ?? "-",
     warna: item.alat_ukur?.warna ?? "-",
     ukuran: item.alat_ukur?.ukuran ?? "-",
 
     // Jumlah
-    jumlah: item.jumlah,
+    jumlah: item.jumlah ?? 1,
 
     // Informasi peminjam
     namaPeminjam: namaPeminjam,
@@ -202,8 +199,8 @@ function mapRiwayatFromApi(
     divisi: item.peminta?.divisi ?? "-",
 
     // Informasi pekerjaan
-    namaPekerjaan: item.nama_pekerjaan ?? "-",
-    nama_pekerjaan: item.nama_pekerjaan ?? "-",
+    namaPekerjaan: namaPekerjaan,
+    nama_pekerjaan: namaPekerjaan,
 
     areaKerja: item.area_pekerjaan ?? "-",
     area_kerja: item.area_pekerjaan ?? "-",
@@ -214,69 +211,30 @@ function mapRiwayatFromApi(
 }
 
 // ============================================================
-// PEMINJAMAN
-// ============================================================
-
-/**
- * Submit peminjaman langsung.
- *
- * Digunakan ketika cartItems sudah tersedia
- * dan setiap item dikirim satu per satu ke API.
- */
-export async function submitPeminjaman(
-  cartItems: CartItemType[],
-  pemintaId: string,
-  areaKerja: string,
-  namaPekerjaan: string,
-  dicatatOleh: string,
-  spesifikasi?: string,
-  keterangan?: string
-): Promise<void> {
-  const tanggal = new Date().toISOString();
-
-  for (const item of cartItems) {
-    const payload: CreatePeminjamanPayload = {
-      tanggal,
-
-      // PERBAIKAN:
-      // sebelumnya "alat ukur_id"
-      alat_ukur_id: item.alatUkurId,
-
-      peminta_id: pemintaId,
-      jumlah: item.jumlah,
-
-      area_pekerjaan: areaKerja,
-      nama_pekerjaan: namaPekerjaan,
-
-      spesifikasi,
-      keterangan,
-
-      dicatat_oleh: dicatatOleh,
-    };
-
-    await apiFetch("/peminjaman", {
-      method: "POST",
-      body: JSON.stringify(payload),
-    });
-  }
-}
-
-// ============================================================
 // PEMINJAMAN AKTIF
 // ============================================================
 
 /**
- * Mengambil semua peminjaman yang masih aktif /
- * belum dikembalikan.
+ * Mengambil semua peminjaman yang masih aktif / belum dikembalikan.
+ * Memanggil endpoint khusus /peminjaman/belum-kembali sesuai controller.
  */
 export async function getPeminjamanAktif(): Promise<
   PeminjamanAktifItemType[]
 > {
-  const data: PeminjamanIndexApiResponse[] =
-    await apiFetch("/peminjaman");
+  const response: any = await apiFetch("/peminjaman/belum-kembali");
 
-  return data
-    .filter((item) => item.tanggal_kembali === null)
+  // Normalisasi data dari response Laravel { status: 'success', data: [...] }
+  let dataArray: PeminjamanIndexApiResponse[] = [];
+  if (Array.isArray(response)) {
+    dataArray = response;
+  } else if (Array.isArray(response?.data)) {
+    dataArray = response.data;
+  } else if (Array.isArray(response?.result)) {
+    dataArray = response.result;
+  }
+
+  return dataArray
+    .filter((item) => item && item.tanggal_kembali === null)
     .map(mapPeminjamanFromApi);
 }
 
@@ -285,18 +243,25 @@ export async function getPeminjamanAktif(): Promise<
 // ============================================================
 
 /**
- * Mengambil semua peminjaman yang sudah dikembalikan.
+ * Mengambil semua peminjaman (riwayat keseluruhan).
  */
 export async function getRiwayatPeminjaman(): Promise<
   RiwayatPeminjamanType[]
 > {
-  const data: PeminjamanIndexApiResponse[] =
-    await apiFetch("/peminjaman");
+  const response: any = await apiFetch("/peminjaman");
 
-  return data
-    .filter((item) => item.tanggal_kembali !== null)
+  let dataArray: PeminjamanIndexApiResponse[] = [];
+  if (Array.isArray(response)) {
+    dataArray = response;
+  } else if (Array.isArray(response?.data)) {
+    dataArray = response.data;
+  } else if (Array.isArray(response?.result)) {
+    dataArray = response.result;
+  }
+
+  return dataArray
+    .filter((item) => item && item.tanggal_kembali !== null)
     .sort((a, b) => {
-      // Urutkan tanggal kembali terbaru terlebih dahulu
       const dateA = new Date(
         a.tanggal_kembali as string
       ).getTime();
@@ -316,176 +281,39 @@ export async function getRiwayatPeminjaman(): Promise<
 
 /**
  * Menandai peminjaman sebagai sudah dikembalikan.
- *
- * jumlahDikembalikan bersifat optional karena backend
- * mungkin sudah memiliki default.
  */
 export async function tandaiDikembalikan(
   id: string,
-  jumlahDikembalikan?: number
+  catatanPengembalian?: string
 ): Promise<void> {
   await apiFetch(`/peminjaman/${id}/kembali`, {
     method: "PATCH",
     body: JSON.stringify({
-      jumlah_dikembalikan: jumlahDikembalikan,
+      catatan_pengembalian: catatanPengembalian ?? null,
     }),
   });
 }
 
 // ============================================================
-// CART / TEMPORARY_CART
-// FLOW BARU
-// ============================================================
-
-export interface AntreanItemResponse {
-  id: string | number;
-
-  alat_ukur_id: string;
-
-  nama_barang: string;
-  kode_barang: string;
-
-  qty: number;
-  max_jumlah: number;
-}
-
-// ============================================================
-// SCAN ALAT UKUR
-// ============================================================
-
-/**
- * Scan alat ukur dan masukkan ke temporary cart.
- *
- * Endpoint:
- * POST /peminjaman/scan
- *
- * Body:
- * {
- *   alat_ukur_id: "...",
- *   jumlah: 1
- * }
- */
-export async function scanAlatukur(
-  alatUkurId: string,
-  jumlah = 1
-): Promise<{
-  message: string;
-  qty: number;
-}> {
-  return apiFetch("/peminjaman/scan", {
-    method: "POST",
-
-    body: JSON.stringify({
-      alat_ukur_id: alatUkurId,
-      jumlah,
-    }),
-  });
-}
-
-// ============================================================
-// FETCH ANTREAN / CART
-// ============================================================
-
-/**
- * Mengambil isi temporary cart / antrean.
- *
- * Response API diasumsikan:
- *
- * {
- *   data: [...]
- * }
- */
-export async function fetchAntrean(): Promise<
-  AntreanItemResponse[]
-> {
-  const res = (await apiFetch(
-    "/peminjaman/antrean"
-  )) as {
-    data: AntreanItemResponse[];
-  };
-
-  return res.data || [];
-}
-
-// ============================================================
-// UPDATE CART
-// ============================================================
-
-/**
- * Mengubah jumlah item di cart.
- *
- * Endpoint:
- * PATCH /peminjaman/cart/{cartId}
- */
-export async function updateCartItem(
-  cartId: string | number,
-  qty: number
-): Promise<void> {
-  await apiFetch(`/peminjaman/cart/${cartId}`, {
-    method: "PATCH",
-
-    body: JSON.stringify({
-      qty,
-    }),
-  });
-}
-
-// ============================================================
-// REMOVE CART
-// ============================================================
-
-/**
- * Menghapus item dari cart.
- *
- * Endpoint:
- * DELETE /peminjaman/cart/{cartId}
- */
-export async function removeCartItem(
-  cartId: string | number
-): Promise<void> {
-  await apiFetch(`/peminjaman/cart/${cartId}`, {
-    method: "DELETE",
-  });
-}
-
-// ============================================================
-// PROSES PEMINJAMAN
+// PROSES PEMINJAMAN / SCAN
 // ============================================================
 
 export interface ProsesPeminjamanParams {
+  kodeAlat: string;
   pemintaId: string;
-  dicatatOleh: string;
-  namaPekerjaan: string;
-
-  areaKerja?: string;
-  spesifikasi?: string;
+  pekerjaanId: string | number; // Harus berupa ID dari tabel pekerjaan
   keterangan?: string;
 }
 
-/**
- * Memproses semua item yang ada di temporary cart
- * menjadi transaksi peminjaman.
- *
- * Endpoint:
- * POST /peminjaman/proses
- */
 export async function prosesPeminjamanApi(
   params: ProsesPeminjamanParams
 ): Promise<void> {
   await apiFetch("/peminjaman/proses", {
     method: "POST",
-
     body: JSON.stringify({
+      kode_alat: params.kodeAlat,
       peminta_id: params.pemintaId,
-
-      dicatat_oleh: params.dicatatOleh,
-
-      nama_pekerjaan: params.namaPekerjaan,
-
-      area_pekerjaan: params.areaKerja,
-
-      spesifikasi: params.spesifikasi,
-
+      pekerjaan_id: params.pekerjaanId, // Sesuai dengan validasi backend
       keterangan: params.keterangan,
     }),
   });

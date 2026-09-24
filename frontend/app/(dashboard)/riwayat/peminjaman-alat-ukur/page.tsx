@@ -2,7 +2,7 @@
 import { Metadata } from "next";
 
 // import custom components
-import RiwayatPeminjamanManager from "components/ruangalat ukur/riwayat/peminjaman/RiwayatPeminjamanManager";
+import RiwayatPeminjamanManager from "components/riwayat/peminjaman/RiwayatPeminjamanManager";
 
 export const metadata: Metadata = {
   title: "Riwayat Peminjaman Alatukur | Ruang Alatukur - Admin Panel",

@@ -17,6 +17,7 @@ class PeminjamanController extends Controller
      */
     public function index()
     {
+        // Memastikan relasi menggunakan penulisan yang aman (bisa disesuaikan dengan Model)
         $data = Peminjaman::with(['alatUkur', 'peminta', 'pekerjaan', 'dicatatOleh'])
             ->orderBy('tanggal_pinjam', 'desc')
             ->get();
@@ -53,18 +54,29 @@ class PeminjamanController extends Controller
     {
         // 1. Validasi Input dari Frontend (Hasil Scan)
         $validator = Validator::make($request->all(), [
-            'kode_alat' => 'required|string|exists:alat_ukur,kode_alat', // Dari scan fisik alat
-            'peminta_id' => 'required|exists:peminta,id', // Dari scan kartu RFID pekerja
-            'pekerjaan_id' => 'required|exists:pekerjaan,id', // Pilihan dropdown
+            'kode_alat' => 'required|string|exists:alat_ukur,kode_alat', 
+            'peminta_id' => 'required|exists:peminta,id', 
+            'pekerjaan_id' => 'required|exists:pekerjaan,id', 
             'keterangan' => 'nullable|string',
         ]);
 
         if ($validator->fails()) {
-            return response()->json(['errors' => $validator->errors()], 422);
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Validasi gagal',
+                'errors' => $validator->errors()
+            ], 422);
         }
 
         // 2. Cari ID alat berdasarkan kode_alat hasil scan
         $alat = AlatUkur::where('kode_alat', $request->kode_alat)->first();
+
+        if (!$alat) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Alat ukur dengan kode tersebut tidak ditemukan.'
+            ], 404);
+        }
 
         // 3. Keamanan: Pastikan alat ini tidak sedang dipinjam orang lain
         $sedangDipinjam = Peminjaman::where('alat_ukur_id', $alat->id)
@@ -78,14 +90,14 @@ class PeminjamanController extends Controller
             ], 400);
         }
 
-        // 4. Eksekusi Simpan (Langsung tanpa keranjang sementara)
+        // 4. Eksekusi Simpan
         $peminjaman = Peminjaman::create([
             'alat_ukur_id' => $alat->id,
             'peminta_id' => $request->peminta_id,
             'pekerjaan_id' => $request->pekerjaan_id,
-            'dicatat_oleh' => $request->user('sanctum')?->id ?? null, // Mencatat admin yang sedang login
+            'dicatat_oleh' => $request->user('sanctum')?->id ?? null, 
             'tanggal_pinjam' => Carbon::now(),
-            'tanggal_kembali' => null, // Karena baru dipinjam
+            'tanggal_kembali' => null, 
             'keterangan' => $request->keterangan,
         ]);
 
@@ -105,14 +117,19 @@ class PeminjamanController extends Controller
         $peminjaman = Peminjaman::find($id);
 
         if (!$peminjaman) {
-            return response()->json(['message' => 'Data transaksi tidak ditemukan'], 404);
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Data transaksi tidak ditemukan'
+            ], 404);
         }
 
         if ($peminjaman->tanggal_kembali != null) {
-            return response()->json(['message' => 'Alat ini sudah dikembalikan sebelumnya.'], 422);
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Alat ini sudah dikembalikan sebelumnya.'
+            ], 422);
         }
 
-        // Tandai waktu kembali (detik itu juga)
         $peminjaman->update([
             'tanggal_kembali' => Carbon::now(),
             'catatan_pengembalian' => $request->catatan_pengembalian ?? null
@@ -134,7 +151,10 @@ class PeminjamanController extends Controller
         $data = Peminjaman::with(['alatUkur', 'peminta', 'pekerjaan', 'dicatatOleh'])->find($id);
 
         if (!$data) {
-            return response()->json(['message' => 'Data tidak ditemukan'], 404);
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Data tidak ditemukan'
+            ], 404);
         }
 
         return response()->json([
@@ -145,14 +165,17 @@ class PeminjamanController extends Controller
 
     /**
      * 6. DELETE /api/peminjaman/{id}
-     * Hapus riwayat (Opsional, khusus Super Admin)
+     * Hapus riwayat
      */
     public function destroy($id)
     {
         $peminjaman = Peminjaman::find($id);
 
         if (!$peminjaman) {
-            return response()->json(['message' => 'Data tidak ditemukan'], 404);
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Data tidak ditemukan'
+            ], 404);
         }
 
         $peminjaman->delete();
