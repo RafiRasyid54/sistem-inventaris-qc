@@ -129,6 +129,12 @@ export const DashboardMenu: MenuItemType[] = [
         name: "Peminjaman Alat Ukur",
         link: "/riwayat/peminjaman-alat-ukur",
       },
+
+      {
+        id: uuid(),
+        name: "Kalibrasi Alat Ukur",
+        link: "/riwayat/kalibrasi-alat-ukur",
+      },
     ],
   },
 

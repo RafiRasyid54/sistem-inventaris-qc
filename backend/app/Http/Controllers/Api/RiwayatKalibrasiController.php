@@ -11,6 +11,41 @@ use Illuminate\Support\Facades\Validator;
 class RiwayatKalibrasiController extends Controller
 {
     /**
+     * Menampilkan seluruh riwayat kalibrasi (semua alat ukur).
+     * Query opsional: ?search=...&status=...
+     */
+    public function index(Request $request)
+    {
+        $query = RiwayatKalibrasi::with('alatUkur')
+            ->orderBy('tanggal_kalibrasi', 'desc');
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('pelaksana_kalibrasi', 'like', "%{$search}%")
+                  ->orWhereHas('alatUkur', function ($a) use ($search) {
+                      $a->where('kode_alat', 'like', "%{$search}%")
+                        ->orWhere('nama_alat', 'like', "%{$search}%");
+                  });
+            });
+        }
+
+        if ($request->filled('status')) {
+            $query->where('kondisi', $request->status);
+        }
+
+        $data = $query->get()->map(function ($item) {
+            $item->status_jatuh_tempo = $this->hitungStatusJatuhTempo($item->tanggal_jatuh_tempo);
+            return $item;
+        });
+
+        return response()->json([
+            'status' => 'success',
+            'data' => $data,
+        ]);
+    }
+
+    /**
      * Menampilkan semua riwayat kalibrasi dari satu alat ukur tertentu.
      */
     public function getByAlatUkur($alat_ukur_id)
@@ -67,7 +102,7 @@ class RiwayatKalibrasiController extends Controller
     public function update(Request $request, $id)
     {
         $riwayat = RiwayatKalibrasi::find($id);
-        
+
         if (!$riwayat) {
             return response()->json(['message' => 'Riwayat kalibrasi tidak ditemukan.'], 404);
         }
@@ -99,16 +134,32 @@ class RiwayatKalibrasiController extends Controller
     public function destroy($id)
     {
         $riwayat = RiwayatKalibrasi::find($id);
-        
+
         if (!$riwayat) {
             return response()->json(['message' => 'Riwayat kalibrasi tidak ditemukan.'], 404);
         }
 
         $riwayat->delete();
-        
+
         return response()->json([
             'status' => 'success',
             'message' => 'Riwayat kalibrasi berhasil dihapus.'
         ]);
+    }
+
+    /**
+     * Menghitung status jatuh tempo dari tanggal_jatuh_tempo.
+     */
+    private function hitungStatusJatuhTempo($tanggal)
+    {
+        if (!$tanggal) {
+            return 'Tidak ada jadwal';
+        }
+
+        $hari = today()->diffInDays($tanggal, false);
+
+        if ($hari < 0) return 'Lewat jatuh tempo';
+        if ($hari <= 30) return 'Mendekati jatuh tempo';
+        return 'Aman';
     }
 }

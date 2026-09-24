@@ -68,3 +68,33 @@ export interface PeriodeFilterValue {
   dari: string;
   sampai: string;
 }
+
+export interface RiwayatKalibrasiApiResponse {
+  id: string;
+  alat_ukur_id: string;
+  tanggal_kalibrasi: string;
+  tanggal_jatuh_tempo: string | null;
+  kondisi: "Baik" | "RPP" | "RT";
+  pelaksana_kalibrasi?: string | null;
+  keterangan?: string | null;
+  alat_ukur?: {
+    id: string;
+    kode_alat: string;
+    nama_alat: string;
+    merk?: string;
+  };
+}
+
+export interface RiwayatKalibrasiType {
+  id: string;
+  alatUkurId: string;
+  kodeAlat: string;
+  namaAlat: string;
+  merk: string;
+  tanggalKalibrasi: string;
+  tanggalJatuhTempo: string;
+  tanggalJatuhTempoRaw: string | null;
+  kondisi: "Baik" | "RPP" | "RT";
+  pelaksana: string;
+  keterangan: string;
+}
