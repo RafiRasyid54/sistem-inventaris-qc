@@ -1,65 +1,132 @@
-import React, { useEffect, useState } from 'react';
-import { X, Calendar, Award } from 'lucide-react';
-import { AlatUkur, RiwayatKalibrasi } from '../../types/DataAlatUkurTypes';
-import apiFetch from '/lib/apiFetch';
+import React from 'react';
+import { Modal, Badge } from 'react-bootstrap';
+import { Info } from 'lucide-react';
+import { AlatUkur } from '../../types/DataAlatUkurTypes';
 
 interface AlatUkurDetailModalProps {
   item: AlatUkur | null;
   onClose: () => void;
 }
 
+// Fungsi untuk memformat tanggal YYYY-MM-DD menjadi "Bulan-Tahun" seperti di Excel
+const formatBulanTahun = (dateString?: string) => {
+  if (!dateString) return '-';
+  const date = new Date(dateString);
+  if (isNaN(date.getTime())) return dateString;
+  
+  return new Intl.DateTimeFormat('id-ID', {
+    month: 'long',
+    year: '2-digit'
+  }).format(date).replace(' ', '-'); // Contoh output: "November-25"
+};
+
 export const AlatUkurDetailModal: React.FC<AlatUkurDetailModalProps> = ({ item, onClose }) => {
-  const [kalibrasi, setKalibrasi] = useState<RiwayatKalibrasi[]>([]);
-  const [loading, setLoading] = useState(false);
+  // Render Badge Kondisi
+  const getKondisiBadge = (kondisi?: string) => {
+    const k = kondisi?.toLowerCase();
+    if (k === 'baik') return <Badge bg="success-subtle" text="success">Baik</Badge>;
+    if (k === 'rpp') return <Badge bg="warning-subtle" text="warning">RPP</Badge>;
+    if (k === 'rt') return <Badge bg="danger-subtle" text="danger">RT</Badge>;
+    return <Badge bg="secondary-subtle" text="secondary">{kondisi || '-'}</Badge>;
+  };
 
-  useEffect(() => {
-    if (item?.id) {
-      setLoading(true);
-      apiFetch<RiwayatKalibrasi[]>(`/alat-ukur/${item.id}/riwayat-kalibrasi`)
-        .then((res) => setKalibrasi(res))
-        .catch(() => setKalibrasi([]))
-        .finally(() => setLoading(false));
-    }
-  }, [item]);
-
-  if (!item) return null;
+  // Logika pintar untuk memisahkan kode alat berdasarkan teks
+  const kodeAlat = item?.kode_alat || '';
+  const isMekanik = kodeAlat.includes('MM');
+  const isElektrik = kodeAlat.includes('EL');
+  const isSipil = kodeAlat.includes('SP');
 
   return (
-    <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-xl relative">
-        <button onClick={onClose} className="absolute right-4 top-4 text-gray-400 hover:text-gray-600">
-          <X size={20} />
-        </button>
+    <Modal 
+      show={!!item} 
+      onHide={onClose} 
+      centered 
+      backdrop="static"
+      size="lg"
+    >
+      <Modal.Header closeButton className="bg-light">
+        <Modal.Title className="fs-5 fw-bold text-dark d-flex align-items-center gap-2">
+          <Info size={20} className="text-primary"/> Detail Alat Ukur
+        </Modal.Title>
+      </Modal.Header>
+      
+      <Modal.Body className="bg-light pb-4">
+        {item && (
+          <div className="bg-white p-4 rounded border shadow-sm mt-2">
+            {/* Bagian Header Detail */}
+            <div className="d-flex justify-content-between align-items-start mb-3">
+              <div>
+                <h3 className="fw-bold text-dark mb-1">{item.nama_alat}</h3>
+                <p className="font-monospace text-primary fw-semibold mb-0">
+                  {kodeAlat || "Tanpa Kode"}
+                </p>
+              </div>
+              <div>{getKondisiBadge(item.kondisi)}</div>
+            </div>
 
-        <h3 className="text-xl font-bold text-gray-800 mb-1">{item.nama_alat}</h3>
-        <p className="text-xs font-mono text-blue-600 mb-4">{item.kode_alat}</p>
+            {/* Spesifikasi Grid */}
+            <div className="row g-3 border-top pt-3">
+              {/* Baris 1: Spesifikasi Dasar */}
+              <div className="col-md-4 col-sm-6">
+                <span className="text-secondary small d-block mb-1">Merk</span>
+                <span className="fw-semibold text-dark">{item.merk || '-'}</span>
+              </div>
+              <div className="col-md-4 col-sm-6">
+                <span className="text-secondary small d-block mb-1">Serial Number (SN)</span>
+                <span className="fw-semibold text-dark">{item.sn || '-'}</span>
+              </div>
+              <div className="col-md-4 col-sm-6">
+                <span className="text-secondary small d-block mb-1">Spesifikasi</span>
+                <span className="fw-semibold text-dark">{item.spesifikasi || '-'}</span>
+              </div>
 
-        <div className="grid grid-cols-2 gap-3 text-sm bg-gray-50 p-3 rounded-xl mb-6">
-          <div><span className="text-gray-400">Merek:</span> {item.merk || '-'}</div>
-          <div><span className="text-gray-400">Lokasi:</span> {item.lokasi || '-'}</div>
-        </div>
+              {/* Baris 2: Pembagian Kode (Smart Logic) */}
+              <div className="col-md-4 col-sm-6 mt-3">
+                <span className="text-secondary small d-block mb-1">Kode Mekanik</span>
+                <span className="fw-semibold text-dark">{isMekanik ? kodeAlat : '-'}</span>
+              </div>
+              <div className="col-md-4 col-sm-6 mt-3">
+                <span className="text-secondary small d-block mb-1">Kode Elektrik</span>
+                <span className="fw-semibold text-dark">{isElektrik ? kodeAlat : '-'}</span>
+              </div>
+              <div className="col-md-4 col-sm-6 mt-3">
+                <span className="text-secondary small d-block mb-1">Kode Sipil</span>
+                <span className="fw-semibold text-dark">{isSipil ? kodeAlat : '-'}</span>
+              </div>
 
-        <h4 className="text-sm font-bold text-gray-700 mb-3 flex items-center gap-2">
-          <Award size={16} /> Riwayat Kalibrasi
-        </h4>
+              {/* Baris 3: Lokasi & Keterangan */}
+              <div className="col-md-6 col-sm-12 mt-3">
+                <span className="text-secondary small d-block mb-1">Lokasi</span>
+                <span className="fw-semibold text-dark">{item.lokasi || '-'}</span>
+              </div>
+              <div className="col-md-6 col-sm-12 mt-3">
+                <span className="text-secondary small d-block mb-1">Keterangan</span>
+                <span className="fw-semibold text-dark">{item.keterangan || '-'}</span>
+              </div>
 
-        {loading ? (
-          <p className="text-xs text-gray-400">Memuat riwayat...</p>
-        ) : kalibrasi.length === 0 ? (
-          <p className="text-xs text-gray-400">Belum ada riwayat kalibrasi.</p>
-        ) : (
-          <div className="space-y-2 max-h-40 overflow-y-auto">
-            {kalibrasi.map((k) => (
-              <div key={k.id} className="p-2 border border-gray-100 rounded-lg text-xs flex justify-between items-center">
-                <div>
-                  <p className="font-semibold">{k.hasil}</p>
-                  <p className="text-gray-400 flex items-center gap-1"><Calendar size={12} /> {k.tanggal_kalibrasi}</p>
+              {/* Baris 4: Jadwal Kalibrasi (Membaca API Laravel yang benar) */}
+              <div className="col-md-6 col-sm-12 mt-4">
+                <div className="bg-light p-2 rounded border border-secondary-subtle">
+                  <span className="text-secondary small d-block mb-1">Kalibrasi Terakhir</span>
+                  {/* Gunakan item.tanggal_kalibrasi_terakhir dari API */}
+                  <span className="fw-semibold text-primary">
+                    {formatBulanTahun(item.tanggal_kalibrasi_terakhir as string)}
+                  </span>
                 </div>
               </div>
-            ))}
+              <div className="col-md-6 col-sm-12 mt-4">
+                <div className="bg-light p-2 rounded border border-secondary-subtle">
+                  <span className="text-secondary small d-block mb-1">Rencana Kalibrasi Berikutnya</span>
+                  {/* Gunakan item.tanggal_kalibrasi_selanjutnya dari API */}
+                  <span className="fw-semibold text-danger">
+                    {formatBulanTahun(item.tanggal_kalibrasi_selanjutnya as string)}
+                  </span>
+                </div>
+              </div>
+            </div>
           </div>
         )}
-      </div>
-    </div>
+      </Modal.Body>
+    </Modal>
   );
 };

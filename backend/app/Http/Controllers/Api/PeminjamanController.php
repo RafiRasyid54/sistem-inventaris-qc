@@ -185,4 +185,14 @@ class PeminjamanController extends Controller
             'message' => 'Riwayat peminjaman berhasil dihapus'
         ]);
     }
+    public function getByAlatUkur($alat_ukur_id)
+    {
+        // Sesuaikan nama model dan relasi dengan yang kamu gunakan di Laravel
+        $riwayat = Peminjaman::with(['peminta']) // atau 'peminjam', 'user', tergantung relasimu
+            ->where('alat_ukur_id', $alat_ukur_id) // atau sesuai struktur databasemu
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        return response()->json($riwayat);
+    }
 }

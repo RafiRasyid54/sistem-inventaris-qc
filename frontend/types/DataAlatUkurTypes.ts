@@ -18,6 +18,11 @@ export interface AlatUkur {
   kalibrasi?: string;
   rencana_kalibrasi?: string;
 
+  // --- TAMBAHAN BARU SESUAI API LARAVEL ---
+  tanggal_kalibrasi_terakhir?: string;
+  tanggal_kalibrasi_selanjutnya?: string;
+  // ----------------------------------------
+
   kondisi?: string;
   keterangan?: string;
   kategori?: string;

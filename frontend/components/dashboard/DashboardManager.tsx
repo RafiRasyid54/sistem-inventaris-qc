@@ -1,14 +1,14 @@
 "use client";
-import { useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { Row, Col, Card, CardBody, Alert, Badge } from "react-bootstrap";
+import { Row, Col, Card, CardBody, Alert, Badge, Spinner } from "react-bootstrap";
 import {
   IconRuler2,
   IconUsers,
   IconClockHour4,
   IconAlertTriangle,
   IconTrendingUp,
-  IconShoppingCart,
+  IconRefresh,
 } from "@tabler/icons-react";
 import {
   LineChart,
@@ -27,12 +27,18 @@ import {
   AlatTerpopulerItem,
   AktivitasItem,
   TrenPeminjamanItem,
-  OrderAlatUkurStatusCount,
 } from "types/DashboardTypes";
 
 import Flex from "components/common/Flex";
 import DasherBreadcrumb from "components/common/DasherBreadcrumb";
 import StatCard from "components/dashboard/StatCard";
+import apiFetch from "/lib/apiFetch";
+
+// =======================================================
+// Interval auto-refresh (polling) dalam milidetik.
+// Ganti angka ini kalau mau lebih cepat/lambat.
+// =======================================================
+const REFRESH_INTERVAL_MS = 15000; // 15 detik
 
 const formatWaktu = (iso: string) => {
   const d = new Date(iso);
@@ -50,64 +56,84 @@ const jenisLabel: Record<AktivitasItem["jenis"], { label: string; color: string 
   pengembalian: { label: "Pengembalian", color: "success" },
 };
 
-// --- DATA DUMMY ---
-const dummySummary: DashboardSummary = {
-  total_alat_ukur: 142,
-  sedang_dipinjam: 12,
-  peringatan_kalibrasi: 5,
-  total_peminta_aktif: 28,
-  total_pekerjaan_aktif: 4,
-  order_alat_ukur_status: {
-    belum_dibeli: 3,
-    on_progres: 2,
-    sudah_dibeli: 15,
-    ditolak: 1,
-  } as OrderAlatUkurStatusCount,
-};
-
-const dummyKalibrasi: KalibrasiMendekatiItem[] = [
-  { id: 1, nama_alat: "Digital Caliper 150mm", kode_alat: "AL-001", sn: "SN987654", tanggal_kalibrasi_selanjutnya: "2026-10-15" },
-  { id: 2, nama_alat: "Micrometer Outside", kode_alat: "AL-014", sn: "SN112233", tanggal_kalibrasi_selanjutnya: "2026-10-20" },
-];
-
-const dummyTelat: TelatKembaliItem[] = [
-  { 
-    id: 101, 
-    nama_alat: "Dial Indicator", 
-    nama_peminjam: "Ahmad Fauzi", 
-    hari_terlambat: 3,
-    kode_alat: "AL-022",
-    tanggal_pinjam: "2026-09-01"
-  },
-];
-
-const dummyAlatTerpopuler: AlatTerpopulerItem[] = [
-  { kode_alat: "AL-001", nama_alat: "Digital Caliper 150mm", merk: "Mitutoyo", sn: "SN987654", total_dipinjam: 24 },
-  { kode_alat: "AL-005", nama_alat: "Digital Multimeter", merk: "Fluke", sn: "SN554433", total_dipinjam: 18 },
-];
-
-const dummyAktivitas: AktivitasItem[] = [
-  { waktu: "2026-09-17T10:30:00Z", deskripsi: "Budi meminjam Digital Caliper 150mm", jenis: "peminjaman" },
-  { waktu: "2026-09-17T09:15:00Z", deskripsi: "Siti mengembalikan Micrometer Outside", jenis: "pengembalian" },
-];
-
-const dummyTren: TrenPeminjamanItem[] = [
-  { tanggal: "2026-09-01", total: 2 },
-  { tanggal: "2026-09-05", total: 5 },
-  { tanggal: "2026-09-10", total: 3 },
-  { tanggal: "2026-09-15", total: 8 },
-];
+// Helper: banyak endpoint di backend membalas { status, data },
+// tapi ada juga yang langsung array. Ini menormalkan keduanya.
+function extractData<T>(res: any, fallback: T): T {
+  if (res == null) return fallback;
+  if (Array.isArray(res)) return res as unknown as T;
+  if (res.data !== undefined) return res.data as T;
+  return res as T;
+}
 
 const DashboardManager = () => {
-  const [summary] = useState<DashboardSummary | null>(dummySummary);
-  const [kalibrasiMendekati] = useState<KalibrasiMendekatiItem[]>(dummyKalibrasi);
-  const [telatKembali] = useState<TelatKembaliItem[]>(dummyTelat);
-  const [alatTerpopuler] = useState<AlatTerpopulerItem[]>(dummyAlatTerpopuler);
-  const [aktivitas] = useState<AktivitasItem[]>(dummyAktivitas);
-  const [tren] = useState<TrenPeminjamanItem[]>(dummyTren);
+  const [summary, setSummary] = useState<DashboardSummary | null>(null);
+  const [kalibrasiMendekati, setKalibrasiMendekati] = useState<KalibrasiMendekatiItem[]>([]);
+  const [telatKembali, setTelatKembali] = useState<TelatKembaliItem[]>([]);
+  const [alatTerpopuler, setAlatTerpopuler] = useState<AlatTerpopulerItem[]>([]);
+  const [aktivitas, setAktivitas] = useState<AktivitasItem[]>([]);
+  const [tren, setTren] = useState<TrenPeminjamanItem[]>([]);
 
-  const [loading] = useState(false);
-  const [error] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  // Dipakai supaya loading spinner besar cuma tampil sekali di awal,
+  // bukan setiap kali auto-refresh jalan di background.
+  const isFirstLoadRef = useRef(true);
+
+  const loadDashboard = useCallback(async () => {
+    try {
+      if (isFirstLoadRef.current) {
+        setLoading(true);
+      } else {
+        setIsRefreshing(true);
+      }
+      setError(null);
+
+      const [
+        summaryRes,
+        kalibrasiRes,
+        telatRes,
+        terpopulerRes,
+        aktivitasRes,
+        trenRes,
+      ] = await Promise.all([
+        apiFetch<any>("/dashboard/summary"),
+        apiFetch<any>("/dashboard/kalibrasi-mendekati"),
+        apiFetch<any>("/dashboard/telat-kembali"),
+        apiFetch<any>("/dashboard/alat-terpopuler"),
+        apiFetch<any>("/dashboard/aktivitas-terbaru"),
+        apiFetch<any>("/dashboard/tren-peminjaman"),
+      ]);
+
+      setSummary(extractData<DashboardSummary>(summaryRes, null as any));
+      setKalibrasiMendekati(extractData<KalibrasiMendekatiItem[]>(kalibrasiRes, []));
+      setTelatKembali(extractData<TelatKembaliItem[]>(telatRes, []));
+      setAlatTerpopuler(extractData<AlatTerpopulerItem[]>(terpopulerRes, []));
+      setAktivitas(extractData<AktivitasItem[]>(aktivitasRes, []));
+      setTren(extractData<TrenPeminjamanItem[]>(trenRes, []));
+
+      setLastUpdated(new Date());
+    } catch (err: any) {
+      setError(err?.message || "Gagal memuat data dashboard.");
+    } finally {
+      setLoading(false);
+      setIsRefreshing(false);
+      isFirstLoadRef.current = false;
+    }
+  }, []);
+
+  // Load pertama kali + auto-refresh berkala (polling) untuk efek real-time
+  useEffect(() => {
+    loadDashboard();
+
+    const intervalId = setInterval(() => {
+      loadDashboard();
+    }, REFRESH_INTERVAL_MS);
+
+    return () => clearInterval(intervalId);
+  }, [loadDashboard]);
 
   const PageHeader = (
     <Row className="mb-4 align-items-center">
@@ -120,6 +146,18 @@ const DashboardManager = () => {
             </p>
             <DasherBreadcrumb />
           </div>
+
+          <div className="d-flex align-items-center gap-2">
+            {isRefreshing && (
+              <Spinner animation="border" size="sm" className="text-primary" />
+            )}
+            <span className="text-muted small d-flex align-items-center gap-1">
+              <IconRefresh size={14} />
+              {lastUpdated
+                ? `Diperbarui ${lastUpdated.toLocaleTimeString("id-ID")}`
+                : "Memuat..."}
+            </span>
+          </div>
         </Flex>
       </Col>
     </Row>
@@ -129,7 +167,10 @@ const DashboardManager = () => {
     return (
       <>
         {PageHeader}
-        <div className="text-center py-5 text-muted">Memuat data dashboard...</div>
+        <div className="text-center py-5 text-muted">
+          <Spinner animation="border" size="sm" className="me-2" />
+          Memuat data dashboard...
+        </div>
       </>
     );
   }
@@ -142,8 +183,6 @@ const DashboardManager = () => {
       </>
     );
   }
-
-  const orderAlatUkurStatus: Partial<OrderAlatUkurStatusCount> = summary?.order_alat_ukur_status ?? {};
 
   return (
     <div className="py-2">
@@ -375,43 +414,6 @@ const DashboardManager = () => {
               )}
             </CardBody>
           </Card>
-        </Col>
-      </Row>
-
-      {/* Baris 6: Rincian Order Alat Ukur */}
-      <Row className="g-3 mb-4">
-        <Col xs={12}>
-          <Link
-            href="/order/order-alat-ukur"
-            className="text-decoration-none d-block"
-          >
-            <Card className="border border-primary border-opacity-25 shadow-sm rounded-3 hover-shadow transition-all">
-              <CardBody className="p-4">
-                <h6 className="mb-3 d-flex align-items-center gap-2 fs-6 fw-bold text-dark">
-                  <IconShoppingCart size={20} className="text-primary" />
-                  Rincian Status Order Alat Ukur
-                </h6>
-                <Row className="text-center g-2">
-                  <Col xs={3}>
-                    <div className="text-muted small mb-1">Belum Dibeli</div>
-                    <div className="h5 mb-0 text-secondary fw-bold">{orderAlatUkurStatus.belum_dibeli ?? 0}</div>
-                  </Col>
-                  <Col xs={3}>
-                    <div className="text-muted small mb-1">On Progres</div>
-                    <div className="h5 mb-0 text-primary fw-bold">{orderAlatUkurStatus.on_progres ?? 0}</div>
-                  </Col>
-                  <Col xs={3}>
-                    <div className="text-muted small mb-1">Sudah Dibeli</div>
-                    <div className="h5 mb-0 text-success fw-bold">{orderAlatUkurStatus.sudah_dibeli ?? 0}</div>
-                  </Col>
-                  <Col xs={3}>
-                    <div className="text-muted small mb-1">Ditolak</div>
-                    <div className="h5 mb-0 text-danger fw-bold">{orderAlatUkurStatus.ditolak ?? 0}</div>
-                  </Col>
-                </Row>
-              </CardBody>
-            </Card>
-          </Link>
         </Col>
       </Row>
     </div>

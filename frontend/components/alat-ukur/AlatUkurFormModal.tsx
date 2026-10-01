@@ -12,14 +12,13 @@ interface AlatUkurFormModalProps {
 const defaultForm: Partial<AlatUkur> = {
   kode_alat: '',
   nama_alat: '',
-  kategori: '',
+  kategori: '', // Menyimpan input Mekanik/Elektrik/Sipil
   merk: '',
   sn: '',
   spesifikasi: '',
   kondisi: 'Baik',
-  status_kalibrasi: 'Terkalibrasi',
-  kalibrasi: '',
-  rencana_kalibrasi: '',
+  tanggal_kalibrasi_terakhir: '', // Disesuaikan dengan API Laravel
+  tanggal_kalibrasi_selanjutnya: '', // Disesuaikan dengan API Laravel
   lokasi: '',
   keterangan: '',
 };
@@ -34,7 +33,12 @@ export const AlatUkurFormModal: React.FC<AlatUkurFormModalProps> = ({
 
   useEffect(() => {
     if (item) {
-      setForm(item);
+      setForm({
+        ...item,
+        // Format tanggal ke YYYY-MM-DD agar muncul di input type="date"
+        tanggal_kalibrasi_terakhir: item.tanggal_kalibrasi_terakhir ? item.tanggal_kalibrasi_terakhir.split('T')[0] : '',
+        tanggal_kalibrasi_selanjutnya: item.tanggal_kalibrasi_selanjutnya ? item.tanggal_kalibrasi_selanjutnya.split('T')[0] : '',
+      });
     } else {
       setForm(defaultForm);
     }
@@ -57,7 +61,7 @@ export const AlatUkurFormModal: React.FC<AlatUkurFormModalProps> = ({
         <Modal.Body>
           <Row className="g-3">
             <Col md={6}>
-              <Form.Label className="small font-weight-bold">
+              <Form.Label className="small fw-bold">
                 Kode Alat <span className="text-danger">*</span>
               </Form.Label>
               <Form.Control
@@ -69,7 +73,7 @@ export const AlatUkurFormModal: React.FC<AlatUkurFormModalProps> = ({
               />
             </Col>
             <Col md={6}>
-              <Form.Label className="small font-weight-bold">
+              <Form.Label className="small fw-bold">
                 Serial Number (SN)
               </Form.Label>
               <Form.Control
@@ -81,7 +85,7 @@ export const AlatUkurFormModal: React.FC<AlatUkurFormModalProps> = ({
             </Col>
 
             <Col md={12}>
-              <Form.Label className="small font-weight-bold">
+              <Form.Label className="small fw-bold">
                 Nama Alat Ukur <span className="text-danger">*</span>
               </Form.Label>
               <Form.Control
@@ -94,7 +98,7 @@ export const AlatUkurFormModal: React.FC<AlatUkurFormModalProps> = ({
             </Col>
 
             <Col md={6}>
-              <Form.Label className="small font-weight-bold">Merk</Form.Label>
+              <Form.Label className="small fw-bold">Merk</Form.Label>
               <Form.Control
                 type="text"
                 placeholder="misal: Mitutoyo"
@@ -104,10 +108,11 @@ export const AlatUkurFormModal: React.FC<AlatUkurFormModalProps> = ({
             </Col>
 
             <Col md={6}>
-              <Form.Label className="small font-weight-bold">Kategori / Bidang</Form.Label>
+              <Form.Label className="small fw-bold">Kategori / Bidang <span className="text-danger">*</span></Form.Label>
               <Form.Select
                 value={form.kategori || ''}
                 onChange={(e) => setForm({ ...form, kategori: e.target.value })}
+                required
               >
                 <option value="">Pilih Kategori...</option>
                 <option value="Mekanik">Mekanik</option>
@@ -117,31 +122,19 @@ export const AlatUkurFormModal: React.FC<AlatUkurFormModalProps> = ({
             </Col>
 
             <Col md={6}>
-              <Form.Label className="small font-weight-bold">Kondisi</Form.Label>
+              <Form.Label className="small fw-bold">Kondisi</Form.Label>
               <Form.Select
                 value={form.kondisi || 'Baik'}
                 onChange={(e) => setForm({ ...form, kondisi: e.target.value })}
               >
                 <option value="Baik">Baik</option>
-                <option value="Perlu Perbaikan">Perlu Perbaikan</option>
-                <option value="Rusak">Rusak</option>
+                <option value="RPP">RPP (Perlu Perbaikan)</option>
+                <option value="RT">RT (Rusak)</option>
               </Form.Select>
             </Col>
 
             <Col md={6}>
-              <Form.Label className="small font-weight-bold">Status Kalibrasi</Form.Label>
-              <Form.Select
-                value={form.status_kalibrasi || 'Terkalibrasi'}
-                onChange={(e) => setForm({ ...form, status_kalibrasi: e.target.value })}
-              >
-                <option value="Terkalibrasi">Terkalibrasi</option>
-                <option value="Perlu Kalibrasi">Perlu Kalibrasi</option>
-                <option value="Expired">Expired</option>
-              </Form.Select>
-            </Col>
-
-            <Col md={6}>
-              <Form.Label className="small font-weight-bold">Spesifikasi</Form.Label>
+              <Form.Label className="small fw-bold">Spesifikasi</Form.Label>
               <Form.Control
                 type="text"
                 placeholder="misal: 0-25mm 0.001mm"
@@ -151,7 +144,25 @@ export const AlatUkurFormModal: React.FC<AlatUkurFormModalProps> = ({
             </Col>
 
             <Col md={6}>
-              <Form.Label className="small font-weight-bold">Lokasi Penyimpanan</Form.Label>
+              <Form.Label className="small fw-bold">Tanggal Kalibrasi Terakhir</Form.Label>
+              <Form.Control
+                type="date"
+                value={form.tanggal_kalibrasi_terakhir || ''}
+                onChange={(e) => setForm({ ...form, tanggal_kalibrasi_terakhir: e.target.value })}
+              />
+            </Col>
+
+            <Col md={6}>
+              <Form.Label className="small fw-bold">Rencana Kalibrasi Berikutnya</Form.Label>
+              <Form.Control
+                type="date"
+                value={form.tanggal_kalibrasi_selanjutnya || ''}
+                onChange={(e) => setForm({ ...form, tanggal_kalibrasi_selanjutnya: e.target.value })}
+              />
+            </Col>
+
+            <Col md={6}>
+              <Form.Label className="small fw-bold">Lokasi Penyimpanan</Form.Label>
               <Form.Control
                 type="text"
                 placeholder="misal: Lemari A1"
@@ -160,26 +171,8 @@ export const AlatUkurFormModal: React.FC<AlatUkurFormModalProps> = ({
               />
             </Col>
 
-            <Col md={6}>
-              <Form.Label className="small font-weight-bold">Tanggal Kalibrasi</Form.Label>
-              <Form.Control
-                type="date"
-                value={form.kalibrasi || ''}
-                onChange={(e) => setForm({ ...form, kalibrasi: e.target.value })}
-              />
-            </Col>
-
-            <Col md={6}>
-              <Form.Label className="small font-weight-bold">Rencana Kalibrasi</Form.Label>
-              <Form.Control
-                type="date"
-                value={form.rencana_kalibrasi || ''}
-                onChange={(e) => setForm({ ...form, rencana_kalibrasi: e.target.value })}
-              />
-            </Col>
-
             <Col md={12}>
-              <Form.Label className="small font-weight-bold">Keterangan</Form.Label>
+              <Form.Label className="small fw-bold">Keterangan</Form.Label>
               <Form.Control
                 as="textarea"
                 rows={2}

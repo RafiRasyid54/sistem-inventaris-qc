@@ -45,6 +45,12 @@ class AlatUkurController extends Controller
                 'string',
             ],
 
+            'kategori' => [
+                'nullable',
+                'string',
+                'in:Mekanik,Elektrik,Sipil', // Pastikan isinya valid
+            ],
+
             'merk' => [
                 'nullable',
                 'string',
@@ -210,6 +216,12 @@ class AlatUkurController extends Controller
             'nama_alat' => [
                 'sometimes',
                 'string',
+            ],
+
+            'kategori' => [
+                'nullable',
+                'string',
+                'in:Mekanik,Elektrik,Sipil', // Pastikan isinya valid
             ],
 
             'merk' => [

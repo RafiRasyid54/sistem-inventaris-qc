@@ -14,6 +14,7 @@ class AlatUkur extends Model
     protected $fillable = [
         'kode_alat',
         'nama_alat',
+        'kategori',
         'merk',
         'sn',
         'spesifikasi',

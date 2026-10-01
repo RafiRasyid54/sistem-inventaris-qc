@@ -16,6 +16,10 @@ return new class extends Migration
                 $table->id();
                 $table->string('kode_alat')->unique();
                 $table->string('nama_alat');
+                
+                // --- KOLOM KATEGORI DITAMBAHKAN DI SINI ---
+                $table->string('kategori')->nullable();
+                
                 $table->string('merk')->nullable();
                 $table->string('sn')->nullable();
                 $table->string('spesifikasi')->nullable();

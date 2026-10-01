@@ -89,17 +89,16 @@ Route::middleware('auth:sanctum')->group(function () {
     // C. MODUL ALAT UKUR & KALIBRASI
     // ==========================================
 
+    // ==========================================
+    // C. MODUL ALAT UKUR & KALIBRASI
+    // ==========================================
     Route::apiResource('alat-ukur', AlatUkurController::class);
 
     // Riwayat kalibrasi berdasarkan alat ukur
-    Route::get(
-        '/alat-ukur/{alat_ukur_id}/riwayat-kalibrasi',
-        [RiwayatKalibrasiController::class, 'getByAlatUkur']
-    );
-
-    // CRUD riwayat kalibrasi
-    Route::apiResource('riwayat-kalibrasi', RiwayatKalibrasiController::class);
-
+    Route::get('/alat-ukur/{alat_ukur_id}/riwayat-kalibrasi', [RiwayatKalibrasiController::class, 'getByAlatUkur']);
+    
+    // TAMBAHKAN BARIS INI: Riwayat peminjaman berdasarkan alat ukur
+    Route::get('/alat-ukur/{alat_ukur_id}/riwayat-peminjaman', [PeminjamanController::class, 'getByAlatUkur']);
 
     // ==========================================
     // D. MODUL TRANSAKSI (PEMINJAMAN)

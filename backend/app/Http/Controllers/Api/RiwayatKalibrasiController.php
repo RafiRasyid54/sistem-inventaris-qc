@@ -162,4 +162,4 @@ class RiwayatKalibrasiController extends Controller
         if ($hari <= 30) return 'Mendekati jatuh tempo';
         return 'Aman';
     }
-}
+} 
