@@ -4,12 +4,15 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
 
 class Peminjaman extends Model
 {
-    use HasFactory;
+    use HasFactory, HasUuids;
 
     protected $table = 'peminjaman';
+    protected $keyType = 'string';
+    public $incrementing = false;
 
     // Kolom-kolom inti untuk scan < 1 menit
     protected $fillable = [

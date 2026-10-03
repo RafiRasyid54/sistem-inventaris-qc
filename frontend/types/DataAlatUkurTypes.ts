@@ -84,6 +84,7 @@ export interface LoanFormValues {
 
 export interface PeminjamanAktifItemType {
   id: string;
+  peminjamanId?: string; // <--- TAMBAHKAN BARIS INI
 
   alatUkurId: string;
 

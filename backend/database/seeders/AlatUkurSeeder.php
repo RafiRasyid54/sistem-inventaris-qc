@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use Illuminate\Support\Str;
 use Illuminate\Database\Seeder;
 use App\Models\AlatUkur;
 use Carbon\Carbon;
@@ -157,6 +158,11 @@ class AlatUkurSeeder extends Seeder
         ];
 
         foreach ($data as $item) {
+            // Tambahkan UUID secara dinamis sebelum menyimpan ke database
+            if (!isset($item['id'])) {
+                $item['id'] = Str::uuid()->toString();
+            }
+            
             AlatUkur::firstOrCreate(['kode_alat' => $item['kode_alat']], $item);
         }
     }

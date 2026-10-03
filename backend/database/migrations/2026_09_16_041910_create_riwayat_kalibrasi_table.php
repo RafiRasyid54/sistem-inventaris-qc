@@ -9,8 +9,11 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('riwayat_kalibrasi', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('alat_ukur_id')->constrained('alat_ukur')->onDelete('cascade');
+            $table->id(); // ID riwayat kalibrasi tetap biarkan begini tidak apa-apa
+            
+            // UBAH BAGIAN INI MENJADI UUID:
+            $table->uuid('alat_ukur_id');
+            $table->foreign('alat_ukur_id')->references('id')->on('alat_ukur')->onDelete('cascade');
             $table->date('tanggal_kalibrasi');
             $table->date('tanggal_jatuh_tempo')->nullable();
             $table->enum('kondisi', ['Baik', 'RPP', 'RT']);

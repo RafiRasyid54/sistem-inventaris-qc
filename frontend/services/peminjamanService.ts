@@ -124,6 +124,7 @@ function mapPeminjamanFromApi(
 
   return {
     id: item.id,
+    peminjamanId: item.id, // <--- PERBAIKAN: Suntikkan peminjamanId di sini!
 
     // ID alat ukur
     alatUkurId: item.alat_ukur?.id ?? "-",

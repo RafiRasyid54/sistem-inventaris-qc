@@ -13,7 +13,7 @@ return new class extends Migration
     {
         if (!Schema::hasTable('alat_ukur')) {
             Schema::create('alat_ukur', function (Blueprint $table) {
-                $table->id();
+                $table->uuid('id')->primary();
                 $table->string('kode_alat')->unique();
                 $table->string('nama_alat');
                 

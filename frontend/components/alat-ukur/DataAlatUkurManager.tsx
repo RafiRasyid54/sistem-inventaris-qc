@@ -187,6 +187,20 @@ const DataAlatUkurManager = () => {
         return;
       }
 
+      // 1. BLOKIR JIKA SEDANG DIPINJAM
+      // Pastikan backend mengirimkan field 'status_peminjaman'
+      const statusPinjam = (item as any).status_peminjaman; 
+      if (statusPinjam === 'Dipinjam' || statusPinjam === 'sedang_dipinjam') {
+        alert(`❌ Gagal: Alat "${item.nama_alat}" saat ini sedang dipinjam dan belum dikembalikan!`);
+        return;
+      }
+
+      // 2. BLOKIR JIKA ALAT DALAM KONDISI RUSAK (Khusus QC)
+      if (item.kondisi === 'RPP' || item.kondisi === 'RT') {
+        alert(`❌ Gagal: Alat "${item.nama_alat}" dalam kondisi rusak (${item.kondisi}) dan tidak bisa dipinjamkan!`);
+        return;
+      }
+
       const isAlreadyInCart = cart.some((ci) => ci.id === item.id);
       if (isAlreadyInCart) {
         alert(

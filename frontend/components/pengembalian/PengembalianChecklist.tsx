@@ -173,7 +173,9 @@ const PengembalianChecklist = ({
 
       return {
         id: item.id,
-        toolId: item.toolId,
+        toolId: item.toolId,               // Tetap kirim untuk kompabilitas internal komponen
+        tool_id: item.toolId,              // FORMAT SNAKE_CASE WAJIB UNTUK BACKEND (TOOLS)
+        alat_ukur_id: item.toolId,         // FORMAT WAJIB UNTUK BACKEND (ALAT UKUR)
         namaBarang: item.namaBarang,
         jumlahDikembalikan: row.jumlahDikembalikan,
         kerusakan,

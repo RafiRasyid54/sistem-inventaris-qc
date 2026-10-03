@@ -68,8 +68,6 @@ const PengembalianManager = () => {
         return;
       }
 
-      // FIX: fallback chain, sama seperti di DataAlatUkurManager.verifyCard
-      // karena API /peminta kadang tidak selalu mengembalikan field "nama"
       const namaPeminta =
         peminta.nama ||
         peminta.nama_peminta ||
@@ -85,7 +83,6 @@ const PengembalianManager = () => {
         return;
       }
 
-      // Gabungkan alat ukur yang sama (dipinjam di transaksi berbeda) jadi 1 baris
       const grouped: PengembalianGroupItem[] = [];
       const records: Record<string, PeminjamanAktifItemType[]> = {};
 
@@ -94,9 +91,9 @@ const PengembalianManager = () => {
           records[item.alatUkurId] = [];
           grouped.push({
             id: item.alatUkurId,
-            toolId: item.alatUkurId,       // FIX: dulu field ini gak pernah di-set
-            kodeBarang: item.kodeBarang,   // FIX: dulu "kodeAlat" (salah, gak match interface)
-            namaBarang: item.namaBarang,   // FIX: dulu "namaAlat" (salah, gak match interface)
+            toolId: item.alatUkurId,
+            kodeBarang: item.kodeBarang,
+            namaBarang: item.namaBarang,
             jumlah: 0,
           });
         }
@@ -109,7 +106,7 @@ const PengembalianManager = () => {
         records[alatUkurId].reverse();
       });
 
-      setNamaPeminjamAktif(namaPeminta); // FIX: pakai hasil fallback, bukan peminta.nama polos
+      setNamaPeminjamAktif(namaPeminta);
       setItemsPeminjam(grouped);
       setRecordsByGroup(records);
     } catch (err) {
@@ -134,7 +131,6 @@ const PengembalianManager = () => {
       const dicatatOleh = localStorage.getItem("userId");
 
       for (const item of batch) {
-        // Handle properti id/alatUkurId dari PengembalianBatchItem dengan aman
         const batchId = item.id || (item as unknown as { alatUkurId: string }).alatUkurId;
         const records = recordsByGroup[batchId] || [];
 
@@ -149,9 +145,16 @@ const PengembalianManager = () => {
 
           const ambil = Math.min(record.jumlah, sisaDikembalikan);
 
-          // FIX (dari pembahasan sebelumnya): argumen kedua tandaiDikembalikan
-          // seharusnya catatan (string), bukan jumlah (number) — sebelumnya "ambil as any"
-          await tandaiDikembalikan(String(record.id));
+          // TANGKAP ID
+          const realPeminjamanId = record.id || (record as any).peminjamanId || (record as any).id_peminjaman || (record as any).peminjaman_id;
+          
+          // JEBAKAN BATMAN UNTUK MELIHAT ISI DATA ASLI DARI BACKEND
+          if (!realPeminjamanId || realPeminjamanId === 0 || realPeminjamanId === "0") {
+            alert("🚨 ISI DATA DARI BACKEND: " + JSON.stringify(record, null, 2));
+            throw new Error("Gagal: ID Transaksi Peminjaman tidak ditemukan dari data API backend.");
+          }
+
+          await tandaiDikembalikan(String(realPeminjamanId));
 
           let terpakai = 0;
           const ambilBisaDiperbaiki = Math.min(poolBisaDiperbaiki, ambil);
@@ -160,7 +163,7 @@ const PengembalianManager = () => {
             await createLaporanKerusakan({
               tanggal: new Date().toISOString(),
               alat_ukur_id: batchId,
-              peminjaman_id: String(record.id),
+              peminjaman_id: String(realPeminjamanId), 
               jumlah: ambilBisaDiperbaiki,
               keterangan: catatanBisaDiperbaiki,
               status: "bisa_diperbaiki",
@@ -176,7 +179,7 @@ const PengembalianManager = () => {
             await createLaporanKerusakan({
               tanggal: new Date().toISOString(),
               alat_ukur_id: batchId,
-              peminjaman_id: String(record.id),
+              peminjaman_id: String(realPeminjamanId), 
               jumlah: ambilRusakPermanen,
               keterangan: catatanRusakPermanen,
               status: "rusak_permanen",
@@ -205,7 +208,10 @@ const PengembalianManager = () => {
       handleBackToScan();
     } catch (err) {
       const message = err instanceof Error ? err.message : "Gagal memproses pengembalian";
-      alert(message);
+      // Hapus alert error umum agar alert data mentah kita tidak tertimpa
+      if (!message.includes("ID Transaksi Peminjaman tidak ditemukan")) {
+        alert(message);
+      }
     } finally {
       setSubmitting(false);
     }

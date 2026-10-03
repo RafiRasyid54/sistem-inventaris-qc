@@ -9,10 +9,12 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('peminjaman', function (Blueprint $table) {
-            $table->id();
+    // UBAH BARIS INI:
+            $table->uuid('id')->primary();
             
-            // Relasi ke Master Alat
-            $table->foreignId('alat_ukur_id')->constrained('alat_ukur')->onDelete('cascade');
+            // PERBAIKAN: Ubah foreignId menjadi uuid karena alat_ukur.id adalah uuid
+            $table->uuid('alat_ukur_id');
+            $table->foreign('alat_ukur_id')->references('id')->on('alat_ukur')->onDelete('cascade');
             
             // Relasi ke Pekerja (karena ID Peminta adalah string/RFID)
             $table->string('peminta_id');
@@ -21,7 +23,7 @@ return new class extends Migration
             // Relasi ke Pekerjaan
             $table->foreignId('pekerjaan_id')->constrained('pekerjaan')->onDelete('cascade');
             
-            // Kolom UUID untuk mencatat user (tanpa foreign key constraint fisik ke users)
+            // Kolom UUID untuk mencatat user
             $table->uuid('dicatat_oleh')->nullable();
 
             $table->dateTime('tanggal_pinjam');
