@@ -19,6 +19,9 @@ import {
   IconX,
   IconUsers,
   IconMoodEmpty,
+  IconAlertTriangle,
+  IconFileTypePdf,
+  IconFileSpreadsheet,
 } from "@tabler/icons-react";
 
 import { PeminjamType } from "types/DataAlatUkurTypes";
@@ -56,6 +59,32 @@ const EXPORT_COLUMNS: ExportColumn[] = [
   { header: "Status", key: "statusLabel" },
 ];
 
+// Gaya halaman Data Peminjam (tema PLN). Semua selector diawali .pln-dp.
+const CSS = `
+.pln-dp{--navy:#06355f;--blue:#0b6bb8;--yellow:#ffc20e;--line:#dbe5f1;--mute:#62708a}
+.pln-dp .btn-primary{background:var(--blue);border-color:var(--blue)}
+.pln-dp .btn-primary:hover{background:var(--navy);border-color:var(--navy)}
+.pln-dp .btn-yellow{background:var(--yellow);border:0;color:var(--navy);font-weight:700}
+.pln-dp .btn-yellow:hover{background:var(--yellow);color:var(--navy);filter:brightness(1.06)}
+.pln-dp .pdp-head h1{font-weight:800;color:var(--navy)}
+.pln-dp .pdp-msg{border:0;border-radius:12px;display:flex;align-items:center;gap:10px;font-size:.88rem}
+
+/* ringkasan jumlah */
+.pln-dp .pdp-sum{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:16px}
+.pln-dp .pdp-chip{display:flex;align-items:center;gap:8px;background:#fff;border:1px solid var(--line);border-radius:12px;padding:8px 14px}
+.pln-dp .pdp-chip b{font-size:1.15rem;color:var(--navy)}
+.pln-dp .pdp-chip span{font-size:.78rem;color:var(--mute)}
+.pln-dp .pdp-chip i{width:8px;height:8px;border-radius:50%}
+
+.pln-dp .pdp-card{border-radius:16px;border:1px solid var(--line);border-top:4px solid var(--blue);overflow:hidden}
+.pln-dp .pdp-bar{padding:14px 18px}
+.pln-dp .pdp-bar .form-control:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(11,107,184,.16)}
+.pln-dp .pdp-exp{border-radius:9px;font-weight:600;display:inline-flex;align-items:center;gap:6px}
+
+.pln-dp .pdp-empty-ic{width:68px;height:68px;border-radius:18px;background:#e6f0fa;color:var(--blue);display:grid;place-items:center;margin:0 auto 14px}
+.pln-dp .pdp-empty h5{font-weight:800;color:var(--navy)}
+`;
+
 const PeminjamManager = () => {
   const canManage = true; // Diatur true langsung sesuai permintaan
 
@@ -70,6 +99,8 @@ const PeminjamManager = () => {
   const [deleting, setDeleting] = useState(false);
   const [togglingId, setTogglingId] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  // Error aksi (nonaktifkan, aktifkan, ganti role) ditampilkan di halaman, bukan alert() browser
+  const [actionError, setActionError] = useState<string | null>(null);
 
   const [searchTerm, setSearchTerm] = useState("");
 
@@ -94,6 +125,11 @@ const PeminjamManager = () => {
       );
     });
   }, [peminjamList, searchTerm]);
+
+  const jumlahAktif = useMemo(
+    () => peminjamList.filter((p) => p.aktif).length,
+    [peminjamList]
+  );
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -153,6 +189,7 @@ const PeminjamManager = () => {
   const handleConfirmDelete = async () => {
     if (!activeItem) return;
     setDeleting(true);
+    setActionError(null);
     try {
       const updated = await nonaktifkanPeminta(activeItem.id);
       setPeminjamList((prev) =>
@@ -163,7 +200,8 @@ const PeminjamManager = () => {
       setSuccessMessage(`${updated.nama} berhasil dinonaktifkan.`);
       setTimeout(() => setSuccessMessage(null), 5000);
     } catch (err: any) {
-      alert(err?.message || "Gagal menonaktifkan data");
+      setDeleteModalOpen(false);
+      setActionError(err?.message || "Gagal menonaktifkan data");
     } finally {
       setDeleting(false);
     }
@@ -171,6 +209,7 @@ const PeminjamManager = () => {
 
   const handleAktifkan = useCallback(async (item: PeminjamType) => {
     setTogglingId(item.id);
+    setActionError(null);
     try {
       const updated = await aktifkanPeminta(item.id);
       setPeminjamList((prev) =>
@@ -179,13 +218,14 @@ const PeminjamManager = () => {
       setSuccessMessage(`${updated.nama} berhasil diaktifkan kembali.`);
       setTimeout(() => setSuccessMessage(null), 5000);
     } catch (err: any) {
-      alert(err?.message || "Gagal mengaktifkan data");
+      setActionError(err?.message || "Gagal mengaktifkan data");
     } finally {
       setTogglingId(null);
     }
   }, []);
 
   const handleGantiRole = useCallback(async (item: PeminjamType, roleBaru: "user" | "inventory man") => {
+    setActionError(null);
     try {
       const updated = await updateRolePeminta(item.id, roleBaru);
       setPeminjamList((prev) =>
@@ -195,7 +235,7 @@ const PeminjamManager = () => {
       setSuccessMessage(`Role ${updated.nama} berhasil diubah menjadi ${roleName}.`);
       setTimeout(() => setSuccessMessage(null), 5000);
     } catch (err: any) {
-      alert(err?.message || "Gagal mengubah role");
+      setActionError(err?.message || "Gagal mengubah role");
     }
   }, []);
 
@@ -236,31 +276,45 @@ const PeminjamManager = () => {
   );
 
   return (
-    <div className="datapeminjam-page">
+    <div className="datapeminjam-page pln-dp">
+      <style>{CSS}</style>
+
       {successMessage && (
         <Alert
           variant="success"
-          className="d-flex align-items-center gap-2"
+          className="pdp-msg"
           dismissible
           onClose={() => setSuccessMessage(null)}
         >
           <IconCircleCheck size={20} />
-          {successMessage}
+          <span>{successMessage}</span>
+        </Alert>
+      )}
+
+      {actionError && (
+        <Alert
+          variant="danger"
+          className="pdp-msg"
+          dismissible
+          onClose={() => setActionError(null)}
+        >
+          <IconAlertTriangle size={20} />
+          <span>{actionError}</span>
         </Alert>
       )}
 
       <Row>
         <Col>
-          <Flex justifyContent="between" alignItems="center" className="mb-4 w-100" breakpoint="md">
+          <Flex justifyContent="between" alignItems="center" className="mb-4 w-100 pdp-head" breakpoint="md">
             <div>
               <h1 className="mb-2 h2">Data Peminjam</h1>
-              <p className="text-secondary mb-0">
+              <p className="text-secondary mb-2">
                 Mengelola daftar pegawai yang dapat meminjam alat atau mengambil bahan.
               </p>
               <DasherBreadcrumb />
             </div>
             <div>
-              <Button variant="primary" className="d-flex align-items-center gap-2" onClick={openAddModal}>
+              <Button className="btn-yellow d-flex align-items-center gap-2" onClick={openAddModal}>
                 <IconPlus size={18} />
                 Tambah Data
               </Button>
@@ -269,8 +323,27 @@ const PeminjamManager = () => {
         </Col>
       </Row>
 
-      <Card className="card-lg mb-6">
-        <div className="datapeminjam-toolbar border-bottom">
+      {!loading && peminjamList.length > 0 && (
+        <div className="pdp-sum">
+          <div className="pdp-chip">
+            <b>{peminjamList.length}</b>
+            <span>Total peminjam</span>
+          </div>
+          <div className="pdp-chip">
+            <i style={{ background: "#12a36b" }} />
+            <b>{jumlahAktif}</b>
+            <span>Aktif</span>
+          </div>
+          <div className="pdp-chip">
+            <i style={{ background: "#8794a8" }} />
+            <b>{peminjamList.length - jumlahAktif}</b>
+            <span>Nonaktif</span>
+          </div>
+        </div>
+      )}
+
+      <Card className="card-lg mb-6 pdp-card">
+        <div className="datapeminjam-toolbar border-bottom pdp-bar">
           <Row className="g-2 align-items-center">
             <Col lg={5} md={6}>
               <InputGroup className="datapeminjam-search">
@@ -296,26 +369,31 @@ const PeminjamManager = () => {
                 )}
               </InputGroup>
             </Col>
-            <Col lg={4} md={3} className="text-md-end">
+            <Col lg={3} md={3} className="text-md-end">
               <span className="text-secondary small">
                 Menampilkan{" "}
                 <span className="fw-semibold text-body">{filteredPeminjam.length}</span>{" "}
                 dari {peminjamList.length} data
               </span>
             </Col>
-            <Col lg={3} md={3} className="d-flex justify-content-md-end gap-2">
-              <Button variant="outline-danger" size="sm" onClick={handleExportPDF}>
-                Export PDF
+            <Col lg={4} md={3} className="d-flex justify-content-md-end gap-2">
+              <Button variant="outline-danger" size="sm" className="pdp-exp" onClick={handleExportPDF}>
+                <IconFileTypePdf size={16} /> PDF
               </Button>
-              <Button variant="outline-success" size="sm" onClick={handleExportExcel}>
-                Export Excel
+              <Button variant="outline-success" size="sm" className="pdp-exp" onClick={handleExportExcel}>
+                <IconFileSpreadsheet size={16} /> Excel
               </Button>
             </Col>
           </Row>
         </div>
 
         <CardBody>
-          {error && <Alert variant="danger">{error}</Alert>}
+          {error && (
+            <Alert variant="danger" className="pdp-msg">
+              <IconAlertTriangle size={20} />
+              <span>{error}</span>
+            </Alert>
+          )}
 
           {loading ? (
             <div className="text-center py-6">
@@ -323,8 +401,8 @@ const PeminjamManager = () => {
               Memuat data...
             </div>
           ) : peminjamList.length === 0 ? (
-            <div className="datapeminjam-empty text-center py-6">
-              <div className="datapeminjam-empty-icon mb-3">
+            <div className="datapeminjam-empty pdp-empty text-center py-6">
+              <div className="pdp-empty-ic">
                 <IconUsers size={32} />
               </div>
               <h5 className="mb-1">Belum ada data peminjam</h5>
@@ -332,8 +410,7 @@ const PeminjamManager = () => {
                 Mulai dengan menambahkan pegawai yang dapat meminjam alat atau mengambil bahan.
               </p>
               <Button
-                variant="primary"
-                className="d-inline-flex align-items-center gap-2"
+                className="btn-yellow d-inline-flex align-items-center gap-2"
                 onClick={openAddModal}
               >
                 <IconPlus size={18} />
@@ -341,8 +418,8 @@ const PeminjamManager = () => {
               </Button>
             </div>
           ) : filteredPeminjam.length === 0 ? (
-            <div className="datapeminjam-empty text-center py-6">
-              <div className="datapeminjam-empty-icon mb-3">
+            <div className="datapeminjam-empty pdp-empty text-center py-6">
+              <div className="pdp-empty-ic">
                 <IconMoodEmpty size={32} />
               </div>
               <h5 className="mb-1">Tidak ada hasil</h5>
@@ -379,7 +456,7 @@ const PeminjamManager = () => {
         initialData={activeItem}
         error={formError}
       />
-      
+
       <DeleteConfirmModal
         show={deleteModalOpen}
         onClose={() => setDeleteModalOpen(false)}

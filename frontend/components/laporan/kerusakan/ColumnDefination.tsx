@@ -1,7 +1,8 @@
 "use client";
 // import node module libraries
+import { CSSProperties } from "react";
 import { ColumnDef } from "@tanstack/react-table";
-import { Dropdown, Badge } from "react-bootstrap";
+import { Dropdown } from "react-bootstrap";
 import { IconDotsVertical } from "@tabler/icons-react";
 
 // import custom types
@@ -17,6 +18,30 @@ interface ColumnHandlers {
   onTandaiPermanen: (item: LaporanKerusakanType) => void; 
 }
 
+// Gaya pill tema PLN (inline, sama dengan palet pill di modal detail)
+const pillBase: CSSProperties = {
+  display: "inline-block",
+  fontSize: ".76rem",
+  fontWeight: 700,
+  padding: "4px 12px",
+  borderRadius: 99,
+  whiteSpace: "nowrap",
+};
+
+const PILL = {
+  ok: { background: "#dcf4ea", color: "#0b7a50" },
+  warn: { background: "#fff0c2", color: "#7a5500" },
+  bad: { background: "#fde1df", color: "#a8160f" },
+  neutral: { background: "#eef3f9", color: "#06355f" },
+} satisfies Record<string, CSSProperties>;
+
+const STATUS_CONFIG: Record<string, { tone: keyof typeof PILL; label: string }> = {
+  bisa_diperbaiki: { tone: "warn", label: "Bisa Diperbaiki" },
+  rusak_permanen: { tone: "bad", label: "Rusak Permanen" },
+  selesai_diperbaiki: { tone: "ok", label: "Sudah Diperbaiki" },
+  rusak: { tone: "bad", label: "Rusak Permanen" },
+};
+
 export const getLaporanKerusakanColumns = ({
   canProcess = false,
   onDetail,
@@ -30,13 +55,42 @@ export const getLaporanKerusakanColumns = ({
   {
     accessorKey: "kode_barang",
     header: "Kode Barang",
-    cell: ({ row }) => (
-      <span className="fw-semibold">{row.original.kode_barang}</span>
-    ),
+    cell: ({ row }) => {
+      const kode = row.original.kode_barang;
+      const kosong = !kode || kode === "-";
+
+      return kosong ? (
+        <span style={{ color: "#8794a8" }}>-</span>
+      ) : (
+        <span
+          style={{
+            fontFamily: "ui-monospace, Menlo, monospace",
+            fontWeight: 700,
+            color: "#06355f",
+          }}
+        >
+          {kode}
+        </span>
+      );
+    },
   },
   {
     accessorKey: "nama_barang",
     header: "Nama Barang",
+  },
+  {
+    accessorKey: "status",
+    header: "Status",
+    cell: ({ row }) => {
+      const status = row.original.status;
+      const config = STATUS_CONFIG[status] ?? { tone: "neutral" as const, label: status };
+
+      return (
+        <span style={{ ...pillBase, ...PILL[config.tone] }}>
+          {config.label}
+        </span>
+      );
+    },
   },
   {
     accessorKey: "merk",
@@ -57,13 +111,22 @@ export const getLaporanKerusakanColumns = ({
   {
     accessorKey: "jumlah_rusak",
     header: "Jumlah Rusak",
-    cell: ({ row }) => (
-      <span className="d-flex justify-content-center">
-        <Badge bg="danger-subtle" text="danger-emphasis" className="fw-semibold">
-          {row.original.jumlah_rusak}
-        </Badge>
-      </span>
-    ),
+    cell: ({ row }) => {
+      const jumlah = row.original.jumlah_rusak as number | string | null | undefined;
+      const kosong = jumlah === null || jumlah === undefined || jumlah === "";
+
+      return (
+        <span className="d-flex justify-content-center">
+          {kosong ? (
+            <span style={{ color: "#8794a8" }}>-</span>
+          ) : (
+            <span style={{ ...pillBase, ...PILL.bad, minWidth: 34, textAlign: "center" }}>
+              {jumlah}
+            </span>
+          )}
+        </span>
+      );
+    },
   },
   {
     accessorKey: "nama_peminjam",
@@ -87,51 +150,47 @@ export const getLaporanKerusakanColumns = ({
     cell: ({ row }) => {
       const text = row.original.keterangan;
       const truncated = text.length > 30 ? `${text.slice(0, 30)}...` : text;
-      return <span className="text-secondary small">{truncated || "-"}</span>;
-    },
-  },
-   {
-    accessorKey: "status",
-    header: "Status",
-    cell: ({ row }) => {
-      const status = row.original.status;
-      const config = {
-        bisa_diperbaiki: { bg: "warning-subtle", text: "warning-emphasis", label: "Bisa Diperbaiki" },
-        rusak_permanen: { bg: "danger-subtle", text: "danger-emphasis", label: "Rusak Permanen" },
-        selesai_diperbaiki: { bg: "success-subtle", text: "success-emphasis", label: "Sudah Diperbaiki" },
-        rusak: { bg: "danger-subtle", text: "danger-emphasis", label: "Rusak Permanen" },
-      }[status] ?? { bg: "secondary-subtle", text: "secondary-emphasis", label: status };
-
       return (
-        <Badge bg={config.bg} text={config.text} className="fw-semibold">
-          {config.label}
-        </Badge>
+        <span
+          title={text || undefined}
+          style={{ fontSize: ".8rem", color: "#62708a" }}
+        >
+          {truncated || "-"}
+        </span>
       );
     },
   },
-   {
+  {
     id: "aksi",
     header: "Aksi",
     cell: ({ row }) => {
       const item = row.original;
       const bisaDiperbaiki = item.status === "bisa_diperbaiki";
 
-       return (
+      return (
         <ActionMenu
-          toggleButton={<IconDotsVertical size={20} />}
+          toggleButton={<IconDotsVertical size={20} style={{ color: "#06355f" }} />}
           className="btn btn-ghost btn-icon btn-sm rounded-circle"
           drop="start"
           align="start"
         >
-           <Dropdown.Item onClick={() => onDetail(item)}>
+          <Dropdown.Item onClick={() => onDetail(item)}>
             Detail Laporan
           </Dropdown.Item>
           {canProcess && bisaDiperbaiki && (
             <>
-              <Dropdown.Item className="text-success" onClick={() => onRepair(item)}>
+              <Dropdown.Item
+                className="text-success"
+                style={{ fontWeight: 600 }}
+                onClick={() => onRepair(item)}
+              >
                 Repair Alat
               </Dropdown.Item>
-              <Dropdown.Item className="text-danger" onClick={() => onTandaiPermanen(item)}>
+              <Dropdown.Item
+                className="text-danger"
+                style={{ fontWeight: 600 }}
+                onClick={() => onTandaiPermanen(item)}
+              >
                 Tandai Rusak Permanen
               </Dropdown.Item>
             </>

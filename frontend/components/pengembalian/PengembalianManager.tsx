@@ -2,7 +2,7 @@
 // import node module libraries
 import { useEffect, useState } from "react";
 import { Row, Col, Alert, Spinner } from "react-bootstrap";
-import { IconCircleCheck } from "@tabler/icons-react";
+import { IconCircleCheck, IconAlertTriangle, IconLock } from "@tabler/icons-react";
 import { createLaporanKerusakan } from "services/laporanKerusakanService";
 
 // import custom types
@@ -22,6 +22,18 @@ import PengembalianAlatChecklist, {
   PengembalianGroupItem,
 } from "components/pengembalian/PengembalianChecklist";
 
+// Gaya halaman Pengembalian (tema PLN). Semua selector diawali .pln-pg.
+const CSS = `
+.pln-pg .pg-head h1{font-weight:800;color:#06355f}
+.pln-pg .pg-msg{border:0;border-radius:12px;display:flex;align-items:flex-start;gap:10px;font-size:.88rem}
+.pln-pg .pg-steps{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px}
+.pln-pg .pg-step{display:flex;align-items:center;gap:8px;font-size:.8rem;color:#62708a;padding:5px 12px 5px 6px;border-radius:99px;background:#eef3f9}
+.pln-pg .pg-step i{font-style:normal;width:20px;height:20px;border-radius:50%;display:grid;place-items:center;font-size:.7rem;font-weight:800;background:#cfdbea;color:#06355f}
+.pln-pg .pg-step.is-now{background:#06355f;color:#fff;font-weight:600}
+.pln-pg .pg-step.is-now i{background:#ffc20e;color:#06355f}
+.pln-pg .pg-step.is-done i{background:#12a36b;color:#fff}
+`;
+
 const PengembalianManager = () => {
   const canProcess = usePermission("process_transaksi");
   const [items, setItems] = useState<PeminjamanAktifItemType[]>([]);
@@ -36,6 +48,8 @@ const PengembalianManager = () => {
   const [itemsPeminjam, setItemsPeminjam] = useState<PengembalianGroupItem[] | null>(null);
   const [recordsByGroup, setRecordsByGroup] = useState<Record<string, PeminjamanAktifItemType[]>>({});
   const [submitting, setSubmitting] = useState(false);
+  // Error saat proses pengembalian ditampilkan di halaman, bukan alert() browser
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   const loadData = async () => {
     setLoading(true);
@@ -106,6 +120,7 @@ const PengembalianManager = () => {
         records[alatUkurId].reverse();
       });
 
+      setSubmitError(null);
       setNamaPeminjamAktif(namaPeminta);
       setItemsPeminjam(grouped);
       setRecordsByGroup(records);
@@ -127,6 +142,7 @@ const PengembalianManager = () => {
   // ---- Submit pengembalian sekaligus ----
   const handleBatchSubmit = async (batch: PengembalianBatchItem[]) => {
     setSubmitting(true);
+    setSubmitError(null);
     try {
       const dicatatOleh = localStorage.getItem("userId");
 
@@ -147,11 +163,11 @@ const PengembalianManager = () => {
 
           // TANGKAP ID
           const realPeminjamanId = record.id || (record as any).peminjamanId || (record as any).id_peminjaman || (record as any).peminjaman_id;
-          
-          // JEBAKAN BATMAN UNTUK MELIHAT ISI DATA ASLI DARI BACKEND
+
+          // Jika ID tidak ditemukan, isi data asli dari backend dicatat di console untuk debugging
           if (!realPeminjamanId || realPeminjamanId === 0 || realPeminjamanId === "0") {
-            alert("🚨 ISI DATA DARI BACKEND: " + JSON.stringify(record, null, 2));
-            throw new Error("Gagal: ID Transaksi Peminjaman tidak ditemukan dari data API backend.");
+            console.error("ISI DATA DARI BACKEND (ID peminjaman tidak ditemukan):", JSON.stringify(record, null, 2));
+            throw new Error("Gagal: ID Transaksi Peminjaman tidak ditemukan dari data API backend. Detail data ada di console browser.");
           }
 
           await tandaiDikembalikan(String(realPeminjamanId));
@@ -163,7 +179,7 @@ const PengembalianManager = () => {
             await createLaporanKerusakan({
               tanggal: new Date().toISOString(),
               alat_ukur_id: batchId,
-              peminjaman_id: String(realPeminjamanId), 
+              peminjaman_id: String(realPeminjamanId),
               jumlah: ambilBisaDiperbaiki,
               keterangan: catatanBisaDiperbaiki,
               status: "bisa_diperbaiki",
@@ -179,7 +195,7 @@ const PengembalianManager = () => {
             await createLaporanKerusakan({
               tanggal: new Date().toISOString(),
               alat_ukur_id: batchId,
-              peminjaman_id: String(realPeminjamanId), 
+              peminjaman_id: String(realPeminjamanId),
               jumlah: ambilRusakPermanen,
               keterangan: catatanRusakPermanen,
               status: "rusak_permanen",
@@ -208,26 +224,29 @@ const PengembalianManager = () => {
       handleBackToScan();
     } catch (err) {
       const message = err instanceof Error ? err.message : "Gagal memproses pengembalian";
-      // Hapus alert error umum agar alert data mentah kita tidak tertimpa
-      if (!message.includes("ID Transaksi Peminjaman tidak ditemukan")) {
-        alert(message);
-      }
+      setSubmitError(message);
     } finally {
       setSubmitting(false);
     }
   };
 
+  // Langkah alur saat ini: 1 scan kartu, 2 pilih alat dan konfirmasi
+  const step = itemsPeminjam ? 2 : 1;
+  const stepClass = (n: number) => (step === n ? "is-now" : step > n ? "is-done" : "");
+
   return (
-    <div className="pengembalian-page">
+    <div className="pengembalian-page pln-pg">
+      <style>{CSS}</style>
+
       {successMessage && (
         <Alert
           variant="success"
-          className="d-flex align-items-center gap-2"
+          className="pg-msg"
           dismissible
           onClose={() => setSuccessMessage(null)}
         >
-          <IconCircleCheck size={20} />
-          {successMessage}
+          <IconCircleCheck size={20} className="flex-shrink-0" />
+          <span>{successMessage}</span>
         </Alert>
       )}
 
@@ -237,12 +256,12 @@ const PengembalianManager = () => {
           <Flex
             justifyContent="between"
             alignItems="center"
-            className="mb-4 w-100"
+            className="mb-4 w-100 pg-head"
             breakpoint="md"
           >
             <div>
               <h1 className="mb-2 h2">Pengembalian Alat Ukur</h1>
-              <p className="text-secondary mb-0">
+              <p className="text-secondary mb-2">
                 Scan kartu peminjam, lalu centang alat ukur yang ingin dikembalikan sekaligus.
               </p>
               <DasherBreadcrumb />
@@ -251,11 +270,37 @@ const PengembalianManager = () => {
         </Col>
       </Row>
 
-      {error && <Alert variant="danger">{error}</Alert>}
+      {canProcess && (
+        <div className="pg-steps" aria-label="Langkah pengembalian">
+          <span className={`pg-step ${stepClass(1)}`}>
+            <i>1</i> Scan kartu
+          </span>
+          <span className={`pg-step ${stepClass(2)}`}>
+            <i>2</i> Pilih alat dan konfirmasi
+          </span>
+        </div>
+      )}
+
+      {error && (
+        <Alert variant="danger" className="pg-msg">
+          <IconAlertTriangle size={20} className="flex-shrink-0" />
+          <span>{error}</span>
+        </Alert>
+      )}
+
+      {submitError && (
+        <Alert variant="danger" className="pg-msg" dismissible onClose={() => setSubmitError(null)}>
+          <IconAlertTriangle size={20} className="flex-shrink-0" />
+          <span>{submitError}</span>
+        </Alert>
+      )}
 
       {!canProcess ? (
-        <Alert variant="warning">
-          Anda tidak memiliki akses untuk memproses pengembalian alat ukur. Hubungi Admin jika perlu.
+        <Alert variant="warning" className="pg-msg">
+          <IconLock size={20} className="flex-shrink-0" />
+          <span>
+            Anda tidak memiliki akses untuk memproses pengembalian alat ukur. Hubungi Admin jika perlu.
+          </span>
         </Alert>
       ) : loading ? (
         <div className="text-center py-6">

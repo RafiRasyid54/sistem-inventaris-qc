@@ -21,8 +21,10 @@ import {
   IconCamera,
   IconLogout,
   IconCircleCheck,
+  IconAlertTriangle,
   IconEye,
   IconEyeOff,
+  IconUser,
 } from "@tabler/icons-react";
 
 // import custom components
@@ -51,6 +53,59 @@ const emptyProfile: ProfileData = {
   role: "",
   divisi: "-",
 };
+
+// Gaya halaman Profil (tema PLN). Semua selector diawali .pln-pp.
+const CSS = `
+.pln-pp{--navy:#06355f;--blue:#0b6bb8;--yellow:#ffc20e;--line:#dbe5f1;--mute:#62708a}
+.pln-pp .pp-head h1{font-weight:800;color:var(--navy)}
+.pln-pp .pp-head p{max-width:640px}
+
+/* pesan */
+.pln-pp .pp-msg{border:0;border-radius:12px;display:flex;align-items:center;gap:10px;font-size:.88rem}
+
+/* kartu */
+.pln-pp .pp-card{border:1px solid var(--line)!important;border-radius:16px;overflow:hidden;box-shadow:none!important}
+.pln-pp .pp-card.is-top{border-top:4px solid var(--blue)!important}
+
+/* kartu identitas */
+.pln-pp .pp-hero{position:relative;height:96px;background:linear-gradient(115deg,#06355f 0%,#0b6bb8 70%,#00a7c4 140%)}
+.pln-pp .pp-hero::after{content:"";position:absolute;left:0;right:0;bottom:0;height:5px;
+  background:linear-gradient(90deg,#ffc20e 0 55%,#e2231a 55% 70%,#00a7c4 70%)}
+.pln-pp .pp-avatar{width:fit-content;margin:-56px auto 12px;border:4px solid #fff;border-radius:50%;background:#fff;position:relative}
+.pln-pp .pp-name{font-weight:800;color:var(--navy)}
+.pln-pp .pp-role{display:inline-block;font-size:.76rem;font-weight:700;padding:4px 14px;border-radius:99px;
+  background:var(--yellow);color:var(--navy)}
+.pln-pp .pp-div{font-size:.82rem;color:var(--mute);margin-top:8px}
+
+/* judul seksi */
+.pln-pp .pp-title{display:flex;align-items:center;gap:12px;margin:0}
+.pln-pp .pp-title .ic{width:40px;height:40px;border-radius:11px;background:#e6f0fa;color:var(--blue);display:grid;place-items:center;flex:none}
+.pln-pp .pp-title b{font-size:1.05rem;font-weight:800;color:var(--navy)}
+
+/* form */
+.pln-pp .form-label{font-size:.8rem;font-weight:600;color:#14233b;margin-bottom:4px}
+.pln-pp .form-control{background-color:#f6f9fc;border-color:var(--line);border-radius:10px}
+.pln-pp .form-control:focus{background-color:#fff;border-color:var(--blue);box-shadow:0 0 0 3px rgba(11,107,184,.16)}
+.pln-pp .form-control:disabled,.pln-pp .form-control[readonly]{background-color:#eef3f9;color:#14233b;opacity:1}
+.pln-pp .pp-eye{color:var(--mute);line-height:1}
+.pln-pp .pp-eye:hover{color:var(--navy)}
+.pln-pp .pp-foot{border-top:1px solid var(--line)}
+
+/* tombol */
+.pln-pp .pp-btn{border:0;border-radius:11px;padding:9px 18px;font-weight:700;font-size:.9rem;display:inline-flex;align-items:center;gap:6px}
+.pln-pp .pp-ghost{background:#eef3f9;color:var(--navy)}
+.pln-pp .pp-ghost:hover,.pln-pp .pp-ghost:focus{background:#e0e9f4;color:var(--navy)}
+.pln-pp .pp-save{background:var(--yellow);color:var(--navy)}
+.pln-pp .pp-save:hover,.pln-pp .pp-save:focus{background:var(--yellow);color:var(--navy);filter:brightness(1.06)}
+.pln-pp .pp-save:disabled{background:var(--yellow);color:var(--navy);opacity:.5}
+.pln-pp .pp-photo{border:1.5px solid var(--blue);color:var(--blue);background:#fff;border-radius:99px;
+  padding:6px 16px;font-weight:700;font-size:.82rem;display:inline-flex;align-items:center;gap:6px}
+.pln-pp .pp-photo:hover,.pln-pp .pp-photo:focus{background:#e6f0fa;color:var(--navy);border-color:var(--blue)}
+.pln-pp .pp-logout{border:1.5px solid #e2231a;color:#e2231a;background:#fff;border-radius:11px;
+  padding:9px 22px;font-weight:700;font-size:.9rem;display:inline-flex;align-items:center;gap:8px}
+.pln-pp .pp-logout:hover,.pln-pp .pp-logout:focus{background:#fde1df;color:#a8160f;border-color:#e2231a}
+.pln-pp button:focus-visible{outline:2px solid var(--yellow);outline-offset:2px}
+`;
 
 const ProfileManager = () => {
   const router = useRouter();
@@ -109,13 +164,12 @@ const ProfileManager = () => {
     setLoadError(null);
     try {
       const data: ProfileApiData = await getProfile();
-      // Di dalam fungsi loadProfile()
-    const mapped: ProfileData = {
-    namaLengkap: data.namaLengkap,
-    role: data.role,
-    divisi: data.divisi || "-",
-    avatarPath: data.avatarPath ?? undefined, // null akan otomatis diubah menjadi undefined
-    };
+      const mapped: ProfileData = {
+        namaLengkap: data.namaLengkap,
+        role: data.role,
+        divisi: data.divisi || "-",
+        avatarPath: data.avatarPath ?? undefined, // null akan otomatis diubah menjadi undefined
+      };
       setProfile(mapped);
       setForm(mapped);
 
@@ -252,27 +306,72 @@ const ProfileManager = () => {
     );
   }
 
+  // Satu field password dengan tombol tampilkan/sembunyikan
+  const passwordField = (
+    field: "lama" | "baru" | "konfirmasi",
+    label: string
+  ) => (
+    <Col md={4}>
+      <Form.Group>
+        <Form.Label>{label}</Form.Label>
+        <div className="position-relative">
+          <Form.Control
+            type={showPassword[field] ? "text" : "password"}
+            value={passwordForm[field]}
+            disabled={passwordSaving}
+            onChange={(e) =>
+              setPasswordForm((p) => ({ ...p, [field]: e.target.value }))
+            }
+            style={{ paddingRight: "2.5rem" }}
+          />
+          <Button
+            variant="link"
+            className="pp-eye position-absolute top-50 end-0 translate-middle-y p-0 me-3"
+            onClick={() => toggleShowPassword(field)}
+            tabIndex={-1}
+            type="button"
+            aria-label={showPassword[field] ? "Sembunyikan password" : "Tampilkan password"}
+          >
+            {showPassword[field] ? <IconEyeOff size={18} /> : <IconEye size={18} />}
+          </Button>
+        </div>
+      </Form.Group>
+    </Col>
+  );
+
   return (
-    <div className="profile-page">
+    <div className="profile-page pln-pp">
+      <style>{CSS}</style>
+
       {successMessage && (
         <Alert
           variant="success"
-          className="d-flex align-items-center gap-2"
+          className="pp-msg"
           dismissible
           onClose={() => setSuccessMessage(null)}
         >
           <IconCircleCheck size={20} />
-          {successMessage}
+          <span>{successMessage}</span>
         </Alert>
       )}
-      {loadError && <Alert variant="danger">{loadError}</Alert>}
+      {loadError && (
+        <Alert
+          variant="danger"
+          className="pp-msg"
+          dismissible
+          onClose={() => setLoadError(null)}
+        >
+          <IconAlertTriangle size={20} />
+          <span>{loadError}</span>
+        </Alert>
+      )}
 
       {/* ---- Page Header ---- */}
       <Row>
         <Col>
-          <div className="mb-4">
+          <div className="mb-4 pp-head">
             <h1 className="mb-2 h2">Profil Saya</h1>
-            <p className="text-secondary mb-0">
+            <p className="text-secondary mb-2">
               Kelola informasi akun dan keamanan Anda.
             </p>
             <DasherBreadcrumb />
@@ -283,25 +382,24 @@ const ProfileManager = () => {
       <Row className="g-4">
         {/* ---- Kartu Identitas ---- */}
         <Col xl={4} lg={5}>
-          <Card className="card-lg h-100 shadow-sm border-0">
-            <CardBody className="text-center">
-              <div className="profile-avatar-wrap mx-auto mb-3 position-relative">
+          <Card className="card-lg h-100 pp-card">
+            <div className="pp-hero" />
+            <CardBody className="text-center pt-0">
+              <div className="pp-avatar">
                 <Avatar
                   type="image"
                   src={avatarSrc}
                   size="xl"
                   alt="Foto Profil"
-                  className="rounded-circle shadow-sm"
+                  className="rounded-circle"
                 />
               </div>
-              <h4 className="mb-1">{profile.namaLengkap}</h4>
-              <div className="mb-2">
-                <span className="badge bg-primary-subtle text-primary-emphasis px-3 py-2">
-                  {profile.role}
-                </span>
+              <h4 className="pp-name mb-2">{profile.namaLengkap}</h4>
+              <div>
+                <span className="pp-role">{profile.role}</span>
               </div>
               {profile.divisi && profile.divisi !== "-" && (
-                <div className="text-secondary small fw-medium">Divisi: {profile.divisi}</div>
+                <div className="pp-div">Divisi: {profile.divisi}</div>
               )}
 
               <input
@@ -312,9 +410,7 @@ const ProfileManager = () => {
                 onChange={handleAvatarChange}
               />
               <Button
-                variant="outline-primary"
-                size="sm"
-                className="mt-3 d-inline-flex align-items-center gap-2 rounded-pill px-3"
+                className="pp-photo mt-3"
                 onClick={handleAvatarClick}
                 disabled={avatarUploading}
               >
@@ -331,77 +427,77 @@ const ProfileManager = () => {
 
         {/* ---- Informasi Profil ---- */}
         <Col xl={8} lg={7}>
-          <Card className="card-lg h-100 shadow-sm border-0">
+          <Card className="card-lg h-100 pp-card is-top">
             <CardBody>
               <Flex justifyContent="between" alignItems="center" className="mb-4">
-                <h5 className="mb-0 fw-bold">Informasi Profil</h5>
+                <h5 className="pp-title">
+                  <span className="ic"><IconUser size={22} /></span>
+                  <b>Informasi Profil</b>
+                </h5>
                 {!isEditing && (
-                  <Button
-                    variant="light"
-                    size="sm"
-                    className="d-inline-flex align-items-center gap-2 text-primary"
-                    onClick={handleEdit}
-                  >
+                  <Button className="pp-btn pp-ghost" size="sm" onClick={handleEdit}>
                     <IconEdit size={18} />
                     Edit Profil
                   </Button>
                 )}
               </Flex>
 
-              {saveError && <Alert variant="danger">{saveError}</Alert>}
+              {saveError && (
+                <Alert
+                  variant="danger"
+                  className="pp-msg"
+                  dismissible
+                  onClose={() => setSaveError(null)}
+                >
+                  <IconAlertTriangle size={20} />
+                  <span>{saveError}</span>
+                </Alert>
+              )}
 
               <Form onSubmit={handleSave}>
                 <Row className="g-3">
                   <Col md={6}>
                     <Form.Group>
-                      <Form.Label className="text-muted small fw-bold">Nama Lengkap</Form.Label>
+                      <Form.Label>Nama Lengkap</Form.Label>
                       <Form.Control
                         value={form.namaLengkap}
                         disabled={!isEditing || saving}
                         onChange={(e) =>
                           setForm((p) => ({ ...p, namaLengkap: e.target.value }))
                         }
-                        className={!isEditing ? "bg-light" : ""}
                       />
                     </Form.Group>
                   </Col>
                   <Col md={6}>
                     <Form.Group>
-                      <Form.Label className="text-muted small fw-bold">Role</Form.Label>
-                      <Form.Control value={form.role} disabled readOnly className="bg-light" />
+                      <Form.Label>Role</Form.Label>
+                      <Form.Control value={form.role} disabled readOnly />
                     </Form.Group>
                   </Col>
                   <Col md={6}>
                     <Form.Group>
-                      <Form.Label className="text-muted small fw-bold">Divisi</Form.Label>
+                      <Form.Label>Divisi</Form.Label>
                       <Form.Control
                         value={form.divisi}
                         disabled={!isEditing || saving}
                         onChange={(e) =>
                           setForm((p) => ({ ...p, divisi: e.target.value }))
                         }
-                        className={!isEditing ? "bg-light" : ""}
                       />
                     </Form.Group>
                   </Col>
                 </Row>
 
                 {isEditing && (
-                  <div className="d-flex gap-2 mt-4 pt-2 border-top">
-                    <Button
-                      variant="primary"
-                      type="submit"
-                      disabled={saving}
-                      className="d-inline-flex align-items-center gap-2 px-4"
-                    >
+                  <div className="pp-foot d-flex gap-2 mt-4 pt-3">
+                    <Button type="submit" disabled={saving} className="pp-btn pp-save">
                       {saving ? <Spinner animation="border" size="sm" /> : <IconDeviceFloppy size={18} />}
                       Simpan
                     </Button>
                     <Button
-                      variant="light"
                       type="button"
                       disabled={saving}
-                      className="d-inline-flex align-items-center gap-2 px-4"
+                      className="pp-btn pp-ghost"
                       onClick={handleCancel}
                     >
                       <IconX size={18} />
@@ -416,105 +512,32 @@ const ProfileManager = () => {
 
         {/* ---- Ubah Password ---- */}
         <Col xs={12}>
-          <Card className="card-lg shadow-sm border-0">
+          <Card className="card-lg pp-card is-top">
             <CardBody>
-              <div className="d-flex align-items-center gap-2 mb-4">
-                <span className="bg-primary-subtle text-primary p-2 rounded-circle d-flex align-items-center">
-                  <IconLock size={20} />
-                </span>
-                <h5 className="mb-0 fw-bold">Ubah Password</h5>
-              </div>
+              <h5 className="pp-title mb-4">
+                <span className="ic"><IconLock size={22} /></span>
+                <b>Ubah Password</b>
+              </h5>
 
               {passwordError && (
-                <Alert variant="danger" onClose={() => setPasswordError(null)} dismissible>
-                  {passwordError}
+                <Alert
+                  variant="danger"
+                  className="pp-msg"
+                  onClose={() => setPasswordError(null)}
+                  dismissible
+                >
+                  <IconAlertTriangle size={20} />
+                  <span>{passwordError}</span>
                 </Alert>
               )}
 
               <Form onSubmit={handlePasswordSubmit}>
                 <Row className="g-3">
-                  <Col md={4}>
-                    <Form.Group>
-                      <Form.Label className="text-muted small fw-bold">Password Lama</Form.Label>
-                      <div className="position-relative">
-                        <Form.Control
-                          type={showPassword.lama ? "text" : "password"}
-                          value={passwordForm.lama}
-                          disabled={passwordSaving}
-                          onChange={(e) =>
-                            setPasswordForm((p) => ({ ...p, lama: e.target.value }))
-                          }
-                          style={{ paddingRight: "2.5rem" }}
-                        />
-                        <Button
-                          variant="link"
-                          className="position-absolute top-50 end-0 translate-middle-y text-secondary p-0 me-3"
-                          onClick={() => toggleShowPassword("lama")}
-                          tabIndex={-1}
-                          type="button"
-                        >
-                          {showPassword.lama ? <IconEyeOff size={18} /> : <IconEye size={18} />}
-                        </Button>
-                      </div>
-                    </Form.Group>
-                  </Col>
-                  <Col md={4}>
-                    <Form.Group>
-                      <Form.Label className="text-muted small fw-bold">Password Baru</Form.Label>
-                      <div className="position-relative">
-                        <Form.Control
-                          type={showPassword.baru ? "text" : "password"}
-                          value={passwordForm.baru}
-                          disabled={passwordSaving}
-                          onChange={(e) =>
-                            setPasswordForm((p) => ({ ...p, baru: e.target.value }))
-                          }
-                          style={{ paddingRight: "2.5rem" }}
-                        />
-                        <Button
-                          variant="link"
-                          className="position-absolute top-50 end-0 translate-middle-y text-secondary p-0 me-3"
-                          onClick={() => toggleShowPassword("baru")}
-                          tabIndex={-1}
-                          type="button"
-                        >
-                          {showPassword.baru ? <IconEyeOff size={18} /> : <IconEye size={18} />}
-                        </Button>
-                      </div>
-                    </Form.Group>
-                  </Col>
-                  <Col md={4}>
-                    <Form.Group>
-                      <Form.Label className="text-muted small fw-bold">Konfirmasi Password</Form.Label>
-                      <div className="position-relative">
-                        <Form.Control
-                          type={showPassword.konfirmasi ? "text" : "password"}
-                          value={passwordForm.konfirmasi}
-                          disabled={passwordSaving}
-                          onChange={(e) =>
-                            setPasswordForm((p) => ({ ...p, konfirmasi: e.target.value }))
-                          }
-                          style={{ paddingRight: "2.5rem" }}
-                        />
-                        <Button
-                          variant="link"
-                          className="position-absolute top-50 end-0 translate-middle-y text-secondary p-0 me-3"
-                          onClick={() => toggleShowPassword("konfirmasi")}
-                          tabIndex={-1}
-                          type="button"
-                        >
-                          {showPassword.konfirmasi ? <IconEyeOff size={18} /> : <IconEye size={18} />}
-                        </Button>
-                      </div>
-                    </Form.Group>
-                  </Col>
+                  {passwordField("lama", "Password Lama")}
+                  {passwordField("baru", "Password Baru")}
+                  {passwordField("konfirmasi", "Konfirmasi Password")}
                 </Row>
-                <Button
-                  variant="primary"
-                  type="submit"
-                  disabled={passwordSaving}
-                  className="mt-4 d-inline-flex align-items-center gap-2 px-4"
-                >
+                <Button type="submit" disabled={passwordSaving} className="pp-btn pp-save mt-4">
                   {passwordSaving ? <Spinner animation="border" size="sm" /> : <IconLock size={18} />}
                   Simpan Password
                 </Button>
@@ -526,11 +549,7 @@ const ProfileManager = () => {
         {/* ---- Logout ---- */}
         <Col xs={12}>
           <div className="text-center py-3">
-            <Button
-              variant="outline-danger"
-              className="d-inline-flex align-items-center gap-2 px-4 rounded-pill"
-              onClick={handleLogout}
-            >
+            <Button className="pp-logout" onClick={handleLogout}>
               <IconLogout size={18} />
               Keluar Akun (Logout)
             </Button>

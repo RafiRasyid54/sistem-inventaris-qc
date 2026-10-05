@@ -12,7 +12,13 @@ import {
   Form,
   Button,
 } from "react-bootstrap";
-import { IconHistory, IconSearch, IconX } from "@tabler/icons-react";
+import {
+  IconHistory,
+  IconSearch,
+  IconX,
+  IconAlertTriangle,
+  IconFilterOff,
+} from "@tabler/icons-react";
 
 import { RiwayatPeminjamanType } from "types/RiwayatTypes";
 
@@ -46,6 +52,35 @@ const EXPORT_COLUMNS: ExportColumn[] = [
   { header: "Nama Pekerjaan", key: "nama_pekerjaan" },
   { header: "Area Kerja", key: "area_kerja" },
 ];
+
+// Gaya halaman Riwayat Peminjaman (tema PLN). Semua selector diawali .pln-rp.
+const CSS = `
+.pln-rp{--navy:#06355f;--blue:#0b6bb8;--yellow:#ffc20e;--line:#dbe5f1;--mute:#62708a}
+.pln-rp .pr-head h1{font-weight:800;color:var(--navy)}
+.pln-rp .pr-head p{max-width:640px}
+
+/* pesan error */
+.pln-rp .pr-msg{border:0;border-radius:12px;display:flex;align-items:center;gap:10px;font-size:.88rem}
+
+/* kartu tabel */
+.pln-rp .pr-card{border-radius:16px;border:1px solid var(--line);border-top:4px solid var(--blue);overflow:hidden}
+.pln-rp .pr-card .riwayat-toolbar{background:#fff}
+.pln-rp .pr-card .input-group .form-control:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(11,107,184,.16)}
+.pln-rp .pr-info b{color:var(--navy)}
+
+/* tabel */
+.pln-rp .pr-card table thead th{background:#eef3f9;color:var(--navy);font-size:.76rem;font-weight:700;
+  text-transform:uppercase;letter-spacing:.02em;border-bottom:1px solid var(--line)}
+.pln-rp .pr-card table tbody tr:hover>*{background:#f6f9fc}
+.pln-rp .pr-card .page-item.active .page-link{background:var(--blue);border-color:var(--blue);color:#fff}
+.pln-rp .pr-card .page-link{color:var(--navy)}
+
+/* empty state */
+.pln-rp .pr-empty-icon{width:72px;height:72px;border-radius:50%;margin:0 auto;display:grid;place-items:center;
+  background:#e6f0fa;color:var(--blue)}
+.pln-rp .pr-empty.is-filter .pr-empty-icon{background:#fff8e1;color:#9a6a00}
+.pln-rp .pr-empty h5{font-weight:800;color:var(--navy)}
+`;
 
 const RiwayatPeminjamanManager = () => {
   const [riwayatList, setRiwayatList] = useState<RiwayatPeminjamanType[]>([]);
@@ -151,14 +186,16 @@ const RiwayatPeminjamanManager = () => {
   });
 
   return (
-    <div className="riwayat-page riwayat-peminjaman-page">
+    <div className="riwayat-page riwayat-peminjaman-page pln-rp">
+      <style>{CSS}</style>
+
       {/* ---- Page Header ---- */}
       <Row>
         <Col>
-          <Flex justifyContent="between" alignItems="center" className="mb-4 w-100" breakpoint="md">
+          <Flex justifyContent="between" alignItems="center" className="mb-4 w-100 pr-head" breakpoint="md">
             <div>
               <h1 className="mb-2 h2">Riwayat Peminjaman Tools</h1>
-              <p className="text-secondary mb-0">
+              <p className="text-secondary mb-2">
                 Menampilkan riwayat seluruh transaksi peminjaman tools yang telah dikembalikan.
               </p>
               <DasherBreadcrumb />
@@ -167,7 +204,19 @@ const RiwayatPeminjamanManager = () => {
         </Col>
       </Row>
 
-      <Card className="card-lg mb-6">
+      {error && (
+        <Alert
+          variant="danger"
+          className="pr-msg"
+          dismissible
+          onClose={() => setError(null)}
+        >
+          <IconAlertTriangle size={20} />
+          <span>{error}</span>
+        </Alert>
+      )}
+
+      <Card className="card-lg mb-6 pr-card">
         {/* ---- Toolbar: Search + Info (baris 1) & Filter + Export (baris 2) ---- */}
         <div className="riwayat-toolbar border-bottom">
           {/* Baris 1: Search (kiri) + Info jumlah data (kanan) */}
@@ -195,10 +244,8 @@ const RiwayatPeminjamanManager = () => {
               )}
             </InputGroup>
 
-            <span className="riwayat-info text-secondary small">
-              Menampilkan{" "}
-              <span className="fw-semibold text-body">{filteredList.length}</span>{" "}
-              dari {riwayatList.length} data
+            <span className="riwayat-info pr-info text-secondary small">
+              Menampilkan <b>{filteredList.length}</b> dari {riwayatList.length} data
             </span>
           </div>
 
@@ -216,8 +263,6 @@ const RiwayatPeminjamanManager = () => {
         </div>
 
         <CardBody>
-          {error && <Alert variant="danger">{error}</Alert>}
-
           {loading ? (
             <div className="text-center py-6">
               <Spinner animation="border" size="sm" className="me-2" />
@@ -225,8 +270,8 @@ const RiwayatPeminjamanManager = () => {
             </div>
           ) : riwayatList.length === 0 ? (
             /* Empty state: belum ada riwayat sama sekali */
-            <div className="riwayat-empty text-center py-6">
-              <div className="riwayat-empty-icon mb-3">
+            <div className="pr-empty text-center py-6">
+              <div className="pr-empty-icon mb-3">
                 <IconHistory size={32} />
               </div>
               <h5 className="mb-1">Belum ada riwayat peminjaman</h5>
@@ -236,9 +281,9 @@ const RiwayatPeminjamanManager = () => {
             </div>
           ) : filteredList.length === 0 ? (
             /* Empty state: hasil pencarian / filter kosong */
-            <div className="riwayat-empty text-center py-6">
-              <div className="riwayat-empty-icon mb-3">
-                <IconHistory size={32} />
+            <div className="pr-empty is-filter text-center py-6">
+              <div className="pr-empty-icon mb-3">
+                <IconFilterOff size={32} />
               </div>
               <h5 className="mb-1">Tidak ada data yang cocok</h5>
               <p className="text-secondary mb-0">

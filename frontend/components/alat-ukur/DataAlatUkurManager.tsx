@@ -26,10 +26,12 @@ import {
   IconCircleCheck,
   IconSearch,
   IconX,
-  IconMoodEmpty,
   IconId,
   IconUserCheck,
+  IconUserQuestion,
   IconLogout,
+  IconAlertTriangle,
+  IconScan,
 } from "@tabler/icons-react";
 
 import Flex from "components/common/Flex";
@@ -44,12 +46,78 @@ import { CartFAB } from "./CartFAB";
 
 import apiFetch from "/lib/apiFetch";
 import { AlatUkur } from "../../types/DataAlatUkurTypes";
-import { prosesPeminjamanApi } from "services/peminjamanService"; 
+import { prosesPeminjamanApi } from "services/peminjamanService";
 
 interface AlatUkurApiResponse {
   status: string;
   data: AlatUkur[];
 }
+
+// Nama peminjam bisa datang dengan beberapa nama field dari backend.
+const namaPeminjam = (p: any): string =>
+  p?.nama ||
+  p?.nama_peminta ||
+  p?.name ||
+  p?.username ||
+  p?.nama_lengkap ||
+  "Pengguna";
+
+// Gaya halaman Data Alat Ukur (tema PLN). Semua selector diawali .pln-da.
+const CSS = `
+.pln-da{--navy:#06355f;--blue:#0b6bb8;--yellow:#ffc20e;--line:#dbe5f1;--mute:#62708a}
+.pln-da .btn-primary{background:var(--blue);border-color:var(--blue)}
+.pln-da .btn-primary:hover,.pln-da .btn-primary:focus{background:var(--navy);border-color:var(--navy)}
+.pln-da .btn-yellow{background:var(--yellow);border:0;color:var(--navy);font-weight:700}
+.pln-da .btn-yellow:hover{background:var(--yellow);color:var(--navy);filter:brightness(1.06)}
+.pln-da .pda-head h1{font-weight:800;color:var(--navy)}
+.pln-da .pda-head p{max-width:640px}
+
+/* kartu peminjam aktif */
+.pln-da .pda-borrower{border-radius:16px;padding:16px 20px;margin-bottom:12px;display:flex;flex-wrap:wrap;
+  gap:14px;justify-content:space-between;align-items:center;border:1px solid}
+.pln-da .pda-borrower.is-empty{background:#fff8e1;border-color:#ffe08a}
+.pln-da .pda-borrower.is-ready{background:#e8f6ef;border-color:#bfe6d2}
+.pln-da .pda-who{display:flex;align-items:center;gap:14px;min-width:0}
+.pln-da .pda-av{width:48px;height:48px;border-radius:14px;display:grid;place-items:center;flex:none}
+.is-empty .pda-av{background:var(--yellow);color:var(--navy)}
+.is-ready .pda-av{background:#12a36b;color:#fff}
+.pln-da .pda-lb{font-size:.76rem;color:var(--mute);display:block}
+.pln-da .pda-name{font-size:1.1rem;font-weight:800;color:var(--navy);margin:0}
+.pln-da .pda-sub{font-size:.78rem;color:var(--mute)}
+
+/* langkah alur: scan kartu, pilih alat, buka keranjang */
+.pln-da .pda-steps{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px}
+.pln-da .pda-step{display:flex;align-items:center;gap:8px;font-size:.8rem;color:var(--mute);padding:5px 12px 5px 6px;
+  border-radius:99px;background:#eef3f9}
+.pln-da .pda-step i{font-style:normal;width:20px;height:20px;border-radius:50%;display:grid;place-items:center;
+  font-size:.7rem;font-weight:800;background:#cfdbea;color:var(--navy)}
+.pln-da .pda-step.is-now{background:var(--navy);color:#fff;font-weight:600}
+.pln-da .pda-step.is-now i{background:var(--yellow);color:var(--navy)}
+.pln-da .pda-step.is-done i{background:#12a36b;color:#fff}
+
+/* pesan */
+.pln-da .pda-msg{border:0;border-radius:12px;display:flex;align-items:center;gap:10px;font-size:.88rem}
+
+/* toolbar tabel */
+.pln-da .pda-card{border-radius:16px;border:1px solid var(--line);border-top:4px solid var(--blue);overflow:hidden}
+.pln-da .pda-bar{padding:14px 18px;display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between}
+.pln-da .pda-count{font-size:.82rem;color:var(--mute)}
+.pln-da .pda-count b{color:var(--navy)}
+.pln-da .pda-bar .input-group{max-width:460px}
+.pln-da .pda-bar .form-control:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(11,107,184,.16)}
+
+/* modal scan kartu */
+.pln-alert-backdrop.modal-backdrop{--bs-backdrop-bg:#041f38;--bs-backdrop-opacity:.68;backdrop-filter:blur(3px)}
+.pda-scan .modal-content{border:0;border-radius:20px;overflow:hidden}
+.pda-scan .pda-stripe{height:6px;background:linear-gradient(90deg,#ffc20e 0 55%,#e2231a 55% 70%,#00a7c4 70%)}
+.pda-scan .pda-ring{width:92px;height:92px;border-radius:50%;margin:0 auto 18px;display:grid;place-items:center;
+  background:#e6f0fa;color:#0b6bb8;position:relative}
+.pda-scan .pda-ring::after{content:"";position:absolute;inset:-8px;border-radius:50%;border:2px solid #0b6bb8;opacity:.35;
+  animation:pdaPulse 1.8s ease-out infinite}
+@keyframes pdaPulse{from{transform:scale(.85);opacity:.5}to{transform:scale(1.25);opacity:0}}
+@media (prefers-reduced-motion:reduce){.pda-scan .pda-ring::after{animation:none}}
+.pda-scan h5{font-weight:800;color:#06355f}
+`;
 
 const DataAlatUkurManager = () => {
   const [data, setData] = useState<AlatUkur[]>([]);
@@ -74,8 +142,18 @@ const DataAlatUkurManager = () => {
   const [cart, setCart] = useState<AlatUkur[]>([]);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
+  // Peringatan di halaman (pengganti alert() bawaan browser)
+  const [notice, setNotice] = useState<string | null>(null);
+  const noticeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const showNotice = useCallback((msg: string) => {
+    setNotice(msg);
+    if (noticeTimerRef.current) clearTimeout(noticeTimerRef.current);
+    noticeTimerRef.current = setTimeout(() => setNotice(null), 6000);
+  }, []);
+
   // =======================================================
-  // STATE BARU: submit & error untuk proses peminjaman (checkout)
+  // STATE: submit & error untuk proses peminjaman (checkout)
   // =======================================================
   const [loanSubmitting, setLoanSubmitting] = useState(false);
   const [loanError, setLoanError] = useState<string | null>(null);
@@ -114,7 +192,7 @@ const DataAlatUkurManager = () => {
       setError(null);
 
       const res = await apiFetch<any>(`/peminta?rfid=${rfidCode}`);
-      
+
       let rawList: any[] = [];
       if (Array.isArray(res)) {
         rawList = res;
@@ -136,17 +214,10 @@ const DataAlatUkurManager = () => {
 
       if (pemintaData) {
         setPeminjamAktif(pemintaData);
-
-        const namaPeminjam =
-          pemintaData.nama ||
-          pemintaData.nama_peminta ||
-          pemintaData.name ||
-          pemintaData.username ||
-          pemintaData.nama_lengkap ||
-          "Pengguna";
-
         setScanCardModalOpen(false);
-        setSuccessMessage(`Berhasil mengidentifikasi: ${namaPeminjam}`);
+        setSuccessMessage(
+          `Berhasil mengidentifikasi: ${namaPeminjam(pemintaData)}`
+        );
         setTimeout(() => setSuccessMessage(null), 4000);
         return true;
       }
@@ -180,8 +251,8 @@ const DataAlatUkurManager = () => {
   const handleAddToCart = useCallback(
     (item: AlatUkur) => {
       if (!peminjamAktif) {
-        alert(
-          "⚠️ Harap Scan Kartu Identitas Peminjam terlebih dahulu sebelum memilih barang!"
+        showNotice(
+          "Scan kartu identitas peminjam dulu sebelum memilih alat."
         );
         setScanCardModalOpen(true);
         return;
@@ -189,44 +260,42 @@ const DataAlatUkurManager = () => {
 
       // 1. BLOKIR JIKA SEDANG DIPINJAM
       // Pastikan backend mengirimkan field 'status_peminjaman'
-      const statusPinjam = (item as any).status_peminjaman; 
-      if (statusPinjam === 'Dipinjam' || statusPinjam === 'sedang_dipinjam') {
-        alert(`❌ Gagal: Alat "${item.nama_alat}" saat ini sedang dipinjam dan belum dikembalikan!`);
+      const statusPinjam = (item as any).status_peminjaman;
+      if (statusPinjam === "Dipinjam" || statusPinjam === "sedang_dipinjam") {
+        showNotice(
+          `Alat "${item.nama_alat}" sedang dipinjam dan belum dikembalikan.`
+        );
         return;
       }
 
       // 2. BLOKIR JIKA ALAT DALAM KONDISI RUSAK (Khusus QC)
-      if (item.kondisi === 'RPP' || item.kondisi === 'RT') {
-        alert(`❌ Gagal: Alat "${item.nama_alat}" dalam kondisi rusak (${item.kondisi}) dan tidak bisa dipinjamkan!`);
+      if (item.kondisi === "RPP" || item.kondisi === "RT") {
+        showNotice(
+          `Alat "${item.nama_alat}" dalam kondisi rusak (${item.kondisi}) dan tidak bisa dipinjamkan.`
+        );
         return;
       }
 
       const isAlreadyInCart = cart.some((ci) => ci.id === item.id);
       if (isAlreadyInCart) {
-        alert(
-          `⚠️ Alat "${item.nama_alat}" (${
+        showNotice(
+          `Alat "${item.nama_alat}" (${
             item.kode_alat || item.sn || "No. Seri"
-          }) sudah ada di dalam keranjang.`
+          }) sudah ada di keranjang.`
         );
         return;
       }
 
       setCart((prevCart) => [...prevCart, item]);
 
-      const namaPeminjamAktif =
-        peminjamAktif.nama ||
-        peminjamAktif.nama_peminta ||
-        peminjamAktif.name ||
-        peminjamAktif.username ||
-        peminjamAktif.nama_lengkap ||
-        "Pengguna";
-
       setSuccessMessage(
-        `${item.nama_alat} ditambahkan ke keranjang (${namaPeminjamAktif}).`
+        `${item.nama_alat} ditambahkan ke keranjang (${namaPeminjam(
+          peminjamAktif
+        )}).`
       );
       setTimeout(() => setSuccessMessage(null), 3000);
     },
-    [peminjamAktif, cart]
+    [peminjamAktif, cart, showNotice]
   );
 
   // =======================================================
@@ -382,12 +451,19 @@ const DataAlatUkurManager = () => {
     [cart, peminjamAktif]
   );
 
+  // Langkah alur saat ini: 1 scan kartu, 2 pilih alat, 3 buka keranjang
+  const step = !peminjamAktif ? 1 : cart.length === 0 ? 2 : 3;
+  const stepClass = (n: number) =>
+    step === n ? "is-now" : step > n ? "is-done" : "";
+
   return (
-    <div className="datatools-page">
+    <div className="datatools-page pln-da">
+      <style>{CSS}</style>
+
       {successMessage && (
         <Alert
           variant="success"
-          className="d-flex align-items-center gap-2"
+          className="pda-msg"
           dismissible
           onClose={() => setSuccessMessage(null)}
         >
@@ -396,99 +472,50 @@ const DataAlatUkurManager = () => {
         </Alert>
       )}
 
-      {error && (
-        <Alert variant="danger" dismissible onClose={() => setError(null)}>
-          {error}
+      {notice && (
+        <Alert
+          variant="warning"
+          className="pda-msg"
+          dismissible
+          onClose={() => setNotice(null)}
+        >
+          <IconAlertTriangle size={20} />
+          <span>{notice}</span>
         </Alert>
       )}
 
-      {/* BANNER INFORMASI PEMINJAM AKTIF */}
-      <Card className="bg-light mb-4 border-primary">
-        <CardBody className="py-3 d-flex justify-content-between align-items-center flex-wrap gap-3">
-          <div className="d-flex align-items-center gap-3">
-            <div className="bg-primary text-white p-2 rounded-circle">
-              <IconUserCheck size={24} />
-            </div>
-            <div>
-              <span className="text-muted small d-block">
-                Peminjam Aktif Saat Ini:
-              </span>
-              <h5 className="mb-0 fw-bold">
-                {peminjamAktif ? (
-                  peminjamAktif.nama ||
-                  peminjamAktif.nama_peminta ||
-                  peminjamAktif.name ||
-                  peminjamAktif.username ||
-                  peminjamAktif.nama_lengkap
-                ) : (
-                  <span className="text-danger italic">
-                    Belum ada kartu yang di-scan
-                  </span>
-                )}
-              </h5>
-              {peminjamAktif && (
-                <small className="text-muted">
-                  ID / RFID:{" "}
-                  {peminjamAktif.rfid ||
-                    peminjamAktif.kode_identitas ||
-                    peminjamAktif.id ||
-                    "-"}
-                </small>
-              )}
-            </div>
-          </div>
-
-          <div>
-            {!peminjamAktif ? (
-              <Button
-                variant="primary"
-                onClick={() => setScanCardModalOpen(true)}
-                className="d-flex align-items-center gap-2"
-              >
-                <IconId size={18} />
-                Scan Kartu Identitas Dulu
-              </Button>
-            ) : (
-              <Button
-                variant="outline-danger"
-                size="sm"
-                onClick={() => {
-                  setPeminjamAktif(null);
-                  setCart([]);
-                }}
-                className="d-flex align-items-center gap-1"
-              >
-                <IconLogout size={16} />
-                Ganti Peminjam / Reset
-              </Button>
-            )}
-          </div>
-        </CardBody>
-      </Card>
+      {error && (
+        <Alert
+          variant="danger"
+          className="pda-msg"
+          dismissible
+          onClose={() => setError(null)}
+        >
+          <IconAlertTriangle size={20} />
+          <span>{error}</span>
+        </Alert>
+      )}
 
       <Row>
         <Col>
           <Flex
             justifyContent="between"
             alignItems="center"
-            className="mb-4 w-100"
+            className="mb-4 w-100 pda-head"
             breakpoint="md"
           >
             <div>
               <h1 className="mb-2 h2">Data Alat Ukur</h1>
-              <p className="text-secondary mb-0">
-                Pilih alat ukur untuk peminjaman setelah melakukan scan
-                identitas. Barang juga bisa langsung ditambahkan ke keranjang
-                dengan scan barcode/QR alat — cukup scan, sistem otomatis
-                mengenali apakah itu kartu identitas atau kode alat.
+              <p className="text-secondary mb-2">
+                Scan kartu identitas peminjam, lalu pilih alat atau scan
+                barcode/QR-nya. Sistem otomatis mengenali kartu dan kode alat.
               </p>
               <DasherBreadcrumb />
             </div>
 
             <div>
               <Button
-                variant="primary"
-                className="d-flex align-items-center gap-2"
+                className="btn-yellow d-flex align-items-center gap-2"
                 onClick={() => {
                   setActiveAlatUkur(null);
                   setFormModalOpen(true);
@@ -502,32 +529,103 @@ const DataAlatUkurManager = () => {
         </Col>
       </Row>
 
-      <Card className="card-lg mb-6">
-        <div className="datatools-toolbar border-bottom">
-          <Row className="g-2 align-items-center">
-            <Col lg={6} md={7}>
-              <InputGroup className="datatools-search">
-                <InputGroup.Text>
-                  <IconSearch size={18} />
-                </InputGroup.Text>
-                <Form.Control
-                  type="search"
-                  placeholder="Cari kode, nama, merk, SN..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                />
-                {searchTerm && (
-                  <Button
-                    variant="link"
-                    className="datatools-search-clear"
-                    onClick={() => setSearchTerm("")}
-                  >
-                    <IconX size={16} />
-                  </Button>
-                )}
-              </InputGroup>
-            </Col>
-          </Row>
+      {/* PEMINJAM AKTIF */}
+      <div className={`pda-borrower ${peminjamAktif ? "is-ready" : "is-empty"}`}>
+        <div className="pda-who">
+          <span className="pda-av">
+            {peminjamAktif ? (
+              <IconUserCheck size={26} />
+            ) : (
+              <IconUserQuestion size={26} />
+            )}
+          </span>
+          <div className="min-w-0">
+            <span className="pda-lb">Peminjam aktif</span>
+            <h5 className="pda-name">
+              {peminjamAktif
+                ? namaPeminjam(peminjamAktif)
+                : "Belum ada kartu yang di-scan"}
+            </h5>
+            <span className="pda-sub">
+              {peminjamAktif
+                ? `ID / RFID: ${
+                    peminjamAktif.rfid ||
+                    peminjamAktif.kode_identitas ||
+                    peminjamAktif.id ||
+                    "-"
+                  }`
+                : "Tempelkan kartu pada reader, atau klik tombol di samping."}
+            </span>
+          </div>
+        </div>
+
+        {!peminjamAktif ? (
+          <Button
+            variant="primary"
+            onClick={() => setScanCardModalOpen(true)}
+            className="d-flex align-items-center gap-2 fw-semibold"
+          >
+            <IconId size={18} />
+            Scan kartu identitas
+          </Button>
+        ) : (
+          <Button
+            variant="outline-danger"
+            size="sm"
+            onClick={() => {
+              setPeminjamAktif(null);
+              setCart([]);
+            }}
+            className="d-flex align-items-center gap-1 fw-semibold"
+          >
+            <IconLogout size={16} />
+            Ganti peminjam
+          </Button>
+        )}
+      </div>
+
+      <div className="pda-steps" aria-label="Langkah peminjaman">
+        <span className={`pda-step ${stepClass(1)}`}>
+          <i>1</i> Scan kartu
+        </span>
+        <span className={`pda-step ${stepClass(2)}`}>
+          <i>2</i> Pilih alat
+        </span>
+        <span className={`pda-step ${stepClass(3)}`}>
+          <i>3</i> Buka keranjang
+        </span>
+      </div>
+
+      <Card className="card-lg mb-6 pda-card">
+        <div className="datatools-toolbar border-bottom pda-bar">
+          <InputGroup className="datatools-search">
+            <InputGroup.Text>
+              <IconSearch size={18} />
+            </InputGroup.Text>
+            <Form.Control
+              type="search"
+              placeholder="Cari kode, nama, merk, SN..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+            {searchTerm && (
+              <Button
+                variant="link"
+                className="datatools-search-clear"
+                onClick={() => setSearchTerm("")}
+                aria-label="Hapus pencarian"
+              >
+                <IconX size={16} />
+              </Button>
+            )}
+          </InputGroup>
+
+          {!loading && (
+            <span className="pda-count">
+              <b>{filteredData.length}</b>
+              {searchTerm ? ` dari ${data.length}` : ""} alat ukur
+            </span>
+          )}
         </div>
 
         <CardBody>
@@ -563,28 +661,31 @@ const DataAlatUkurManager = () => {
         onHide={() => setScanCardModalOpen(false)}
         centered
         backdrop="static"
+        dialogClassName="pda-scan"
+        backdropClassName="pln-alert-backdrop"
       >
-        <Modal.Header closeButton>
-          <Modal.Title className="d-flex align-items-center gap-2">
-            <IconId size={22} />
-            Wajib Scan Kartu Identitas
+        <div className="pda-stripe" />
+        <Modal.Header closeButton className="border-0 pb-0">
+          <Modal.Title className="h6 d-flex align-items-center gap-2 text-muted">
+            <IconScan size={18} />
+            Scan kartu identitas
           </Modal.Title>
         </Modal.Header>
-        <Modal.Body className="text-center py-5">
+        <Modal.Body className="text-center pt-3 pb-5">
           {isVerifyingCard ? (
             <>
               <Spinner animation="border" variant="primary" className="mb-3" />
-              <h5>Memverifikasi Kartu Peminjam...</h5>
+              <h5>Memverifikasi kartu peminjam...</h5>
             </>
           ) : (
             <>
-              <div className="text-primary mb-3">
-                <IconId size={56} />
+              <div className="pda-ring">
+                <IconId size={42} />
               </div>
-              <h5>Silakan Tap Kartu RFID Anda ke Reader</h5>
-              <p className="text-secondary small mb-0">
-                Anda harus melakukan scan kartu identitas terlebih dahulu
-                sebelum bisa memilih atau men-scan barang pinjaman.
+              <h5>Tempelkan kartu RFID ke reader</h5>
+              <p className="text-secondary small mb-0 mx-auto" style={{ maxWidth: 300 }}>
+                Kartu harus di-scan dulu sebelum kamu bisa memilih atau
+                men-scan alat yang dipinjam.
               </p>
             </>
           )}
@@ -624,12 +725,12 @@ const DataAlatUkurManager = () => {
         count={cart.length}
         onClick={() => {
           if (!peminjamAktif) {
-            alert("Scan kartu identitas peminjam terlebih dahulu!");
+            showNotice("Scan kartu identitas peminjam terlebih dahulu.");
             setScanCardModalOpen(true);
             return;
           }
           if (cart.length === 0) {
-            alert("Keranjang masih kosong.");
+            showNotice("Keranjang masih kosong. Pilih alat dulu.");
             return;
           }
           setLoanModalOpen(true);

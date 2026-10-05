@@ -35,20 +35,23 @@ interface LoginResponse {
   must_change_password: boolean;
 }
 
-// ---- Token desain (semua inline, tidak ada file CSS terpisah) ----
+// ---- Token desain: palet PLN, sama dengan dashboard ----
 const color = {
-  navy950: "#060B14",
-  navy900: "#0B1526",
-  navy800: "#122036",
-  cyan400: "#22D3EE",
-  cyan500: "#06B6D4",
-  ink900: "#0B1220",
-  slate600: "#4B5568",
-  slate400: "#8793A6",
+  navy950: "#041F38",
+  navy900: "#06355F",
+  blue600: "#0B6BB8",
+  cyan500: "#00A7C4",
+  yellow400: "#FFC20E",
+  red500: "#E2231A",
+  ok: "#3DDC97",
+  ink900: "#14233B",
+  slate600: "#4B5B73",
+  slate400: "#8794A8",
   white: "#FFFFFF",
-  border100: "#E3E8EF",
-  danger600: "#C0392E",
-  danger100: "#FBEAE8",
+  border100: "#DBE5F1",
+  field: "#F1F6FB",
+  danger600: "#B3261E",
+  danger100: "#FDE8E6",
 };
 
 const fontDisplay = "'Space Grotesk','Segoe UI',sans-serif";
@@ -57,7 +60,17 @@ const fontMono = "ui-monospace,'SFMono-Regular',Menlo,monospace";
 
 // nilai pembacaan kalibrasi yang "menyala" sekali saat halaman dibuka —
 // murni dekoratif, mengacu ke konteks alat ukur/QC
-const READOUT_TARGET = 24.998;
+
+// Gaya yang tidak bisa dibuat inline (fokus, hover). Semua di bawah .pln-login.
+const CSS = `
+.pln-login .form-control:focus{border-color:${color.blue600};box-shadow:0 0 0 3px rgba(11,107,184,.18)}
+.pln-login .form-check-input:checked{background-color:${color.blue600};border-color:${color.blue600}}
+.pln-login .form-check-input:focus{box-shadow:0 0 0 3px rgba(11,107,184,.18);border-color:${color.blue600}}
+.pln-login .pln-submit:hover:not(:disabled){filter:brightness(1.06)}
+.pln-login .pln-submit:focus-visible{outline:2px solid ${color.navy900};outline-offset:2px}
+.pln-login .pln-eye:hover{color:${color.blue600}}
+.pln-login label.form-label{font-weight:600;font-size:.85rem;color:${color.ink900}}
+`;
 
 const SignIn = () => {
   const router = useRouter();
@@ -69,7 +82,6 @@ const SignIn = () => {
   const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [readout, setReadout] = useState(0);
   const [entrance, setEntrance] = useState({ mounted: false, reduced: false });
 
   // kalau sudah ada sesi login, langsung lempar ke dashboard
@@ -88,7 +100,6 @@ const SignIn = () => {
 
     if (reduced) {
       setEntrance({ mounted: true, reduced: true });
-      setReadout(READOUT_TARGET);
       return;
     }
 
@@ -100,7 +111,6 @@ const SignIn = () => {
     const step = (ts: number) => {
       if (start === null) start = ts;
       const progress = Math.min((ts - start) / duration, 1);
-      setReadout(READOUT_TARGET * progress);
       if (progress < 1) raf = requestAnimationFrame(step);
     };
     raf = requestAnimationFrame(step);
@@ -170,18 +180,19 @@ const SignIn = () => {
       backgroundSize: "34px 34px",
       mixBlendMode: "overlay",
     },
+    // overlay biru PLN: terang di sekitar kartu, gelap ke tepi
     bgOverlay: {
       position: "absolute",
       inset: 0,
       background:
-        "radial-gradient(60% 55% at 50% 45%, rgba(6,11,20,.35) 0%, rgba(6,11,20,.8) 60%, rgba(6,11,20,.95) 100%)",
+        "radial-gradient(65% 60% at 50% 45%, rgba(11,107,184,.55) 0%, rgba(6,53,95,.85) 58%, rgba(4,31,56,.96) 100%)",
     },
     card: {
       position: "relative",
       zIndex: 2,
-      width: "min(400px, 92vw)",
-      background: "rgba(255,255,255,0.9)",
-      border: "1px solid rgba(255,255,255,.5)",
+      width: "min(410px, 92vw)",
+      background: "rgba(255,255,255,0.96)",
+      border: "1px solid rgba(255,255,255,.6)",
       borderRadius: 22,
       overflow: "hidden",
       backdropFilter: "blur(18px) saturate(150%)",
@@ -196,35 +207,47 @@ const SignIn = () => {
       alignItems: "center",
       justifyContent: "space-between",
       gap: 12,
-      background: color.navy950,
-      color: color.cyan400,
+      background: `linear-gradient(110deg, ${color.navy900}, ${color.blue600})`,
+      color: color.yellow400,
       fontFamily: fontMono,
       fontSize: "clamp(.66rem, 1.6vw, .76rem)",
       letterSpacing: ".4px",
       padding: "10px clamp(16px, 4vw, 22px)",
     },
+    readoutStatus: {
+      display: "inline-flex",
+      alignItems: "center",
+      gap: 6,
+      color: "#fff",
+    },
     readoutDot: {
-      width: 6,
-      height: 6,
+      width: 7,
+      height: 7,
       borderRadius: "50%",
-      background: color.cyan400,
+      background: color.ok,
+      boxShadow: "0 0 0 3px rgba(61,220,151,.28)",
       display: "inline-block",
       opacity: entrance.mounted ? 1 : 0,
       transition: entrance.reduced ? "none" : "opacity .4s ease-out .4s",
     },
+    // garis tiga warna identitas PLN di bawah strip pembacaan
+    stripe: {
+      height: 4,
+      background: `linear-gradient(90deg, ${color.yellow400} 0 55%, ${color.red500} 55% 70%, ${color.cyan500} 70%)`,
+    },
     formInner: {
-      padding: "clamp(22px, 5vw, 34px) clamp(20px, 6vw, 32px) 28px",
+      padding: "clamp(22px, 5vw, 32px) clamp(20px, 6vw, 32px) 26px",
     },
     logo: {
-      height: 44,
+      height: 48,
       width: "auto",
       objectFit: "contain",
     },
     title: {
       fontFamily: fontDisplay,
-      fontWeight: 600,
+      fontWeight: 700,
       fontSize: "1.55rem",
-      color: color.navy950,
+      color: color.navy900,
     },
     subtitle: {
       color: color.slate600,
@@ -233,25 +256,27 @@ const SignIn = () => {
     },
     alert: {
       background: color.danger100,
-      border: "1px solid rgba(192,57,46,.25)",
+      border: "1px solid rgba(179,38,30,.25)",
       color: color.danger600,
-      borderRadius: 8,
+      borderRadius: 10,
     },
     inputIcon: {
-      background: "#F3F6FA",
+      background: color.field,
       border: `1px solid ${color.border100}`,
       borderRight: "none",
-      color: color.slate400,
+      color: color.blue600,
     },
     input: {
       border: `1px solid ${color.border100}`,
       borderLeft: "none",
+      background: color.field,
       paddingBlock: 10,
       fontSize: ".95rem",
     },
     passwordToggle: {
       border: `1px solid ${color.border100}`,
       borderLeft: "none",
+      background: color.field,
       color: color.slate400,
       paddingInline: 10,
     },
@@ -260,14 +285,16 @@ const SignIn = () => {
       color: color.slate400,
     },
     submitBtn: {
-      background: color.navy900,
-      borderColor: color.navy900,
-      fontWeight: 600,
+      background: color.yellow400,
+      borderColor: color.yellow400,
+      color: color.navy900,
+      fontWeight: 700,
       paddingBlock: 11,
-      borderRadius: 8,
+      borderRadius: 10,
+      boxShadow: "0 8px 18px -8px rgba(255,194,14,.8)",
     },
     footer: {
-      marginTop: 26,
+      marginTop: 24,
       fontSize: ".72rem",
       color: color.slate400,
       lineHeight: 1.5,
@@ -275,7 +302,9 @@ const SignIn = () => {
   };
 
   return (
-    <div style={styles.page}>
+    <div style={styles.page} className="pln-login">
+      <style>{CSS}</style>
+
       <Image
         src={getAssetPath("/images/png/qc-inspection.png")}
         alt=""
@@ -287,14 +316,12 @@ const SignIn = () => {
 
       <div style={styles.card}>
         <div style={styles.readoutBar} aria-hidden="true">
-          <span style={{ fontVariantNumeric: "tabular-nums" }}>
-            ⌀ {readout.toFixed(3)} mm
-          </span>
-          <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+          <span style={styles.readoutStatus}>
             <span style={styles.readoutDot} />
             SISTEM AKTIF
           </span>
         </div>
+        <div style={styles.stripe} aria-hidden="true" />
 
         <div style={styles.formInner}>
           <div className="text-center mb-4">
@@ -367,6 +394,7 @@ const SignIn = () => {
                 <Button
                   variant="link"
                   type="button"
+                  className="pln-eye"
                   onClick={() => setShowPassword((v) => !v)}
                   aria-label={showPassword ? "Sembunyikan password" : "Tampilkan password"}
                   style={styles.passwordToggle}
@@ -392,6 +420,7 @@ const SignIn = () => {
               <Button
                 variant="primary"
                 type="submit"
+                className="pln-submit"
                 disabled={loading}
                 style={styles.submitBtn}
               >

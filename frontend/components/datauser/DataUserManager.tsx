@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useMemo, useState,  } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Row,
   Col,
@@ -18,6 +18,7 @@ import {
   IconX,
   IconUsers,
   IconMoodEmpty,
+  IconAlertTriangle,
 } from "@tabler/icons-react";
 
 import { UserItemType, UserFormValues } from "types/DataUserTypes";
@@ -40,13 +41,50 @@ import DeleteConfirmModal from "components/datauser/DeleteConfirmModal";
 import ActivateConfirmModal from "components/datauser/ActivateConfirmModal";
 import ResetPasswordModal from "components/datauser/ResetPasswordModal";
 
+// Gaya halaman Manajemen User (tema PLN). Semua selector diawali .pln-du.
+const CSS = `
+.pln-du{--navy:#06355f;--blue:#0b6bb8;--yellow:#ffc20e;--line:#dbe5f1;--mute:#62708a}
+.pln-du .btn-yellow{background:var(--yellow);border:0;color:var(--navy);font-weight:700}
+.pln-du .btn-yellow:hover,.pln-du .btn-yellow:focus{background:var(--yellow);color:var(--navy);filter:brightness(1.06)}
+.pln-du .du-head h1{font-weight:800;color:var(--navy)}
+.pln-du .du-head p{max-width:640px}
+
+/* pesan */
+.pln-du .du-msg{border:0;border-radius:12px;display:flex;align-items:center;gap:10px;font-size:.88rem}
+
+/* kartu tabel */
+.pln-du .du-card{border-radius:16px;border:1px solid var(--line);border-top:4px solid var(--blue);overflow:hidden}
+.pln-du .du-card .datatools-toolbar{padding:14px 18px;background:#fff}
+.pln-du .du-card .form-control:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(11,107,184,.16)}
+.pln-du .du-info b{color:var(--navy)}
+
+/* switch tampilkan yang dihapus */
+.pln-du .du-switch .form-check-input:checked{background-color:var(--blue);border-color:var(--blue)}
+.pln-du .du-switch .form-check-input:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(11,107,184,.16)}
+
+/* tabel */
+.pln-du .du-card table thead th{background:#eef3f9;color:var(--navy);font-size:.74rem;font-weight:700;
+  text-transform:uppercase;letter-spacing:.02em;border-bottom:1px solid var(--line);white-space:nowrap;padding:.75rem .9rem}
+.pln-du .du-card table tbody td{padding:.8rem .9rem;font-size:.85rem;color:#14233b;vertical-align:middle}
+.pln-du .du-card table tbody tr:hover>*{background:#f6f9fc}
+.pln-du .du-card .page-item.active .page-link{background:var(--blue);border-color:var(--blue);color:#fff}
+.pln-du .du-card .page-link{color:var(--navy)}
+
+/* empty state */
+.pln-du .du-empty-icon{width:72px;height:72px;border-radius:50%;margin:0 auto;display:grid;place-items:center;
+  background:#e6f0fa;color:var(--blue)}
+.pln-du .du-empty.is-search .du-empty-icon{background:#fff8e1;color:#9a6a00}
+.pln-du .du-empty h5{font-weight:800;color:var(--navy)}
+`;
+
 const DataUserManager = () => {
   const [users, setUsers] = useState<UserItemType[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
+  // RBAC dimatikan: semua pengguna dianggap boleh mengelola user.
+  const isAdmin = true;
+  const isSuperAdmin = true;
   const [roleColorMap, setRoleColorMap] = useState<Record<string, string>>({});
 
   const [searchTerm, setSearchTerm] = useState("");
@@ -63,22 +101,6 @@ const DataUserManager = () => {
   const [resetSubmitting, setResetSubmitting] = useState(false);
 
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
-
-  useEffect(() => {
-    api("/user")
-      .then((res: any) => {
-        const data = res?.data || res;
-        const perms: string[] = data?.all_permissions || [];
-        const roles: string[] = (data?.roles || []).map((r: any) => r.name ?? r);
-        const canManage = roles.includes("Super Admin") || perms.includes("manage_users");
-        setIsAdmin(canManage);
-        setIsSuperAdmin(roles.includes("Super Admin"));
-      })
-      .catch(() => {
-        setIsAdmin(false);
-        setIsSuperAdmin(false);
-      });
-  }, []);
 
   const loadUsers = async () => {
     setLoading(true);
@@ -124,7 +146,7 @@ const DataUserManager = () => {
     setTimeout(() => setSuccessMessage(null), 4000);
   };
 
-    const filteredUsers = useMemo(() => {
+  const filteredUsers = useMemo(() => {
     const keyword = searchTerm.trim().toLowerCase();
     return users
       .filter((u) => isSuperAdmin || u.role !== "Super Admin") // Hanya Super Admin yang bisa melihat user Super Admin
@@ -144,7 +166,7 @@ const DataUserManager = () => {
         // Di dalam grup yang sama, urutkan abjad nama
         return a.full_name.localeCompare(b.full_name);
       });
-  }, [users, searchTerm, showDeleted, isAdmin, isSuperAdmin]);
+  }, [users, searchTerm, showDeleted]);
 
   const openAddModal = () => {
     setActiveUser(null);
@@ -193,6 +215,7 @@ const DataUserManager = () => {
     }
   };
 
+  // Error aksi hapus/aktifkan ditampilkan sebagai alert di halaman (pengganti alert() bawaan browser)
   const handleConfirmDeactivate = async () => {
     if (!activeUser) return;
     try {
@@ -200,7 +223,7 @@ const DataUserManager = () => {
       setUsers((prev) => prev.filter((u) => u.id !== activeUser.id));
       showSuccess("User berhasil dihapus.");
     } catch (err) {
-      alert(err instanceof Error ? err.message : "Gagal menghapus user");
+      setError(err instanceof Error ? err.message : "Gagal menghapus user");
     } finally {
       setDeactivateModalOpen(false);
       setActiveUser(null);
@@ -216,7 +239,7 @@ const DataUserManager = () => {
       );
       showSuccess(`${activeUser.full_name} berhasil diaktifkan kembali.`);
     } catch (err) {
-      alert(err instanceof Error ? err.message : "Gagal mengaktifkan user");
+      setError(err instanceof Error ? err.message : "Gagal mengaktifkan user");
     } finally {
       setActivateModalOpen(false);
       setActiveUser(null);
@@ -243,57 +266,67 @@ const DataUserManager = () => {
   };
 
   const columns = useMemo(
-  () =>
-     getDataUserColumns({
-      isAdmin,
-      roleColorMap,
-      onEdit: openEditModal,
-      onDeactivate: openDeactivateModal,
-      onActivate: openActivateModal,
-      onResetPassword: openResetModal,
-    }),
-  [isAdmin, roleColorMap]
-);
+    () =>
+      getDataUserColumns({
+        isAdmin,
+        roleColorMap,
+        onEdit: openEditModal,
+        onDeactivate: openDeactivateModal,
+        onActivate: openActivateModal,
+        onResetPassword: openResetModal,
+      }),
+    [roleColorMap]
+  );
 
   return (
-    <div className="datatools-page">
+    <div className="datatools-page pln-du">
+      <style>{CSS}</style>
+
       {successMessage && (
         <Alert
           variant="success"
-          className="d-flex align-items-center gap-2"
+          className="du-msg"
           dismissible
           onClose={() => setSuccessMessage(null)}
         >
           <IconCircleCheck size={20} />
-          {successMessage}
+          <span>{successMessage}</span>
+        </Alert>
+      )}
+
+      {error && (
+        <Alert
+          variant="danger"
+          className="du-msg"
+          dismissible
+          onClose={() => setError(null)}
+        >
+          <IconAlertTriangle size={20} />
+          <span>{error}</span>
         </Alert>
       )}
 
       <Row>
         <Col>
-          <Flex justifyContent="between" alignItems="center" className="mb-4 w-100" breakpoint="md">
+          <Flex justifyContent="between" alignItems="center" className="mb-4 w-100 du-head" breakpoint="md">
             <div>
               <h1 className="mb-2 h2">Manajemen User</h1>
-               <p className="text-secondary mb-0">
-                {isAdmin
-                  ? "Mengelola seluruh akun pengguna sistem."
-                  : "Melihat daftar akun pengguna sistem."}
+              <p className="text-secondary mb-2">
+                Mengelola seluruh akun pengguna sistem.
               </p>
               <DasherBreadcrumb />
             </div>
-            {isAdmin && (
-              <div>
-                <Button variant="primary" className="d-flex align-items-center gap-2" onClick={openAddModal}>
-                  <IconPlus size={18} />
-                  Tambah User
-                </Button>
-              </div>
-              )}
+            <div>
+              <Button className="btn-yellow d-flex align-items-center gap-2" onClick={openAddModal}>
+                <IconPlus size={18} />
+                Tambah User
+              </Button>
+            </div>
           </Flex>
         </Col>
       </Row>
 
-      <Card className="card-lg mb-6">
+      <Card className="card-lg mb-6 du-card">
         <div className="datatools-toolbar border-bottom">
           <Row className="g-2 align-items-center">
             <Col lg={6} md={7}>
@@ -306,52 +339,55 @@ const DataUserManager = () => {
                   placeholder="Cari nama atau email..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
+                  aria-label="Cari user"
                 />
                 {searchTerm && (
-                  <Button variant="link" className="datatools-search-clear" onClick={() => setSearchTerm("")}>
+                  <Button
+                    variant="link"
+                    className="datatools-search-clear"
+                    onClick={() => setSearchTerm("")}
+                    aria-label="Bersihkan pencarian"
+                  >
                     <IconX size={16} />
                   </Button>
                 )}
               </InputGroup>
             </Col>
             <Col lg={6} md={5} className="text-md-end d-flex justify-content-end align-items-center gap-3">
-              {isAdmin && (
-                <Form.Check
-                  type="switch"
-                  id="show-deleted-switch"
-                  label="Tampilkan yang dihapus"
-                  checked={showDeleted}
-                  onChange={(e) => setShowDeleted(e.target.checked)}
-                  className="small text-secondary mb-0"
-                />
-              )}
-              <span className="text-secondary small">
-                Menampilkan <span className="fw-semibold text-body">{filteredUsers.length}</span> dari {users.length} data
+              <Form.Check
+                type="switch"
+                id="show-deleted-switch"
+                label="Tampilkan yang dihapus"
+                checked={showDeleted}
+                onChange={(e) => setShowDeleted(e.target.checked)}
+                className="du-switch small text-secondary mb-0"
+              />
+              <span className="du-info text-secondary small">
+                Menampilkan <b>{filteredUsers.length}</b> dari {users.length} data
               </span>
             </Col>
           </Row>
         </div>
 
         <CardBody>
-          {error && <Alert variant="danger">{error}</Alert>}
           {loading ? (
             <div className="text-center py-6">
               <Spinner animation="border" size="sm" className="me-2" /> Memuat data...
             </div>
           ) : users.length === 0 ? (
-            <div className="datatools-empty text-center py-6">
-              <div className="datatools-empty-icon mb-3">
+            <div className="du-empty text-center py-6">
+              <div className="du-empty-icon mb-3">
                 <IconUsers size={32} />
               </div>
               <h5 className="mb-1">Belum ada data user</h5>
               <p className="text-secondary mb-4">Mulai dengan menambahkan user pertama.</p>
-              <Button variant="primary" className="d-inline-flex align-items-center gap-2" onClick={openAddModal}>
+              <Button className="btn-yellow d-inline-flex align-items-center gap-2" onClick={openAddModal}>
                 <IconPlus size={18} /> Tambah User
               </Button>
             </div>
           ) : filteredUsers.length === 0 ? (
-            <div className="datatools-empty text-center py-6">
-              <div className="datatools-empty-icon mb-3">
+            <div className="du-empty is-search text-center py-6">
+              <div className="du-empty-icon mb-3">
                 <IconMoodEmpty size={32} />
               </div>
               <h5 className="mb-1">Tidak ada hasil</h5>
@@ -379,7 +415,7 @@ const DataUserManager = () => {
         error={formError}
       />
 
-       <DeleteConfirmModal
+      <DeleteConfirmModal
         show={deactivateModalOpen}
         onClose={() => {
           setDeactivateModalOpen(false);
@@ -405,7 +441,7 @@ const DataUserManager = () => {
           setResetModalOpen(false);
           setActiveUser(null);
           setResetError(null);
-        }}  
+        }}
         onSubmit={handleResetSubmit}
         user={activeUser}
         error={resetError}

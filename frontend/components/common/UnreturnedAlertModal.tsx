@@ -2,8 +2,33 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Toast, ToastContainer, Button, Badge } from 'react-bootstrap';
+import { Modal } from 'react-bootstrap';
+import { IconAlertTriangle, IconArrowRight, IconX } from '@tabler/icons-react';
 import api from '/lib/api'; // Sesuaikan path import jika menggunakan alias (misal: 'lib/api')
+
+// Gaya dialog peringatan bertema PLN: tampil di tengah, latar belakang diredupkan.
+const CSS = `
+.pln-alert-backdrop.modal-backdrop{--bs-backdrop-bg:#041f38;--bs-backdrop-opacity:.68;backdrop-filter:blur(3px)}
+.pln-alert .modal-content,.pln-alert.modal-content{border:0;border-radius:20px;overflow:hidden;background:#fff;
+  box-shadow:0 30px 70px -20px rgba(4,31,56,.7)}
+.pln-alert .pa-stripe{height:6px;background:linear-gradient(90deg,#e2231a 0 60%,#ffc20e 60% 80%,#00a7c4 80%)}
+.pln-alert .pa-body{position:relative;padding:28px 28px 24px;text-align:center}
+.pln-alert .pa-ic{width:64px;height:64px;border-radius:18px;background:#fde7e6;color:#e2231a;display:grid;place-items:center;margin:0 auto 16px}
+.pln-alert .pa-title{font-size:1.25rem;font-weight:800;color:#06355f;line-height:1.3;margin:0}
+.pln-alert .pa-title b{color:#e2231a}
+.pln-alert .pa-text{font-size:.9rem;color:#62708a;margin:8px auto 0;line-height:1.55;max-width:320px}
+.pln-alert .pa-x{position:absolute;top:12px;right:12px;border:0;background:transparent;color:#8794a8;width:32px;height:32px;
+  border-radius:9px;display:grid;place-items:center;cursor:pointer}
+.pln-alert .pa-x:hover{background:#eef3f9;color:#06355f}
+.pln-alert .pa-actions{display:flex;gap:10px;margin-top:22px}
+.pln-alert .pa-btn{flex:1;border:0;border-radius:12px;padding:11px 14px;font-size:.9rem;font-weight:700;cursor:pointer;
+  display:inline-flex;align-items:center;justify-content:center;gap:6px}
+.pln-alert .pa-ghost{background:#eef3f9;color:#06355f}
+.pln-alert .pa-ghost:hover{background:#e0e9f4}
+.pln-alert .pa-go{flex:1.4;background:#ffc20e;color:#06355f}
+.pln-alert .pa-go:hover{filter:brightness(1.06)}
+.pln-alert button:focus-visible{outline:2px solid #0b6bb8;outline-offset:2px}
+`;
 
 export default function UnreturnedAlertModal() {
   const [unreturnedCount, setUnreturnedCount] = useState(0);
@@ -14,7 +39,7 @@ export default function UnreturnedAlertModal() {
     const checkUserAndUnreturnedAlatukur = async () => {
       try {
         const userRes: any = await api('/user');
-        
+
         // Menyesuaikan struktur data user & roles dari backend Laravel/Spatie
         const userData = userRes?.data || userRes;
         const roles = userData?.roles || [];
@@ -23,7 +48,7 @@ export default function UnreturnedAlertModal() {
 
         // Jika bukan role yang diizinkan, hentikan eksekusi agar tidak memicu error 500 pada API selanjutnya
         if (primaryRole && primaryRole.toLowerCase() === 'super admin') {
-          // Super admin atau role tertentu bisa dilewati jika diperlukan, 
+          // Super admin atau role tertentu bisa dilewati jika diperlukan,
           // sesuaikan logika ini dengan kebutuhan Anda
         }
 
@@ -44,92 +69,53 @@ export default function UnreturnedAlertModal() {
     checkUserAndUnreturnedAlatukur();
   }, []);
 
-  if (!showModal) return null;
+  const close = () => setShowModal(false);
 
   return (
-    <ToastContainer
-      position="top-end"
-      className="p-3"
-      style={{ zIndex: 999999, position: 'fixed' }}
-    >
-      <Toast
+    <>
+      <style>{CSS}</style>
+      <Modal
         show={showModal}
-        onClose={() => setShowModal(false)}
-        style={{
-          maxWidth: 420,
-          borderLeft: '5px solid #dc3545',
-          borderTopLeftRadius: 0,
-          borderBottomLeftRadius: 0,
-        }}
+        onHide={close}
+        centered
+        backdropClassName="pln-alert-backdrop"
+        contentClassName="pln-alert"
+        aria-labelledby="pln-alert-title"
+        style={{ zIndex: 999999 }}
       >
-        <Toast.Header className="align-items-start py-3">
-          <div
-            className="rounded-circle bg-danger bg-opacity-10 d-flex align-items-center justify-content-center me-2 flex-shrink-0"
-            style={{ width: 42, height: 42 }}
-          >
-            <svg
-              width="22"
-              height="22"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="#dc3545"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="M12 9v4m0 4h.01M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z" />
-            </svg>
+        <div className="pa-stripe" />
+        <div className="pa-body">
+          <button type="button" className="pa-x" onClick={close} aria-label="Tutup">
+            <IconX size={18} />
+          </button>
+
+          <div className="pa-ic">
+            <IconAlertTriangle size={32} />
           </div>
-          <div className="me-auto">
-            <strong className="text-body" style={{ fontSize: 16 }}>
-              Peringatan Alat
-            </strong>
-            <div className="text-danger fw-semibold" style={{ fontSize: 12 }}>
-              Memerlukan tindakan segera
-            </div>
-          </div>
-        </Toast.Header>
-        <Toast.Body>
-          <p className="text-secondary mb-3" style={{ fontSize: 14, lineHeight: 1.6 }}>
-            Saat ini terdapat{' '}
-            <Badge bg="danger" pill className="fw-semibold" style={{ fontSize: 13 }}>
-              {unreturnedCount} alat
-            </Badge>{' '}
-            yang masih dipinjam dan belum dikembalikan oleh peminjam.
+          <h2 className="pa-title" id="pln-alert-title">
+            <b>{unreturnedCount} alat</b> belum dikembalikan
+          </h2>
+          <p className="pa-text">
+            Masih ada alat ukur yang dipinjam dan belum kembali. Cek daftarnya dan hubungi peminjam.
           </p>
-          <div className="d-flex justify-content-end gap-2">
-            <Button
-              variant="light"
-              className="fw-semibold"
-              onClick={() => setShowModal(false)}
-            >
-              Abaikan
-            </Button>
-            <Button
-              variant="danger"
-              className="fw-semibold d-flex align-items-center gap-1"
+
+          <div className="pa-actions">
+            <button type="button" className="pa-btn pa-ghost" onClick={close}>
+              Nanti
+            </button>
+            <button
+              type="button"
+              className="pa-btn pa-go"
               onClick={() => {
-                setShowModal(false);
+                close();
                 router.push('/transaksi/peminjaman-aktif');
               }}
             >
-              Lihat Daftar
-              <svg
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="M5 12h14M13 6l6 6-6 6" />
-              </svg>
-            </Button>
+              Lihat daftar <IconArrowRight size={16} />
+            </button>
           </div>
-        </Toast.Body>
-      </Toast>
-    </ToastContainer>
+        </div>
+      </Modal>
+    </>
   );
 }

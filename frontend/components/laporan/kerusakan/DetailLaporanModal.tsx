@@ -1,6 +1,6 @@
 "use client";
 // import node module libraries
-import { Modal, Button, Row, Col, Badge } from "react-bootstrap";
+import { Modal } from "react-bootstrap";
 import { IconAlertTriangle, IconCircleCheck } from "@tabler/icons-react";
 
 // import custom types
@@ -11,12 +11,10 @@ interface DetailRowProps {
   value: React.ReactNode;
 }
 const DetailRow = ({ label, value }: DetailRowProps) => (
-  <Col md={6}>
-    <div className="detail-laporan-item">
-      <div className="text-secondary small text-uppercase mb-1">{label}</div>
-      <div className="fw-semibold">{value || <span className="text-secondary">-</span>}</div>
-    </div>
-  </Col>
+  <div>
+    <span className="dl-k">{label}</span>
+    <span className="dl-v">{value || "-"}</span>
+  </div>
 );
 
 interface DetailLaporanModalProps {
@@ -25,86 +23,110 @@ interface DetailLaporanModalProps {
   item: LaporanKerusakanType | null;
 }
 
+// Gaya modal detail laporan (tema PLN). Semua selector diawali .pln-dl.
+const CSS = `
+.pln-modal-backdrop.modal-backdrop{--bs-backdrop-bg:#041f38;--bs-backdrop-opacity:.68;backdrop-filter:blur(3px)}
+.pln-dl{border:0!important;border-radius:20px!important;overflow:hidden}
+.pln-dl .dl-hero{position:relative;padding:22px 26px 20px;color:#fff;
+  background:linear-gradient(115deg,#06355f 0%,#0b6bb8 70%,#00a7c4 140%)}
+.pln-dl .dl-hero::after{content:"";position:absolute;left:0;right:0;bottom:0;height:5px;
+  background:linear-gradient(90deg,#ffc20e 0 55%,#e2231a 55% 70%,#00a7c4 70%)}
+.pln-dl .dl-top{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+.pln-dl .dl-lb{font-size:.74rem;color:#cfe3f6;display:flex;align-items:center;gap:6px;margin-bottom:6px}
+.pln-dl .dl-name{font-size:1.5rem;font-weight:800;margin:0;line-height:1.2;color:#fff}
+.pln-dl .dl-code{display:inline-block;margin-top:10px;font-family:ui-monospace,Menlo,monospace;font-weight:700;
+  font-size:.85rem;background:rgba(255,255,255,.16);padding:3px 10px;border-radius:8px}
+.pln-dl .dl-close{border:0;background:rgba(255,255,255,.14);color:#fff;width:34px;height:34px;border-radius:10px;
+  font-size:1.1rem;line-height:1;cursor:pointer;flex:none}
+.pln-dl .dl-close:hover{background:rgba(255,255,255,.26)}
+.pln-dl .dl-pill{display:inline-flex;align-items:center;gap:5px;font-size:.76rem;font-weight:700;padding:4px 12px;border-radius:99px}
+.pln-dl .pill-ok{background:#dcf4ea;color:#0b7a50}
+.pln-dl .pill-bad{background:#fde1df;color:#a8160f}
+
+.pln-dl .dl-body{padding:22px 26px 8px;background:#fff}
+.pln-dl .dl-sec{font-size:.78rem;font-weight:700;color:#0b6bb8;display:flex;align-items:center;gap:10px;margin:0 0 12px}
+.pln-dl .dl-sec::after{content:"";flex:1;height:1px;background:#dbe5f1}
+.pln-dl .dl-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px 20px;margin-bottom:22px}
+.pln-dl .dl-k{font-size:.74rem;color:#62708a;display:block;margin-bottom:2px}
+.pln-dl .dl-v{font-weight:600;color:#14233b;overflow-wrap:anywhere}
+.pln-dl .dl-note{background:#f6f9fc;border:1px solid #dbe5f1;border-radius:12px;padding:12px 14px;margin:0 0 16px;
+  color:#14233b;overflow-wrap:anywhere}
+
+.pln-dl .dl-foot{padding:16px 26px 22px;background:#fff;display:flex;justify-content:flex-end}
+.pln-dl .dl-btn{border:0;border-radius:11px;padding:9px 22px;font-weight:700;font-size:.9rem;background:#eef3f9;color:#06355f;cursor:pointer}
+.pln-dl .dl-btn:hover{background:#e0e9f4}
+.pln-dl button:focus-visible{outline:2px solid #ffc20e;outline-offset:2px}
+@media (max-width:575px){.pln-dl .dl-grid{grid-template-columns:1fr}}
+`;
+
 const DetailLaporanModal = ({ show, onClose, item }: DetailLaporanModalProps) => {
   if (!item) return null;
 
+  const isFixed = item.status === "selesai_diperbaiki";
+
   return (
-    <Modal show={show} onHide={onClose} centered size="lg" className="detail-laporan-modal">
-      <Modal.Header closeButton>
-        <Modal.Title as="h5" className="d-flex align-items-center gap-2">
-          <span className="detail-laporan-title-icon">
-            <IconAlertTriangle size={20} />
-          </span>
-          Detail Laporan Kerusakan
-        </Modal.Title>
-      </Modal.Header>
-      <Modal.Body>
+    <>
+      <style>{CSS}</style>
+      <Modal
+        show={show}
+        onHide={onClose}
+        centered
+        size="lg"
+        backdrop="static"
+        backdropClassName="pln-modal-backdrop"
+        contentClassName="pln-dl"
+        className="detail-laporan-modal"
+      >
         {/* Hero: nama barang + kode + jumlah rusak */}
-        <div className="detail-laporan-hero mb-4">
-          <div className="d-flex justify-content-between align-items-start gap-3 flex-wrap">
+        <div className="dl-hero">
+          <div className="dl-top">
             <div>
-              <h4 className="mb-1">{item.nama_barang}</h4>
-              <div className="text-secondary">
-                Kode Barang:{" "}
-                <span className="fw-semibold text-body">{item.kode_barang}</span>
+              <div className="dl-lb">
+                <IconAlertTriangle size={14} /> Detail laporan kerusakan
               </div>
+              <h3 className="dl-name">{item.nama_barang}</h3>
+              <span className="dl-code">{item.kode_barang || "Tanpa Kode"}</span>
             </div>
-            <Badge
-              bg={item.status === "selesai_diperbaiki" ? "success-subtle" : "danger-subtle"}
-              text={item.status === "selesai_diperbaiki" ? "success-emphasis" : "danger-emphasis"}
-              className="detail-laporan-badge d-inline-flex align-items-center gap-1"
-            >
-              {item.status === "selesai_diperbaiki" ? (
-                <IconCircleCheck size={16} />
-              ) : (
-                <IconAlertTriangle size={16} />
-              )}
-              {item.jumlah_rusak} unit {item.status === "selesai_diperbaiki" ? "diperbaiki" : "rusak"}
-            </Badge>
+            <div className="d-flex align-items-center gap-2">
+              <span className={`dl-pill ${isFixed ? "pill-ok" : "pill-bad"}`}>
+                {isFixed ? <IconCircleCheck size={14} /> : <IconAlertTriangle size={14} />}
+                {item.jumlah_rusak} unit {isFixed ? "diperbaiki" : "rusak"}
+              </span>
+              <button type="button" className="dl-close" onClick={onClose} aria-label="Tutup">×</button>
+            </div>
           </div>
         </div>
 
-        {/* Spesifikasi alat */}
-        <div className="detail-laporan-section mb-4">
-          <div className="text-secondary small text-uppercase fw-semibold mb-3">
-            Spesifikasi Alat
-          </div>
-          <Row className="g-3">
+        <div className="dl-body">
+          {/* Spesifikasi alat */}
+          <div className="dl-sec">Spesifikasi alat</div>
+          <div className="dl-grid">
             <DetailRow label="Merk" value={item.merk} />
             <DetailRow label="Tipe" value={item.tipe} />
             <DetailRow label="Warna" value={item.warna} />
             <DetailRow label="Ukuran" value={item.ukuran} />
-          </Row>
-        </div>
-
-        {/* Informasi pengembalian */}
-        <div className="detail-laporan-section mb-4">
-          <div className="text-secondary small text-uppercase fw-semibold mb-3">
-            Informasi Pengembalian
           </div>
-          <Row className="g-3">
+
+          {/* Informasi pengembalian */}
+          <div className="dl-sec">Informasi pengembalian</div>
+          <div className="dl-grid">
             <DetailRow label="Tgl & Jam Pengembalian" value={item.tanggal_pengembalian} />
             <DetailRow label="Nama Peminjam" value={item.nama_peminjam} />
             <DetailRow label="Divisi" value={item.divisi} />
             <DetailRow label="Nama Pekerjaan" value={item.nama_pekerjaan} />
             <DetailRow label="Area Kerja" value={item.area_kerja} />
-          </Row>
+          </div>
+
+          {/* Keterangan */}
+          <div className="dl-sec">Keterangan</div>
+          <p className="dl-note">{item.keterangan || "-"}</p>
         </div>
 
-        {/* Keterangan */}
-        <div className="detail-laporan-section">
-          <div className="text-secondary small text-uppercase fw-semibold mb-2">
-            Keterangan
-          </div>
-          <p className="mb-0">{item.keterangan || "-"}</p>
+        <div className="dl-foot">
+          <button type="button" className="dl-btn" onClick={onClose}>Tutup</button>
         </div>
-      </Modal.Body>
-      <Modal.Footer>
-        <Button variant="outline-secondary" onClick={onClose}>
-          Tutup
-        </Button>
-      </Modal.Footer>
-    </Modal>
+      </Modal>
+    </>
   );
 };
 
