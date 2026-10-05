@@ -169,13 +169,22 @@ const PeminjamManager = () => {
   const handleFormSubmit = async (values: PeminjamFormValues) => {
     setFormError(null);
     try {
+      // Pastikan payload diformat ulang agar field baru pasti ikut terkirim
+      const payload = {
+        kategori: values.kategori,
+        rfid_uid: values.rfid_uid || null,
+        nama_peminta: values.nama_peminta,
+        divisi: values.divisi || null,
+        role: values.role,
+      };
+
       if (activeItem) {
-        const updated = await updatePeminta(activeItem.id, values);
+        const updated = await updatePeminta(activeItem.id, payload);
         setPeminjamList((prev) =>
           sortByNama(prev.map((p) => (p.id === updated.id ? updated : p)))
         );
       } else {
-        const created = await createPeminta(values);
+        const created = await createPeminta(payload);
         setPeminjamList((prev) => sortByNama([created, ...prev]));
       }
       setFormModalOpen(false);

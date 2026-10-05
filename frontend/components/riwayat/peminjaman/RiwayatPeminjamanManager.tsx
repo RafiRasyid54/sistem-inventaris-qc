@@ -51,22 +51,52 @@ const EXPORT_COLUMNS: ExportColumn[] = [
   { header: "Divisi", key: "divisi" },
   { header: "Nama Pekerjaan", key: "nama_pekerjaan" },
   { header: "Area Kerja", key: "area_kerja" },
+  { header: "Kategori", key: "kategori" }, // Menambahkan kategori untuk export
 ];
+
+type KategoriTab = "Internal" | "Vendor";
+
+// Kategori bisa datang dengan beberapa nama field dari backend; default "Internal".
+const getKategori = (r: RiwayatPeminjamanType): string =>
+  (r as any).kategori || (r as any).kategori_peminta || (r as any).peminta?.kategori || "Internal";
 
 // Gaya halaman Riwayat Peminjaman (tema PLN). Semua selector diawali .pln-rp.
 const CSS = `
 .pln-rp{--navy:#06355f;--blue:#0b6bb8;--yellow:#ffc20e;--line:#dbe5f1;--mute:#62708a}
 .pln-rp .pr-head h1{font-weight:800;color:var(--navy)}
 .pln-rp .pr-head p{max-width:640px}
-
-/* pesan error */
 .pln-rp .pr-msg{border:0;border-radius:12px;display:flex;align-items:center;gap:10px;font-size:.88rem}
 
 /* kartu tabel */
 .pln-rp .pr-card{border-radius:16px;border:1px solid var(--line);border-top:4px solid var(--blue);overflow:hidden}
-.pln-rp .pr-card .riwayat-toolbar{background:#fff}
 .pln-rp .pr-card .input-group .form-control:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(11,107,184,.16)}
+
+/* toolbar: tiga bagian dengan jarak tegas (!important agar menang dari CSS global .riwayat-toolbar) */
+.pln-rp .pr-toolbar{background:#fff;padding:0!important}
+.pln-rp .pr-sec{padding:0 28px!important}
+.pln-rp .pr-sec-top{padding-top:22px!important;display:flex;flex-wrap:wrap;gap:12px 20px;align-items:center;justify-content:space-between}
+.pln-rp .pr-sec-search{padding-top:18px!important}
+.pln-rp .pr-sec-filter{padding-top:18px!important;padding-bottom:24px!important}
+.pln-rp .pr-sec-filter>*{margin:0!important;padding:0!important;width:100%;gap:14px!important;flex-wrap:wrap!important}
+.pln-rp .pr-info{font-size:.85rem;color:var(--mute)}
 .pln-rp .pr-info b{color:var(--navy)}
+.pln-rp .pr-sec-search .riwayat-search{width:100%;max-width:480px;margin:0!important}
+.pln-rp .pr-sec-search .input-group-text,.pln-rp .pr-sec-search .form-control{padding-top:11px;padding-bottom:11px}
+
+/* isi tabel: ruang di tepi dan sel yang lega */
+.pln-rp .pr-body{padding:12px 28px 24px!important}
+.pln-rp .pr-card table th,.pln-rp .pr-card table td{padding:14px 16px!important;vertical-align:middle}
+.pln-rp .pr-card table th{white-space:nowrap}
+
+/* tab kategori */
+.pln-rp .pa-tabs{background:#eef3f9;padding:5px;border-radius:12px;display:inline-flex;gap:4px}
+.pln-rp .pa-tab-btn{border:0;background:transparent;color:var(--mute);font-weight:600;font-size:.9rem;border-radius:9px;
+  padding:8px 18px;display:inline-flex;align-items:center;gap:8px;transition:all .2s ease}
+.pln-rp .pa-tab-btn:hover{color:var(--navy)}
+.pln-rp .pa-tab-btn.active{background:#fff;color:var(--navy);box-shadow:0 2px 6px rgba(6,53,95,.1)}
+.pln-rp .pa-tab-btn:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+.pln-rp .pa-tab-n{font-size:.72rem;font-weight:700;min-width:22px;text-align:center;padding:1px 7px;border-radius:99px;background:#dbe5f1;color:var(--navy)}
+.pln-rp .pa-tab-btn.active .pa-tab-n{background:var(--yellow)}
 
 /* tabel */
 .pln-rp .pr-card table thead th{background:#eef3f9;color:var(--navy);font-size:.76rem;font-weight:700;
@@ -80,6 +110,13 @@ const CSS = `
   background:#e6f0fa;color:var(--blue)}
 .pln-rp .pr-empty.is-filter .pr-empty-icon{background:#fff8e1;color:#9a6a00}
 .pln-rp .pr-empty h5{font-weight:800;color:var(--navy)}
+
+@media (max-width:576px){
+  .pln-rp .pr-sec{padding:0 16px!important}
+  .pln-rp .pr-body{padding:12px 12px 20px!important}
+  .pln-rp .pa-tabs{width:100%;display:flex}
+  .pln-rp .pa-tab-btn{flex:1;justify-content:center;padding:8px 10px;font-size:.85rem}
+}
 `;
 
 const RiwayatPeminjamanManager = () => {
@@ -87,12 +124,15 @@ const RiwayatPeminjamanManager = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Tab yang sedang aktif ("Internal" atau "Vendor")
+  const [kategoriTab, setKategoriTab] = useState<KategoriTab>("Internal");
+
   const loadData = async () => {
     setLoading(true);
     setError(null);
     try {
       const data = await getRiwayatPeminjaman();
-      setRiwayatList(data);
+      setRiwayatList(Array.isArray(data) ? data : []);
     } catch (err) {
       const message = err instanceof Error ? err.message : "Gagal memuat riwayat peminjaman";
       setError(message);
@@ -117,20 +157,35 @@ const RiwayatPeminjamanManager = () => {
     return Array.from(namaSet).sort();
   }, [riwayatList]);
 
+  // Jumlah data per kategori, ditampilkan di tab supaya tidak perlu pindah tab untuk tahu isinya
+  const jumlahPerKategori = useMemo(() => {
+    let internal = 0;
+    let vendor = 0;
+    riwayatList.forEach((r) => {
+      if (getKategori(r) === "Vendor") vendor += 1;
+      else if (getKategori(r) === "Internal") internal += 1;
+    });
+    return { Internal: internal, Vendor: vendor };
+  }, [riwayatList]);
+
+  // Menyaring berdasarkan Tab (Kategori), Tanggal, Nama Peminjam, dan Search Term
   const filteredList = useMemo(() => {
     const keyword = searchTerm.trim().toLowerCase();
-    
+
     return riwayatList.filter((r) => {
-      // 1. Filter tanggal (rentang atau satu bulan)
+      // 1. Filter Berdasarkan Kategori Tab (Internal / Vendor)
+      if (getKategori(r) !== kategoriTab) return false;
+
+      // 2. Filter tanggal (rentang atau satu bulan)
       if (tanggalFilter) {
         const tanggal = parseRowDate(r.tanggal_pinjam);
         if (tanggal && !dateInFilter(tanggal, tanggalFilter)) return false;
       }
-      
-      // 2. Filter nama peminjam (dari dropdown FilterBar)
+
+      // 3. Filter nama peminjam (dari dropdown FilterBar)
       if (namaFilter !== "" && r.nama_peminjam !== namaFilter) return false;
-      
-      // 3. Filter pencarian teks (Diperbarui untuk mencari di SEMUA kolom & Null-Safety)
+
+      // 4. Filter pencarian teks
       if (keyword !== "") {
         const tglPinjam = (r.tanggal_pinjam || "").toLowerCase();
         const tglKembali = (r.tanggal_kembali || "").toLowerCase();
@@ -159,10 +214,10 @@ const RiwayatPeminjamanManager = () => {
 
         if (!cocok) return false;
       }
-      
+
       return true;
     });
-  }, [riwayatList, tanggalFilter, namaFilter, searchTerm]);
+  }, [riwayatList, tanggalFilter, namaFilter, searchTerm, kategoriTab]);
 
   // ---- Modal Detail Transaksi ----
   const [detailModalOpen, setDetailModalOpen] = useState(false);
@@ -177,9 +232,9 @@ const RiwayatPeminjamanManager = () => {
   };
 
   const handleExportPDF = () =>
-    exportToPDF(filteredList, EXPORT_COLUMNS, getFilteredExportFileName("Riwayat_Peminjaman_Tools", namaFilter), "Riwayat Peminjaman Tools");
+    exportToPDF(filteredList, EXPORT_COLUMNS, getFilteredExportFileName(`Riwayat_Peminjaman_${kategoriTab}`, namaFilter), "Riwayat Peminjaman Tools");
   const handleExportExcel = () =>
-    exportToExcel(filteredList, EXPORT_COLUMNS, getFilteredExportFileName("Riwayat_Peminjaman_Tools", namaFilter));
+    exportToExcel(filteredList, EXPORT_COLUMNS, getFilteredExportFileName(`Riwayat_Peminjaman_${kategoriTab}`, namaFilter));
 
   const columns = getRiwayatPeminjamanColumns({
     onDetail: openDetailModal,
@@ -217,17 +272,46 @@ const RiwayatPeminjamanManager = () => {
       )}
 
       <Card className="card-lg mb-6 pr-card">
-        {/* ---- Toolbar: Search + Info (baris 1) & Filter + Export (baris 2) ---- */}
-        <div className="riwayat-toolbar border-bottom">
-          {/* Baris 1: Search (kiri) + Info jumlah data (kanan) */}
-          <div className="riwayat-toolbar-row">
+        <div className="pr-toolbar border-bottom">
+          {/* Bagian 1: tab kategori (kiri) + jumlah data (kanan) */}
+          <div className="pr-sec pr-sec-top">
+            <div className="pa-tabs" role="tablist" aria-label="Kategori peminjam">
+              <button
+                type="button"
+                role="tab"
+                aria-selected={kategoriTab === "Internal"}
+                className={`pa-tab-btn ${kategoriTab === "Internal" ? "active" : ""}`}
+                onClick={() => setKategoriTab("Internal")}
+              >
+                Internal PLN
+                <span className="pa-tab-n">{jumlahPerKategori.Internal}</span>
+              </button>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={kategoriTab === "Vendor"}
+                className={`pa-tab-btn ${kategoriTab === "Vendor" ? "active" : ""}`}
+                onClick={() => setKategoriTab("Vendor")}
+              >
+                Eksternal / Vendor
+                <span className="pa-tab-n">{jumlahPerKategori.Vendor}</span>
+              </button>
+            </div>
+
+            <span className="pr-info">
+              Menampilkan <b>{filteredList.length}</b> data {kategoriTab}
+            </span>
+          </div>
+
+          {/* Bagian 2: pencarian */}
+          <div className="pr-sec pr-sec-search">
             <InputGroup className="riwayat-search">
               <InputGroup.Text>
                 <IconSearch size={18} />
               </InputGroup.Text>
               <Form.Control
                 type="search"
-                placeholder="Cari kode, nama barang, atau informasi lainnya..."
+                placeholder={`Cari riwayat peminjaman ${kategoriTab.toLowerCase()}...`}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 aria-label="Cari riwayat peminjaman"
@@ -243,26 +327,24 @@ const RiwayatPeminjamanManager = () => {
                 </Button>
               )}
             </InputGroup>
-
-            <span className="riwayat-info pr-info text-secondary small">
-              Menampilkan <b>{filteredList.length}</b> dari {riwayatList.length} data
-            </span>
           </div>
 
-          {/* Baris 2: Filter Bulan/Tahun (kiri) + Export PDF/Excel (kanan) */}
-          <RiwayatFilterBar
-            tanggalFilter={tanggalFilter}
-            onTanggalFilterChange={setTanggalFilter}
-            namaFilter={namaFilter}
-            onNamaFilterChange={setNamaFilter}
-            namaOptions={namaOptions}
-            namaLabel="Nama Peminjam"
-            onExportPDF={handleExportPDF}
-            onExportExcel={handleExportExcel}
-          />
+          {/* Bagian 3: Filter Tanggal/Nama + Export PDF/Excel */}
+          <div className="pr-sec pr-sec-filter">
+            <RiwayatFilterBar
+              tanggalFilter={tanggalFilter}
+              onTanggalFilterChange={setTanggalFilter}
+              namaFilter={namaFilter}
+              onNamaFilterChange={setNamaFilter}
+              namaOptions={namaOptions}
+              namaLabel="Nama Peminjam"
+              onExportPDF={handleExportPDF}
+              onExportExcel={handleExportExcel}
+            />
+          </div>
         </div>
 
-        <CardBody>
+        <CardBody className="pr-body">
           {loading ? (
             <div className="text-center py-6">
               <Spinner animation="border" size="sm" className="me-2" />
@@ -287,7 +369,8 @@ const RiwayatPeminjamanManager = () => {
               </div>
               <h5 className="mb-1">Tidak ada data yang cocok</h5>
               <p className="text-secondary mb-0">
-                Coba ubah kata kunci pencarian atau filter bulan/tahun.
+                Tidak ada riwayat peminjaman untuk kategori <b>{kategoriTab}</b>
+                {searchTerm || tanggalFilter || namaFilter ? " yang cocok dengan filter Anda." : "."}
               </p>
             </div>
           ) : (

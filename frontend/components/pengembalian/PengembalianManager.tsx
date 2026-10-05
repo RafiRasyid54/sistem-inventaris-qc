@@ -1,8 +1,14 @@
 "use client";
 // import node module libraries
 import { useEffect, useState } from "react";
-import { Row, Col, Alert, Spinner } from "react-bootstrap";
-import { IconCircleCheck, IconAlertTriangle, IconLock } from "@tabler/icons-react";
+import { Row, Col, Alert, Spinner, Button, Modal, Form } from "react-bootstrap";
+import { 
+  IconCircleCheck, 
+  IconAlertTriangle, 
+  IconLock, 
+  IconBuildingStore, 
+  IconId 
+} from "@tabler/icons-react";
 import { createLaporanKerusakan } from "services/laporanKerusakanService";
 
 // import custom types
@@ -32,6 +38,7 @@ const CSS = `
 .pln-pg .pg-step.is-now{background:#06355f;color:#fff;font-weight:600}
 .pln-pg .pg-step.is-now i{background:#ffc20e;color:#06355f}
 .pln-pg .pg-step.is-done i{background:#12a36b;color:#fff}
+.pln-alert-backdrop.modal-backdrop{--bs-backdrop-bg:#041f38;--bs-backdrop-opacity:.68;backdrop-filter:blur(3px)}
 `;
 
 const PengembalianManager = () => {
@@ -48,15 +55,32 @@ const PengembalianManager = () => {
   const [itemsPeminjam, setItemsPeminjam] = useState<PengembalianGroupItem[] | null>(null);
   const [recordsByGroup, setRecordsByGroup] = useState<Record<string, PeminjamanAktifItemType[]>>({});
   const [submitting, setSubmitting] = useState(false);
-  // Error saat proses pengembalian ditampilkan di halaman, bukan alert() browser
   const [submitError, setSubmitError] = useState<string | null>(null);
+
+  // ---- State Khusus Vendor ----
+  const [vendorList, setVendorList] = useState<any[]>([]);
+  const [vendorModalOpen, setVendorModalOpen] = useState(false);
+  const [selectedVendorId, setSelectedVendorId] = useState<string>("");
+  const [pendingVendor, setPendingVendor] = useState<any>(null); // Vendor yg butuh otorisasi
+  const [scanAuthModalOpen, setScanAuthModalOpen] = useState(false); // Modal untuk scan kartu Inventory Man
 
   const loadData = async () => {
     setLoading(true);
     setError(null);
     try {
-      const data = await getPeminjamanAktif();
-      setItems(data);
+      // Load Peminjaman Aktif & Data Peminta (untuk memfilter vendor)
+      const [dataPeminjaman, dataPeminta] = await Promise.all([
+        getPeminjamanAktif(),
+        getPeminta()
+      ]);
+
+      setItems(dataPeminjaman);
+
+      let rawPeminta: any[] = [];
+      if (Array.isArray(dataPeminta)) rawPeminta = dataPeminta;
+      else if (dataPeminta?.data) rawPeminta = dataPeminta.data;
+
+      setVendorList(rawPeminta.filter((p: any) => p.kategori === "Vendor"));
     } catch (err) {
       const message = err instanceof Error ? err.message : "Gagal memuat data peminjaman aktif";
       setError(message);
@@ -69,28 +93,53 @@ const PengembalianManager = () => {
     loadData();
   }, []);
 
-  // ---- Scan kartu peminjam ----
+  // ---- Scan kartu peminjam / Approval Vendor ----
   const handleScan = async (idCard: string) => {
     setScanning(true);
     setScanError(null);
     try {
       const pemintaAktif = await getPeminta();
-      const peminta: any = pemintaAktif.find((p: { id: string }) => p.id === idCard);
+      let rawList: any[] = [];
+      if (Array.isArray(pemintaAktif)) rawList = pemintaAktif;
+      else if (pemintaAktif?.data) rawList = pemintaAktif.data;
 
-      if (!peminta) {
-        setScanError("Kartu tidak dikenali atau peminjam tidak aktif.");
-        return;
+      let targetPemintaId = "";
+      let namaPeminta = "";
+
+      // LOGIKA PEMISAHAN: Apakah sedang mode Normal atau Approval Vendor?
+      if (pendingVendor) {
+        // 1. MODE APPROVAL VENDOR
+        const verifikator = rawList.find((p: any) => p.rfid_uid === idCard || p.id === idCard);
+        
+        if (!verifikator || verifikator.role !== "inventory man") {
+          setScanError("Akses Ditolak! Hanya kartu ber-role 'Inventory Man' yang dapat menyetujui pengembalian Vendor.");
+          return;
+        }
+        
+        // Otorisasi berhasil, arahkan query ke barang milik Vendor
+        targetPemintaId = pendingVendor.id;
+        namaPeminta = pendingVendor.nama_peminta || "Vendor";
+      } else {
+        // 2. MODE NORMAL (Pegawai mengembalikan barangnya sendiri)
+        const peminta = rawList.find((p: any) => p.rfid_uid === idCard || p.id === idCard);
+        
+        if (!peminta) {
+          setScanError("Kartu tidak dikenali atau peminjam tidak aktif.");
+          return;
+        }
+
+        if (peminta.kategori === "Vendor") {
+          setScanError("Vendor tidak memiliki kartu. Silakan klik tombol 'Pengembalian Vendor'.");
+          return;
+        }
+
+        // Arahkan query ke barang milik Pegawai tersebut
+        targetPemintaId = peminta.id;
+        namaPeminta = peminta.nama || peminta.nama_peminta || peminta.name || "Pengguna";
       }
 
-      const namaPeminta =
-        peminta.nama ||
-        peminta.nama_peminta ||
-        peminta.name ||
-        peminta.username ||
-        peminta.nama_lengkap ||
-        "Pengguna";
-
-      const milikPeminjamIni = items.filter((item) => item.peminjamId === idCard);
+      // Cari barang yang sedang dipinjam
+      const milikPeminjamIni = items.filter((item) => item.peminjamId === targetPemintaId);
 
       if (milikPeminjamIni.length === 0) {
         setScanError(`${namaPeminta} tidak sedang meminjam alat ukur apa pun.`);
@@ -124,6 +173,11 @@ const PengembalianManager = () => {
       setNamaPeminjamAktif(namaPeminta);
       setItemsPeminjam(grouped);
       setRecordsByGroup(records);
+      
+      // Bersihkan state otorisasi vendor
+      setPendingVendor(null);
+      setScanAuthModalOpen(false);
+
     } catch (err) {
       const message = err instanceof Error ? err.message : "Gagal memverifikasi kartu";
       setScanError(message);
@@ -137,6 +191,20 @@ const PengembalianManager = () => {
     setItemsPeminjam(null);
     setRecordsByGroup({});
     setScanError(null);
+    setPendingVendor(null);
+    setScanAuthModalOpen(false);
+  };
+
+  const handleSelectVendorSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedVendorId) return;
+    
+    const vendor = vendorList.find((v) => v.id === selectedVendorId);
+    if (vendor) {
+      setPendingVendor(vendor);
+      setVendorModalOpen(false);
+      setScanAuthModalOpen(true); // Buka modal otorisasi kartu
+    }
   };
 
   // ---- Submit pengembalian sekaligus ----
@@ -164,10 +232,8 @@ const PengembalianManager = () => {
           // TANGKAP ID
           const realPeminjamanId = record.id || (record as any).peminjamanId || (record as any).id_peminjaman || (record as any).peminjaman_id;
 
-          // Jika ID tidak ditemukan, isi data asli dari backend dicatat di console untuk debugging
           if (!realPeminjamanId || realPeminjamanId === 0 || realPeminjamanId === "0") {
-            console.error("ISI DATA DARI BACKEND (ID peminjaman tidak ditemukan):", JSON.stringify(record, null, 2));
-            throw new Error("Gagal: ID Transaksi Peminjaman tidak ditemukan dari data API backend. Detail data ada di console browser.");
+            throw new Error("Gagal: ID Transaksi Peminjaman tidak ditemukan.");
           }
 
           await tandaiDikembalikan(String(realPeminjamanId));
@@ -230,7 +296,6 @@ const PengembalianManager = () => {
     }
   };
 
-  // Langkah alur saat ini: 1 scan kartu, 2 pilih alat dan konfirmasi
   const step = itemsPeminjam ? 2 : 1;
   const stepClass = (n: number) => (step === n ? "is-now" : step > n ? "is-done" : "");
 
@@ -239,12 +304,7 @@ const PengembalianManager = () => {
       <style>{CSS}</style>
 
       {successMessage && (
-        <Alert
-          variant="success"
-          className="pg-msg"
-          dismissible
-          onClose={() => setSuccessMessage(null)}
-        >
+        <Alert variant="success" className="pg-msg" dismissible onClose={() => setSuccessMessage(null)}>
           <IconCircleCheck size={20} className="flex-shrink-0" />
           <span>{successMessage}</span>
         </Alert>
@@ -253,12 +313,7 @@ const PengembalianManager = () => {
       {/* ---- Page Header ---- */}
       <Row>
         <Col>
-          <Flex
-            justifyContent="between"
-            alignItems="center"
-            className="mb-4 w-100 pg-head"
-            breakpoint="md"
-          >
+          <Flex justifyContent="between" alignItems="center" className="mb-4 w-100 pg-head" breakpoint="md">
             <div>
               <h1 className="mb-2 h2">Pengembalian Alat Ukur</h1>
               <p className="text-secondary mb-2">
@@ -308,7 +363,14 @@ const PengembalianManager = () => {
           Memuat data...
         </div>
       ) : !itemsPeminjam ? (
-        <PengembalianAlatScanForm onScan={handleScan} loading={scanning} error={scanError} />
+        <>
+          <div className="d-flex justify-content-end mb-3">
+             <Button variant="outline-primary" onClick={() => setVendorModalOpen(true)} className="d-flex align-items-center gap-2 fw-semibold bg-white shadow-sm">
+                <IconBuildingStore size={18} /> Pengembalian Eksternal (Vendor)
+             </Button>
+          </div>
+          <PengembalianAlatScanForm onScan={handleScan} loading={scanning && !scanAuthModalOpen} error={!scanAuthModalOpen ? scanError : null} />
+        </>
       ) : (
         <PengembalianAlatChecklist
           namaPeminjam={namaPeminjamAktif || ""}
@@ -318,6 +380,79 @@ const PengembalianManager = () => {
           submitting={submitting}
         />
       )}
+
+      {/* MODAL PILIH VENDOR */}
+      <Modal show={vendorModalOpen} onHide={() => setVendorModalOpen(false)} centered backdropClassName="pln-alert-backdrop">
+        <Form onSubmit={handleSelectVendorSubmit}>
+          <Modal.Header closeButton>
+            <Modal.Title className="h5 fw-bold" style={{color: '#06355f'}}>Pengembalian Eksternal</Modal.Title>
+          </Modal.Header>
+          <Modal.Body>
+            <Form.Group>
+              <Form.Label className="fw-semibold">Pilih Instansi Vendor</Form.Label>
+              <Form.Select required value={selectedVendorId} onChange={(e) => setSelectedVendorId(e.target.value)}>
+                <option value="" disabled>-- Pilih Vendor --</option>
+                {vendorList.map((v) => (
+                  <option key={v.id} value={v.id}>{v.nama_peminta}</option>
+                ))}
+              </Form.Select>
+              <Form.Text className="text-muted mt-2 d-block">
+                Setelah memilih vendor, sistem akan meminta otorisasi dari <b>Inventory Man</b> melalui scan kartu RFID.
+              </Form.Text>
+            </Form.Group>
+          </Modal.Body>
+          <Modal.Footer>
+            <Button variant="light" onClick={() => setVendorModalOpen(false)}>Batal</Button>
+            <Button variant="primary" type="submit" disabled={!selectedVendorId}>Lanjutkan</Button>
+          </Modal.Footer>
+        </Form>
+      </Modal>
+
+      {/* MODAL OTORISASI SCAN KARTU INVENTORY MAN */}
+      <Modal 
+        show={scanAuthModalOpen} 
+        onHide={() => { setScanAuthModalOpen(false); setPendingVendor(null); setScanError(null); }} 
+        centered 
+        backdrop="static"
+        backdropClassName="pln-alert-backdrop"
+      >
+        <Modal.Header closeButton className="border-0 pb-0">
+          <Modal.Title className="h6 text-muted">Otorisasi Pengembalian</Modal.Title>
+        </Modal.Header>
+        <Modal.Body className="text-center py-4">
+           {scanning ? (
+             <>
+               <Spinner animation="border" variant="primary" className="mb-3" />
+               <h5>Memverifikasi Otorisasi...</h5>
+             </>
+           ) : (
+             <>
+               <div style={{width: 92, height: 92, background: '#e6f0fa', color: '#0b6bb8', borderRadius: '50%', display: 'grid', placeItems: 'center', margin: '0 auto 16px'}}>
+                 <IconId size={42} />
+               </div>
+               <h5 className="mb-2" style={{color: '#06355f', fontWeight: 800}}>Scan Kartu Inventory Man</h5>
+               <p className="text-secondary small mb-4 mx-auto" style={{ maxWidth: 320 }}>
+                 Pengembalian barang oleh vendor <b>{pendingVendor?.nama_peminta}</b> memerlukan persetujuan dari petugas Inventory Man.
+               </p>
+               <Form.Control
+                 autoFocus
+                 type="password"
+                 placeholder="Tap kartu RFID ke reader..."
+                 className="text-center"
+                 onKeyDown={(e) => {
+                   if (e.key === "Enter") {
+                     e.preventDefault();
+                     handleScan(e.currentTarget.value);
+                     e.currentTarget.value = "";
+                   }
+                 }}
+               />
+               {scanError && <Alert variant="danger" className="mt-3 text-start mb-0">{scanError}</Alert>}
+             </>
+           )}
+        </Modal.Body>
+      </Modal>
+
     </div>
   );
 };

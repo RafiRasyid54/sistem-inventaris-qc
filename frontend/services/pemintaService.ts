@@ -4,20 +4,25 @@ import { PeminjamType } from "../types/DataAlatUkurTypes";
 // Helper untuk mapping data dari backend (nama_peminta -> nama)
 const mapResponseItem = (item: any): PeminjamType => ({
   ...item,
+  // Memastikan field nama terisi untuk kompatibilitas UI lama, 
+  // namun tetap mempertahankan field baru.
   nama: item.nama_peminta || item.nama || "",
 });
 
-// di services/pemintaService.ts
 export const getPeminta = async () => {
-  const response = await apiFetch('/peminta'); // sesuaikan endpoint kamu
+  const response = await apiFetch('/peminta');
   return response.data;
 };
 
 export async function createPeminta(values: any): Promise<PeminjamType> {
   const payload = {
-    id: values.id || undefined, // Biarkan kosong/undefined jika di-generate otomatis oleh backend
-    nama_peminta: values.nama || values.nama_peminta,
-    divisi: values.divisi,
+    // ID di-generate oleh backend, jadi tidak perlu dikirim. 
+    // Kita kirimkan rfid_uid, kategori, dan instansi_vendor
+    rfid_uid: values.rfid_uid || null,
+    kategori: values.kategori,
+    instansi_vendor: values.instansi_vendor || null,
+    nama_peminta: values.nama_peminta || values.nama,
+    divisi: values.divisi || null,
     role: values.role,
   };
 
@@ -25,13 +30,17 @@ export async function createPeminta(values: any): Promise<PeminjamType> {
     method: "POST",
     body: JSON.stringify(payload),
   });
+  
   return mapResponseItem(res.data);
 }
 
 export async function updatePeminta(id: string, values: any): Promise<PeminjamType> {
   const payload = {
-    nama_peminta: values.nama || values.nama_peminta,
-    divisi: values.divisi,
+    rfid_uid: values.rfid_uid || null,
+    kategori: values.kategori,
+    instansi_vendor: values.instansi_vendor || null,
+    nama_peminta: values.nama_peminta || values.nama,
+    divisi: values.divisi || null,
     role: values.role,
   };
 
@@ -39,6 +48,7 @@ export async function updatePeminta(id: string, values: any): Promise<PeminjamTy
     method: "PUT",
     body: JSON.stringify(payload),
   });
+  
   return mapResponseItem(res.data);
 }
 

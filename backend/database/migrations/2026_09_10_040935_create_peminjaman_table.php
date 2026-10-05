@@ -9,15 +9,14 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('peminjaman', function (Blueprint $table) {
-    // UBAH BARIS INI:
             $table->uuid('id')->primary();
             
-            // PERBAIKAN: Ubah foreignId menjadi uuid karena alat_ukur.id adalah uuid
+            // Relasi ke Alat Ukur
             $table->uuid('alat_ukur_id');
             $table->foreign('alat_ukur_id')->references('id')->on('alat_ukur')->onDelete('cascade');
             
-            // Relasi ke Pekerja (karena ID Peminta adalah string/RFID)
-            $table->string('peminta_id');
+            // PERBAIKAN DI SINI: Ubah tipe data string menjadi uuid
+            $table->uuid('peminta_id');
             $table->foreign('peminta_id')->references('id')->on('peminta')->onDelete('cascade');
             
             // Relasi ke Pekerjaan

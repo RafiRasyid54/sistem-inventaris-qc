@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import { Modal, Form, Row, Col, Button, Alert } from "react-bootstrap";
+import { Modal, Form, Row, Col, Button } from "react-bootstrap";
 import {
   IconUser,
   IconPencil,
@@ -8,19 +8,25 @@ import {
   IconIdBadge2,
   IconTool,
   IconPackage,
+  IconAlertTriangle,
 } from "@tabler/icons-react";
 
 import { PeminjamType } from "types/DataAlatUkurTypes";
 
-// Kita gunakan "id" untuk menyimpan kode RFID dan menambahkan opsi role
-export type PeminjamFormValues = Omit<PeminjamType, "id" | "aktif"> & {
+export type PeminjamFormValues = Omit<PeminjamType, "id" | "aktif" | "nama"> & {
   id?: string;
+  rfid_uid?: string;
+  kategori: "Internal" | "Vendor";
+  nama_peminta: string; // Akan berisi Nama Pegawai ATAU Nama Vendor
+  divisi?: string;
   role?: "user" | "inventory man";
 };
 
 const emptyForm: PeminjamFormValues = {
   id: "",
-  nama: "",
+  rfid_uid: "",
+  kategori: "Internal",
+  nama_peminta: "",
   divisi: "",
   role: "user",
 };
@@ -41,11 +47,11 @@ interface PeminjamFormModalProps {
   show: boolean;
   onClose: () => void;
   onSubmit: (values: PeminjamFormValues) => void;
-  initialData?: PeminjamType | null;
+  initialData?: any; 
   error?: string | null;
 }
 
-// Gaya form peminjam bertema PLN. Selector diawali .pln-pform.
+// Gaya form bertema PLN. Selector diawali .pln-pform / .pln-modal-backdrop.
 const CSS = `
 .pln-modal-backdrop.modal-backdrop{--bs-backdrop-bg:#041f38;--bs-backdrop-opacity:.68;backdrop-filter:blur(3px)}
 .pln-pform{border:0!important;border-radius:20px!important;overflow:hidden}
@@ -59,13 +65,16 @@ const CSS = `
 .pln-pform .pf-sec{font-size:.78rem;font-weight:700;color:#0b6bb8;display:flex;align-items:center;gap:10px;margin:18px 0 10px}
 .pln-pform .pf-sec::after{content:"";flex:1;height:1px;background:#dbe5f1}
 .pln-pform .pf-sec:first-of-type{margin-top:8px}
+.pln-pform .pf-err{display:flex;align-items:flex-start;gap:10px;font-size:.86rem;background:#fde1df;color:#a8160f;
+  border-radius:12px;padding:10px 14px;margin:8px 0 0}
+.pln-pform .pf-err svg{flex:none;margin-top:1px}
 .pln-pform .form-label{font-size:.8rem;font-weight:600;color:#14233b;margin-bottom:4px}
 .pln-pform .form-control,.pln-pform .form-select{background-color:#f6f9fc;border-color:#dbe5f1;border-radius:10px}
 .pln-pform .form-control:focus,.pln-pform .form-select:focus{background-color:#fff;border-color:#0b6bb8;box-shadow:0 0 0 3px rgba(11,107,184,.16)}
 .pln-pform .form-control[readonly]{background-color:#eef3f9;color:#62708a}
+.pln-pform .form-select:disabled{background-color:#eef3f9;color:#62708a;opacity:1}
 .pln-pform .pf-hint{font-size:.74rem;color:#8794a8;margin-top:5px}
 
-/* pilihan role berupa dua kartu */
 .pln-pform .pf-roles{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .pln-pform .pf-role{text-align:left;border:1.5px solid #dbe5f1;background:#f6f9fc;border-radius:12px;padding:12px;
   display:flex;gap:10px;align-items:flex-start;cursor:pointer;transition:border-color .15s,background .15s}
@@ -77,7 +86,6 @@ const CSS = `
 .pln-pform .pf-role.on .ri{background:#ffc20e;color:#06355f}
 .pln-pform .pf-role:focus-visible{outline:2px solid #0b6bb8;outline-offset:2px}
 
-/* kotak RFID */
 .pln-pform .pf-rfid{background:#eef5fc;border:1.5px dashed #9ec3e6;border-radius:14px;padding:14px 16px}
 .pln-pform .pf-rfid .form-label{color:#0b6bb8;display:flex;align-items:center;gap:8px}
 
@@ -106,18 +114,22 @@ const PeminjamFormModal = ({
       if (initialData) {
         setForm({
           id: initialData.id,
-          nama: initialData.nama,
-          divisi: initialData.divisi,
-          // Pastikan casting type untuk role aman
-          role: (initialData.role === "inventory man" ? "inventory man" : "user") as "user" | "inventory man",
+          rfid_uid: initialData.rfid_uid || "",
+          kategori: initialData.kategori || "Internal",
+          nama_peminta: initialData.nama_peminta || initialData.nama || "",
+          divisi: initialData.divisi || "",
+          role: (initialData.role === "inventory man" ? "inventory man" : "user"),
         });
-        setJabatanSelect(
-          JABATAN_OPTIONS.includes(initialData.divisi)
-            ? initialData.divisi
-            : initialData.divisi
-              ? "Lainnya"
-              : ""
-        );
+
+        if (initialData.kategori !== "Vendor") {
+          setJabatanSelect(
+            JABATAN_OPTIONS.includes(initialData.divisi)
+              ? initialData.divisi
+              : initialData.divisi
+                ? "Lainnya"
+                : ""
+          );
+        }
       } else {
         setForm(emptyForm);
         setJabatanSelect("");
@@ -130,8 +142,6 @@ const PeminjamFormModal = ({
     onSubmit(form);
   };
 
-  // Scanner RFID selalu mengirimkan "Enter" setelah UID selesai dibaca.
-  // Cegah supaya form tidak langsung tersubmit.
   const handleRfidKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") {
       e.preventDefault();
@@ -148,6 +158,7 @@ const PeminjamFormModal = ({
         show={show}
         onHide={onClose}
         centered
+        backdrop="static"
         className="peminjam-form-modal"
         backdropClassName="pln-modal-backdrop"
         contentClassName="pln-pform"
@@ -163,7 +174,7 @@ const PeminjamFormModal = ({
                 <b>{isEditMode ? "Edit Data Peminjam" : "Tambah Data Peminjam"}</b>
                 <span className="s">
                   {isEditMode
-                    ? `${initialData?.nama ?? ""}${initialData?.divisi ? ` · ${initialData.divisi}` : ""}`
+                    ? `${form.nama_peminta}${form.divisi ? ` · ${form.divisi}` : ""}`
                     : "Kolom bertanda * wajib diisi"}
                 </span>
               </span>
@@ -171,120 +182,149 @@ const PeminjamFormModal = ({
           </Modal.Header>
 
           <Modal.Body>
-            {error && <Alert variant="danger" className="border-0 rounded-3 mt-2">{error}</Alert>}
+            {error && (
+              <div className="pf-err" role="alert">
+                <IconAlertTriangle size={18} />
+                <span>{error}</span>
+              </div>
+            )}
 
-            <div className="pf-sec">Informasi pegawai</div>
-            <Row className="g-3">
+            <div className="pf-sec">Kategori Peminjam</div>
+            <Row className="g-3 mb-2">
               <Col md={12}>
-                <Form.Label>
-                  Nama Pegawai <span className="text-danger">*</span>
-                </Form.Label>
-                <Form.Control
-                  required
-                  placeholder="Contoh: Ahmad Sobari"
-                  value={form.nama}
-                  onChange={(e) =>
-                    setForm((prev) => ({ ...prev, nama: e.target.value }))
-                  }
-                />
-              </Col>
-
-              <Col md={12}>
-                <Form.Label>
-                  Jabatan / Bagian <span className="text-danger">*</span>
-                </Form.Label>
                 <Form.Select
-                  required
-                  value={jabatanSelect}
+                  value={form.kategori}
                   onChange={(e) => {
-                    const value = e.target.value;
-                    setJabatanSelect(value);
-                    if (value === "Lainnya") {
-                      setForm((prev) => ({
-                        ...prev,
-                        divisi: JABATAN_OPTIONS.includes(prev.divisi) ? "" : prev.divisi,
-                      }));
-                    } else {
-                      setForm((prev) => ({ ...prev, divisi: value }));
-                    }
+                    const val = e.target.value as "Internal" | "Vendor";
+                    setJabatanSelect(""); // reset pilihan jabatan agar tidak tertinggal saat ganti kategori
+                    setForm((prev) => ({
+                      ...prev,
+                      kategori: val,
+                      rfid_uid: val === "Vendor" ? "" : prev.rfid_uid,
+                      divisi: "",
+                      role: "user", // Vendor otomatis user biasa
+                    }));
                   }}
+                  disabled={isEditMode}
                 >
-                  <option value="" disabled>
-                    -- Pilih Jabatan / Bagian --
-                  </option>
-                  {JABATAN_OPTIONS.map((opt) => (
-                    <option key={opt} value={opt}>
-                      {opt}
-                    </option>
-                  ))}
+                  <option value="Internal">Internal PLN (Memakai Kartu RFID)</option>
+                  <option value="Vendor">Vendor Eksternal (Tanpa Kartu Akses)</option>
                 </Form.Select>
-                {jabatanSelect === "Lainnya" && (
-                  <Form.Control
-                    required
-                    className="mt-2"
-                    placeholder="Ketik jabatan/bagian lainnya..."
-                    value={form.divisi}
-                    onChange={(e) =>
-                      setForm((prev) => ({ ...prev, divisi: e.target.value }))
-                    }
-                  />
+                {isEditMode && (
+                  <div className="pf-hint">Kategori tidak bisa diubah saat mengedit data.</div>
                 )}
               </Col>
             </Row>
 
-            <div className="pf-sec">Role akses</div>
-            <div className="pf-roles" role="radiogroup" aria-label="Role akses">
-              <button
-                type="button"
-                role="radio"
-                aria-checked={form.role === "user"}
-                className={`pf-role ${form.role === "user" ? "on" : ""}`}
-                onClick={() => setRole("user")}
-              >
-                <span className="ri"><IconTool size={20} /></span>
-                <span>
-                  <b>Pekerja</b>
-                  <span className="d">Pengguna biasa, bisa meminjam alat.</span>
-                </span>
-              </button>
-              <button
-                type="button"
-                role="radio"
-                aria-checked={form.role === "inventory man"}
-                className={`pf-role ${form.role === "inventory man" ? "on" : ""}`}
-                onClick={() => setRole("inventory man")}
-              >
-                <span className="ri"><IconPackage size={20} /></span>
-                <span>
-                  <b>Inventory Man</b>
-                  <span className="d">Bisa input stok Consumable Masuk.</span>
-                </span>
-              </button>
-            </div>
+            <div className="pf-sec">Informasi Entitas</div>
+            <Row className="g-3">
+              <Col md={12}>
+                <Form.Label>
+                  {form.kategori === "Internal" ? "Nama Pegawai" : "Nama Vendor / Perusahaan"} <span className="text-danger">*</span>
+                </Form.Label>
+                <Form.Control
+                  required
+                  placeholder={form.kategori === "Internal" ? "Contoh: Ahmad Sobari" : "Contoh: PT. Maju Jaya"}
+                  value={form.nama_peminta}
+                  onChange={(e) =>
+                    setForm((prev) => ({ ...prev, nama_peminta: e.target.value }))
+                  }
+                />
+              </Col>
 
-            <div className="pf-sec">Kartu identitas</div>
-            <div className="pf-rfid mb-3">
-              <Form.Label>
-                <IconIdBadge2 size={18} />
-                ID Kartu RFID
-              </Form.Label>
-              <Form.Control
-                type="text"
-                placeholder={isEditMode ? "Sudah terdaftar" : "Klik di sini, lalu tap kartu ke reader..."}
-                value={form.id}
-                readOnly={isEditMode}
-                onChange={(e) =>
-                  setForm((prev) => ({ ...prev, id: e.target.value }))
-                }
-                onKeyDown={handleRfidKeyDown}
-                autoComplete="off"
-              />
-              <div className="pf-hint">
-                {isEditMode
-                  ? "ID Kartu RFID tidak dapat diubah setelah pegawai didaftarkan."
-                  : "Kosongkan jika pegawai belum memiliki kartu, sistem akan membuatkan ID otomatis."}
-              </div>
-            </div>
+              {form.kategori === "Internal" && (
+                <Col md={12}>
+                  <Form.Label>
+                    Jabatan / Bagian <span className="text-danger">*</span>
+                  </Form.Label>
+                  <Form.Select
+                    required
+                    value={jabatanSelect}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      setJabatanSelect(value);
+                      if (value === "Lainnya") {
+                        setForm((prev) => ({
+                          ...prev,
+                          divisi: JABATAN_OPTIONS.includes(prev.divisi || "") ? "" : prev.divisi,
+                        }));
+                      } else {
+                        setForm((prev) => ({ ...prev, divisi: value }));
+                      }
+                    }}
+                  >
+                    <option value="" disabled>-- Pilih Jabatan / Bagian --</option>
+                    {JABATAN_OPTIONS.map((opt) => (
+                      <option key={opt} value={opt}>{opt}</option>
+                    ))}
+                  </Form.Select>
+                  {jabatanSelect === "Lainnya" && (
+                    <Form.Control
+                      required
+                      className="mt-2"
+                      placeholder="Ketik jabatan/bagian lainnya..."
+                      value={form.divisi}
+                      onChange={(e) =>
+                        setForm((prev) => ({ ...prev, divisi: e.target.value }))
+                      }
+                    />
+                  )}
+                </Col>
+              )}
+            </Row>
+
+            {form.kategori === "Internal" && (
+              <>
+                <div className="pf-sec">Role Akses Sistem</div>
+                <div className="pf-roles" role="radiogroup" aria-label="Role akses sistem">
+                  <button
+                    type="button"
+                    role="radio"
+                    aria-checked={form.role === "user"}
+                    className={`pf-role ${form.role === "user" ? "on" : ""}`}
+                    onClick={() => setRole("user")}
+                  >
+                    <span className="ri"><IconTool size={20} /></span>
+                    <span>
+                      <b>Pekerja</b>
+                      <span className="d">Pengguna biasa, hanya bisa meminjam alat.</span>
+                    </span>
+                  </button>
+                  <button
+                    type="button"
+                    role="radio"
+                    aria-checked={form.role === "inventory man"}
+                    className={`pf-role ${form.role === "inventory man" ? "on" : ""}`}
+                    onClick={() => setRole("inventory man")}
+                  >
+                    <span className="ri"><IconPackage size={20} /></span>
+                    <span>
+                      <b>Inventory Man</b>
+                      <span className="d">Bisa input stok Consumable.</span>
+                    </span>
+                  </button>
+                </div>
+
+                <div className="pf-sec">Kartu Identitas</div>
+                <div className="pf-rfid mb-3">
+                  <Form.Label>
+                    <IconIdBadge2 size={18} />
+                    ID Kartu RFID <span className="text-danger">*</span>
+                  </Form.Label>
+                  <Form.Control
+                    type="text"
+                    required
+                    placeholder={isEditMode ? "Sudah terdaftar" : "Klik di sini, lalu tap kartu ke reader..."}
+                    value={form.rfid_uid}
+                    onChange={(e) =>
+                      setForm((prev) => ({ ...prev, rfid_uid: e.target.value }))
+                    }
+                    onKeyDown={handleRfidKeyDown}
+                    autoComplete="off"
+                  />
+                </div>
+              </>
+            )}
           </Modal.Body>
 
           <Modal.Footer>
@@ -293,7 +333,7 @@ const PeminjamFormModal = ({
             </Button>
             <Button type="submit" className="pf-btn pf-save">
               {isEditMode ? <IconPencil size={18} /> : <IconPlus size={18} />}
-              {isEditMode ? "Simpan perubahan" : "Tambah data"}
+              {isEditMode ? "Simpan Perubahan" : "Tambah Data"}
             </Button>
           </Modal.Footer>
         </Form>

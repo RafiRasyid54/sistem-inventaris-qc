@@ -1,6 +1,7 @@
 // components/peminjamanaktif/ColumnDefination.tsx
 import { ColumnDef } from "@tanstack/react-table";
-import { Badge } from "react-bootstrap";
+import { Badge, Button, OverlayTrigger, Tooltip } from "react-bootstrap";
+import { IconEye } from "@tabler/icons-react";
 import { PeminjamanAktifItemType } from "types/DataAlatUkurTypes";
 
 const statusVariant = (status?: string) => {
@@ -14,7 +15,10 @@ const statusVariant = (status?: string) => {
   }
 };
 
-export const getPeminjamanAktifColumns = (): ColumnDef<PeminjamanAktifItemType>[] => [
+// Tambahkan parameter onDetail agar komponen induk bisa menangkap event klik
+export const getPeminjamanAktifColumns = (
+  onDetail?: (item: PeminjamanAktifItemType) => void
+): ColumnDef<PeminjamanAktifItemType>[] => [
   {
     accessorKey: "no",
     header: "No",
@@ -80,6 +84,28 @@ export const getPeminjamanAktifColumns = (): ColumnDef<PeminjamanAktifItemType>[
         <Badge bg={bg} text={text} className="text-capitalize">
           {statusVal}
         </Badge>
+      );
+    },
+  },
+  // TAMBAHAN KOLOM AKSI DI SINI
+  {
+    id: "aksi",
+    header: "Aksi",
+    cell: ({ row }) => {
+      return (
+        <OverlayTrigger
+          placement="top"
+          overlay={<Tooltip>Lihat Detail Transaksi</Tooltip>}
+        >
+          <Button
+            variant="light"
+            size="sm"
+            className="text-primary"
+            onClick={() => onDetail && onDetail(row.original)}
+          >
+            <IconEye size={18} />
+          </Button>
+        </OverlayTrigger>
       );
     },
   },

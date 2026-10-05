@@ -13,14 +13,17 @@ class Peminta extends Model
 
     protected $table = 'peminta';
 
-    // Karena ID kita bisa berupa nomor RFID (string) atau UUID, kita matikan auto-increment
+    // Karena ID kita murni berupa UUID (string), kita matikan auto-increment
     public $incrementing = false;
     protected $keyType = 'string';
 
     protected $fillable = [
-        'id', // <-- Diisi nomor RFID dari Frontend
-        'nama_peminta', // <-- WAJIB nama_peminta, jangan nama
-        'divisi',
+        'id',              // <-- Berisi UUID acak (Bukan RFID lagi)
+        'rfid_uid',        // <-- Diisi nomor RFID dari Frontend (Bisa null untuk Vendor)
+        'kategori',        // <-- 'Internal' atau 'Vendor'
+        'instansi_vendor', // <-- Nama instansi jika kategori = Vendor
+        'nama_peminta',    // <-- WAJIB nama_peminta
+        'divisi',          // <-- Bisa null untuk Vendor
         'aktif',
         'role',
     ];
@@ -34,8 +37,7 @@ class Peminta extends Model
         parent::boot();
 
         static::creating(function ($model) {
-            // Jika id kosong (pekerja didaftarkan manual tanpa tap kartu RFID),
-            // maka Laravel otomatis membuatkan UUID acak.
+            // Selalu pastikan ID terisi UUID jika terlewat dari Controller
             if (empty($model->id)) {
                 $model->id = (string) Str::uuid();
             }
@@ -48,6 +50,11 @@ class Peminta extends Model
             // Default role
             if (! isset($model->role)) {
                 $model->role = 'user';
+            }
+
+            // Default kategori
+            if (! isset($model->kategori)) {
+                $model->kategori = 'Internal';
             }
         });
     }

@@ -17,7 +17,6 @@ class PeminjamanController extends Controller
      */
     public function index()
     {
-        // Memastikan relasi menggunakan penulisan yang aman (bisa disesuaikan dengan Model)
         $data = Peminjaman::with(['alatUkur', 'peminta', 'pekerjaan', 'dicatatOleh'])
             ->orderBy('tanggal_pinjam', 'desc')
             ->get();
@@ -36,7 +35,7 @@ class PeminjamanController extends Controller
     {
         $data = Peminjaman::with(['alatUkur', 'peminta', 'pekerjaan', 'dicatatOleh'])
             ->whereNull('tanggal_kembali')
-            ->orderBy('tanggal_pinjam', 'asc')
+            ->orderBy('tanggal_pinjam', 'desc') // Tetap gunakan desc agar data terbaru di atas
             ->get();
 
         return response()->json([
@@ -185,11 +184,11 @@ class PeminjamanController extends Controller
             'message' => 'Riwayat peminjaman berhasil dihapus'
         ]);
     }
+
     public function getByAlatUkur($alat_ukur_id)
     {
-        // Sesuaikan nama model dan relasi dengan yang kamu gunakan di Laravel
-        $riwayat = Peminjaman::with(['peminta']) // atau 'peminjam', 'user', tergantung relasimu
-            ->where('alat_ukur_id', $alat_ukur_id) // atau sesuai struktur databasemu
+        $riwayat = Peminjaman::with(['peminta'])
+            ->where('alat_ukur_id', $alat_ukur_id) 
             ->orderBy('created_at', 'desc')
             ->get();
 

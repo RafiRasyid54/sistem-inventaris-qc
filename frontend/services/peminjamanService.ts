@@ -30,6 +30,7 @@ export interface PeminjamanIndexApiResponse {
     nama?: string;
     nama_peminta?: string;     // Menyesuaikan kolom database Laravel
     divisi?: string;
+    kategori?: string;         // TAMBAHAN: Agar TS mengenali kategori
   };
 
   pekerjaan?: {
@@ -198,6 +199,9 @@ function mapRiwayatFromApi(
     namaPeminjam: namaPeminjam,
     nama_peminjam: namaPeminjam,
     divisi: item.peminta?.divisi ?? "-",
+    
+    // 👇 PERBAIKAN: Masukkan kategori ke mapping riwayat 👇
+    kategori: item.peminta?.kategori ?? "Internal",
 
     // Informasi pekerjaan
     namaPekerjaan: namaPekerjaan,
@@ -208,7 +212,7 @@ function mapRiwayatFromApi(
 
     spesifikasi: item.spesifikasi ?? "-",
     keterangan: item.keterangan ?? "-",
-  };
+  } as RiwayatPeminjamanType; // Cast tipe jika interface belum diupdate
 }
 
 // ============================================================
@@ -219,25 +223,25 @@ function mapRiwayatFromApi(
  * Mengambil semua peminjaman yang masih aktif / belum dikembalikan.
  * Memanggil endpoint khusus /peminjaman/belum-kembali sesuai controller.
  */
-export async function getPeminjamanAktif(): Promise<
-  PeminjamanAktifItemType[]
-> {
+export const getPeminjamanAktif = async () => {
   const response: any = await apiFetch("/peminjaman/belum-kembali");
+  
+  const data = response.data || response.result || [];
 
-  // Normalisasi data dari response Laravel { status: 'success', data: [...] }
-  let dataArray: PeminjamanIndexApiResponse[] = [];
-  if (Array.isArray(response)) {
-    dataArray = response;
-  } else if (Array.isArray(response?.data)) {
-    dataArray = response.data;
-  } else if (Array.isArray(response?.result)) {
-    dataArray = response.result;
-  }
-
-  return dataArray
-    .filter((item) => item && item.tanggal_kembali === null)
-    .map(mapPeminjamanFromApi);
-}
+  return data.map((item: any) => ({
+    id: item.id,
+    alatUkurId: item.alat_ukur_id,
+    kodeBarang: item.alat_ukur?.kode_alat || item.alatUkur?.kode_alat || "-",
+    namaBarang: item.alat_ukur?.nama_alat || item.alatUkur?.nama_alat || "-",
+    peminjamId: item.peminta_id,
+    namaPeminjam: item.peminta?.nama_peminta || "-",
+    tanggalPinjam: item.tanggal_pinjam,
+    jumlah: item.jumlah ?? 1,
+    status: item.status || "dipinjam",
+    kategori: item.peminta?.kategori || "Internal",
+    keterangan: item.keterangan || null,
+  }));
+};
 
 // ============================================================
 // RIWAYAT PEMINJAMAN
