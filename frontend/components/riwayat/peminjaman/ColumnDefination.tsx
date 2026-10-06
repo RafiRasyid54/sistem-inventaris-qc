@@ -38,18 +38,6 @@ export const getRiwayatPeminjamanColumns = ({
     header: "Merk",
   },
   {
-    accessorKey: "tipe",
-    header: "Tipe",
-  },
-  {
-    accessorKey: "warna",
-    header: "Warna",
-  },
-  {
-    accessorKey: "ukuran",
-    header: "Ukuran",
-  },
-  {
     accessorKey: "jumlah",
     header: "Jumlah",
     cell: ({ row }) => (

@@ -1,12 +1,11 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation'; // Tambahkan usePathname
 import { Modal } from 'react-bootstrap';
 import { IconAlertTriangle, IconArrowRight, IconX } from '@tabler/icons-react';
-import api from '/lib/api'; // Sesuaikan path import jika menggunakan alias (misal: 'lib/api')
+import api from '/lib/api'; 
 
-// Gaya dialog peringatan bertema PLN: tampil di tengah, latar belakang diredupkan.
 const CSS = `
 .pln-alert-backdrop.modal-backdrop{--bs-backdrop-bg:#041f38;--bs-backdrop-opacity:.68;backdrop-filter:blur(3px)}
 .pln-alert .modal-content,.pln-alert.modal-content{border:0;border-radius:20px;overflow:hidden;background:#fff;
@@ -33,23 +32,28 @@ const CSS = `
 export default function UnreturnedAlertModal() {
   const [unreturnedCount, setUnreturnedCount] = useState(0);
   const [showModal, setShowModal] = useState(false);
+  
   const router = useRouter();
+  const pathname = usePathname(); // Ambil URL saat ini
+
+  // Tentukan path dashboard Anda. (Bisa '/' atau '/dashboard' tergantung rute aplikasi Anda)
+  const isDashboard = pathname === '/' || pathname === '/dashboard';
 
   useEffect(() => {
+    // Jika bukan di dashboard, jangan lakukan fetch API sama sekali
+    if (!isDashboard) return;
+
     const checkUserAndUnreturnedAlatukur = async () => {
       try {
         const userRes: any = await api('/user');
 
-        // Menyesuaikan struktur data user & roles dari backend Laravel/Spatie
         const userData = userRes?.data || userRes;
         const roles = userData?.roles || [];
         const roleNames = Array.isArray(roles) ? roles.map((r: any) => (typeof r === 'string' ? r : r.name)) : [];
         const primaryRole = roleNames[0] || userData?.role || '';
 
-        // Jika bukan role yang diizinkan, hentikan eksekusi agar tidak memicu error 500 pada API selanjutnya
         if (primaryRole && primaryRole.toLowerCase() === 'super admin') {
-          // Super admin atau role tertentu bisa dilewati jika diperlukan,
-          // sesuaikan logika ini dengan kebutuhan Anda
+          // Logika bypass role jika dibutuhkan
         }
 
         const res: any = await api('/peminjaman/belum-kembali');
@@ -61,13 +65,15 @@ export default function UnreturnedAlertModal() {
           setShowModal(true);
         }
       } catch (err) {
-        // Tangkap error secara diam-diam agar modal tidak membuat aplikasi crash total
         console.error('Gagal mengecek data peminjaman belum kembali:', err);
       }
     };
 
     checkUserAndUnreturnedAlatukur();
-  }, []);
+  }, [pathname, isDashboard]); // Re-run jika pindah route kembali ke dashboard
+
+  // Cegah komponen dirender (mengembalikan null) jika bukan di halaman dashboard
+  if (!isDashboard) return null;
 
   const close = () => setShowModal(false);
 

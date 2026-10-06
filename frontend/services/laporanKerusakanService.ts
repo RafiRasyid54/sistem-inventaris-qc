@@ -50,23 +50,37 @@ interface LaporanKerusakanApiResponse {
   tingkat_kerusakan: "ringan" | "berat" | null;
   perbaikan_ke: number | null;
   dilaporkan_oleh: string;
-  alat_ukur: {
-    kode_barang: string;
-    nama_barang: string;
-    merk: string | null;
-    type: string | null;
-    warna: string | null;
-    ukuran: string | null;
-    kategori: string | null;
-  } | null;
-  peminjaman: {
-    area_pekerjaan: string | null;
-    nama_pekerjaan: string | null;
-    peminta: {
-      nama: string;
-      divisi: string | null;
-    } | null;
-  } | null;
+  // Menangani format snake_case atau camelCase dari Laravel JSON serialize
+  alat_ukur?: {
+    kode_alat: string;
+    nama_alat: string;
+    merk?: string;
+    type?: string;
+    warna?: string;
+    ukuran?: string;
+    kategori?: string;
+  };
+  alatUkur?: {
+    kode_alat: string;
+    nama_alat: string;
+    merk?: string;
+    type?: string;
+    warna?: string;
+    ukuran?: string;
+    kategori?: string;
+  };
+  peminjaman?: {
+    area_pekerjaan?: string;
+    nama_pekerjaan?: string;
+    pekerjaan?: {
+      nama_pekerjaan?: string;
+    };
+    peminta?: {
+      nama?: string;
+      nama_peminta?: string;
+      divisi?: string;
+    };
+  };
 }
 
 interface CreateLaporanKerusakanPayload {
@@ -80,33 +94,45 @@ interface CreateLaporanKerusakanPayload {
 }
 
 function mapLaporanFromApi(item: LaporanKerusakanApiResponse): LaporanKerusakanType {
+  // Ambil data relasi dengan fallback agar anti-error
+  const alat = item.alat_ukur || item.alatUkur;
+  const peminjaman = item.peminjaman;
+  const peminta = peminjaman?.peminta;
+
   return {
     id: item.id,
     tanggal_pengembalian: formatTanggalJam(item.tanggal),
-    kode_barang: item.alat_ukur?.kode_barang ?? "-",
-    nama_barang: item.alat_ukur?.nama_barang ?? "-",
-    merk: item.alat_ukur?.merk ?? "-",
-    tipe: item.alat_ukur?.type ?? "-",
-    warna: item.alat_ukur?.warna ?? "-",
-    ukuran: item.alat_ukur?.ukuran ?? "-",
+    
+    // PERBAIKAN: Menggunakan kode_alat & nama_alat sesuai database
+    kode_barang: alat?.kode_alat ?? "-",
+    nama_barang: alat?.nama_alat ?? "-",
+    merk: alat?.merk ?? "-",
+    tipe: alat?.type ?? "-",
+    warna: alat?.warna ?? "-",
+    ukuran: alat?.ukuran ?? "-",
+    
     jumlah_rusak: item.jumlah,
-    nama_peminjam: item.peminjaman?.peminta?.nama ?? "-",
-    divisi: item.peminjaman?.peminta?.divisi ?? "-",
-    nama_pekerjaan: item.peminjaman?.nama_pekerjaan ?? "-",
-    area_kerja: item.peminjaman?.area_pekerjaan ?? "-",
+    
+    // PERBAIKAN: Menggunakan nama_peminta
+    nama_peminjam: peminta?.nama_peminta ?? peminta?.nama ?? "-",
+    divisi: peminta?.divisi ?? "-",
+    
+    // Menyelaraskan nama pekerjaan
+    nama_pekerjaan: peminjaman?.pekerjaan?.nama_pekerjaan ?? peminjaman?.nama_pekerjaan ?? peminjaman?.area_pekerjaan ?? "-",
+    area_kerja: peminjaman?.area_pekerjaan ?? "-",
+    
     keterangan: item.keterangan ?? "-",
     status: item.status,
     catatan_perbaikan: item.catatan_perbaikan ?? undefined,
     tingkat_kerusakan: item.tingkat_kerusakan ?? undefined,
     perbaikan_ke: item.perbaikan_ke ?? undefined,
-    kategori_alat: (item.alat_ukur?.kategori as "mesin" | "alat_biasa" | undefined) ?? "alat_biasa",
+    kategori_alat: (alat?.kategori as "mesin" | "alat_biasa" | undefined) ?? "alat_biasa",
   };
 }
 
 export async function getLaporanKerusakan(): Promise<LaporanKerusakanType[]> {
   const response: any = await apiFetch("/laporan-kerusakan");
   
-  // Normalisasi response data jika dibungkus di dalam objek paginasi (misal: { data: [...] })
   let dataArray: LaporanKerusakanApiResponse[] = [];
   if (Array.isArray(response)) {
     dataArray = response;

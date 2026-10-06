@@ -37,21 +37,19 @@ import { exportToExcel, exportToPDF, ExportColumn, getFilteredExportFileName } f
 
 import { getRiwayatPeminjaman } from "services/peminjamanService";
 
+// Tipe, Warna, dan Ukuran dihapus dari Export
 const EXPORT_COLUMNS: ExportColumn[] = [
   { header: "Tanggal Pinjam", key: "tanggal_pinjam" },
   { header: "Tanggal Kembali", key: "tanggal_kembali" },
   { header: "Kode Barang", key: "kode_barang" },
   { header: "Nama Barang", key: "nama_barang" },
   { header: "Merk", key: "merk" },
-  { header: "Tipe", key: "tipe" },
-  { header: "Warna", key: "warna" },
-  { header: "Ukuran", key: "ukuran" },
   { header: "Jumlah", key: "jumlah" },
   { header: "Nama Peminjam", key: "nama_peminjam" },
   { header: "Divisi", key: "divisi" },
   { header: "Nama Pekerjaan", key: "nama_pekerjaan" },
   { header: "Area Kerja", key: "area_kerja" },
-  { header: "Kategori", key: "kategori" }, // Menambahkan kategori untuk export
+  { header: "Kategori", key: "kategori" },
 ];
 
 type KategoriTab = "Internal" | "Vendor";
@@ -185,16 +183,13 @@ const RiwayatPeminjamanManager = () => {
       // 3. Filter nama peminjam (dari dropdown FilterBar)
       if (namaFilter !== "" && r.nama_peminjam !== namaFilter) return false;
 
-      // 4. Filter pencarian teks
+      // 4. Filter pencarian teks (Tipe, Warna, Ukuran dihapus dari parameter pencarian)
       if (keyword !== "") {
         const tglPinjam = (r.tanggal_pinjam || "").toLowerCase();
         const tglKembali = (r.tanggal_kembali || "").toLowerCase();
         const kodeBarang = (r.kode_barang || "").toLowerCase();
         const namaBarang = (r.nama_barang || "").toLowerCase();
         const merk = (r.merk || "").toLowerCase();
-        const tipe = (r.tipe || "").toLowerCase();
-        const warna = (r.warna || "").toLowerCase();
-        const ukuran = (r.ukuran || "").toLowerCase();
         const jumlah = String(r.jumlah ?? 0);
         const namaPeminjam = (r.nama_peminjam || "").toLowerCase();
         const noTransaksi = (r.nomor_transaksi || "").toLowerCase();
@@ -205,9 +200,6 @@ const RiwayatPeminjamanManager = () => {
           kodeBarang.includes(keyword) ||
           namaBarang.includes(keyword) ||
           merk.includes(keyword) ||
-          tipe.includes(keyword) ||
-          warna.includes(keyword) ||
-          ukuran.includes(keyword) ||
           jumlah.includes(keyword) ||
           namaPeminjam.includes(keyword) ||
           noTransaksi.includes(keyword);

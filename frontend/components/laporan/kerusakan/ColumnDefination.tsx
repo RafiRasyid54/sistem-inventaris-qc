@@ -97,18 +97,6 @@ export const getLaporanKerusakanColumns = ({
     header: "Merk",
   },
   {
-    accessorKey: "tipe",
-    header: "Tipe",
-  },
-  {
-    accessorKey: "warna",
-    header: "Warna",
-  },
-  {
-    accessorKey: "ukuran",
-    header: "Ukuran",
-  },
-  {
     accessorKey: "jumlah_rusak",
     header: "Jumlah Rusak",
     cell: ({ row }) => {

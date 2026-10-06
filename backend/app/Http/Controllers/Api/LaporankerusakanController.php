@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\LaporanKerusakanAlatUkur;
-use App\Models\Tool;
+use App\Models\AlatUkur;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\DB;
@@ -15,7 +15,6 @@ class LaporanKerusakanController extends Controller
     public function index()
     {
         return response()->json(
-            // PERBAIKAN 1: 'tool' diubah menjadi 'alatUkur'
             LaporanKerusakanAlatUkur::with(['alatUkur', 'dilaporkanOleh', 'peminjaman.peminta'])
                 ->orderBy('tanggal', 'desc')
                 ->get()
@@ -24,7 +23,6 @@ class LaporanKerusakanController extends Controller
 
     public function show(string $id)
     {
-        // PERBAIKAN 2: 'tool' diubah menjadi 'alatUkur'
         $data = LaporanKerusakanAlatUkur::with(['alatUkur', 'dilaporkanOleh'])->find($id);
 
         if (! $data) {
@@ -88,31 +86,14 @@ class LaporanKerusakanController extends Controller
 
         try {
             $laporan = DB::transaction(function () use ($laporan, $data) {
-                if (! isset($data['jumlah']) || $data['jumlah'] == $laporan->jumlah) {
-                    $laporan->update($data);
-                    return $laporan;
-                }
-
-                $tool = Tool::lockForUpdate()->findOrFail($laporan->tool_id);
-                $selisih = $data['jumlah'] - $laporan->jumlah;
-
-                if ($selisih > 0 && $tool->stok < $selisih) {
-                    throw new \RuntimeException(
-                        "Stok tidak cukup untuk menambah jumlah kerusakan. Stok saat ini: {$tool->stok}, tambahan diperlukan: {$selisih}"
-                    );
-                }
-
-                $tool->stok -= $selisih;
-                $tool->save();
+                // Logika cek stok dihapus karena setiap alat ukur adalah unit unik
                 $laporan->update($data);
-
                 return $laporan;
             });
         } catch (\RuntimeException $e) {
             return response()->json(['message' => $e->getMessage()], 422);
         }
 
-        // PERBAIKAN 3: 'tool' diubah menjadi 'alatUkur'
         return response()->json($laporan->load('alatUkur'));
     }
 
@@ -126,17 +107,11 @@ class LaporanKerusakanController extends Controller
         }
 
         DB::transaction(function () use ($laporan) {
-            $tool = Tool::lockForUpdate()->find($laporan->tool_id);
-
-            if ($tool) {
-                $tool->stok += $laporan->jumlah;
-                $tool->save();
-            }
-
+            // Logika pengembalian stok dihapus
             $laporan->delete();
         });
 
-        return response()->json(['message' => 'Laporan kerusakan dihapus, stok disesuaikan']);
+        return response()->json(['message' => 'Laporan kerusakan berhasil dihapus']);
     }
 
     // PATCH /api/laporan-kerusakan/{id}/repair
@@ -169,27 +144,21 @@ class LaporanKerusakanController extends Controller
 
         $laporan = DB::transaction(function () use ($laporan, $catatanPerbaikan, $tingkatKerusakan) {
             
-            $tool = Tool::lockForUpdate()->find($laporan->tool_id);
+            $alatUkur = AlatUkur::find($laporan->alat_ukur_id);
 
-            if ($tool) {
-                $tool->stok += $laporan->jumlah;
-                $tool->save();
-            }
-
-            if (class_exists(\App\Models\AlatUkur::class)) {
-                $alatUkur = \App\Models\AlatUkur::where('kode_alat', $laporan->kode_barang)->first();
-                if ($alatUkur) {
-                    $alatUkur->kondisi = 'Baik'; 
-                    $alatUkur->tanggal_kalibrasi_terakhir = null; 
-                    $alatUkur->tanggal_kalibrasi_selanjutnya = null;
-                    $alatUkur->keterangan = "Baru diperbaiki (" . now()->format('Y-m-d') . "). WAJIB KALIBRASI ULANG sebelum dipinjam. Catatan: " . $catatanPerbaikan;
-                    $alatUkur->save();
-                }
+            if ($alatUkur) {
+                // Set flag wajib kalibrasi (tanpa menambah stok)
+                $alatUkur->kondisi = 'Baik'; 
+                $alatUkur->tanggal_kalibrasi_terakhir = null; 
+                $alatUkur->tanggal_kalibrasi_selanjutnya = null;
+                $alatUkur->keterangan = "Baru diperbaiki (" . now()->format('Y-m-d') . "). WAJIB KALIBRASI ULANG sebelum dipinjam. Catatan: " . $catatanPerbaikan;
+                
+                $alatUkur->save();
             }
 
             $perbaikanKe = null;
             if ($tingkatKerusakan !== 'ringan') {
-                $perbaikanKe = LaporanKerusakanAlatUkur::where('tool_id', $laporan->tool_id)
+                $perbaikanKe = LaporanKerusakanAlatUkur::where('alat_ukur_id', $laporan->alat_ukur_id)
                     ->where('status', 'selesai_diperbaiki')
                     ->where(function ($q) {
                         $q->whereNull('tingkat_kerusakan')->orWhere('tingkat_kerusakan', 'berat');
@@ -209,8 +178,7 @@ class LaporanKerusakanController extends Controller
         });
 
         return response()->json([
-            'message' => 'Alat berhasil ditandai selesai diperbaiki, stok telah dikembalikan, dan di-flag wajib kalibrasi (jika alat ukur).',
-            // PERBAIKAN 4: 'tool' diubah menjadi 'alatUkur'
+            'message' => 'Alat berhasil ditandai selesai diperbaiki dan di-flag wajib kalibrasi.',
             'data' => $laporan->load('alatUkur'),
         ]);
     }
@@ -234,7 +202,6 @@ class LaporanKerusakanController extends Controller
 
         return response()->json([
             'message' => 'Laporan berhasil ditandai sebagai Rusak Permanen.',
-            // PERBAIKAN 5: 'tool' diubah menjadi 'alatUkur'
             'data' => $laporan->load('alatUkur'),
         ]);
     }
