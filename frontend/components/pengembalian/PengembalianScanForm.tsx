@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { Form, Button, Alert } from "react-bootstrap";
 import { IconId, IconAlertTriangle, IconSearch } from "@tabler/icons-react";
+import { useBarcodeScanner } from "/hooks/useBarcodeScanner"; // Pastikan path import sesuai
 
 interface PengembalianScanFormProps {
   onScan: (idCard: string) => void;
@@ -9,7 +10,6 @@ interface PengembalianScanFormProps {
   error?: string | null;
 }
 
-// Gaya kartu scan pengembalian. Selector diawali .pln-ps.
 const CSS = `
 .pln-ps{max-width:560px;margin:8px auto 24px;background:#fff;border:1px solid #dbe5f1;border-top:4px solid #ffc20e;
   border-radius:20px;padding:34px 30px 30px;text-align:center}
@@ -33,6 +33,19 @@ const CSS = `
 const PengembalianScanForm = ({ onScan, loading = false, error = null }: PengembalianScanFormProps) => {
   const [idCard, setIdCard] = useState("");
 
+  // Global listener untuk RFID Scanner
+  useBarcodeScanner({
+    enabled: !loading,
+    onScan: (scannedCode) => {
+      // Mengisi kolom secara visual agar pengguna tahu apa yang discan
+      setIdCard(scannedCode);
+      // Langsung mengeksekusi pencarian tanpa perlu klik tombol
+      onScan(scannedCode);
+    },
+    minLength: 4,
+    maxGapMs: 40,
+  });
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!idCard.trim()) return;
@@ -48,7 +61,7 @@ const PengembalianScanForm = ({ onScan, loading = false, error = null }: Pengemb
       </div>
       <h5>Tempelkan kartu peminjam</h5>
       <p className="ps-sub">
-        Tap kartu ID ke reader untuk menampilkan alat yang sedang dipinjam oleh pemilik kartu.
+        Tidak perlu mengklik apapun. Langsung tap kartu ke <i>reader</i> untuk menampilkan alat yang sedang dipinjam.
       </p>
 
       {error && (
@@ -63,8 +76,7 @@ const PengembalianScanForm = ({ onScan, loading = false, error = null }: Pengemb
           <Form.Control
             type="password"
             autoComplete="off"
-            autoFocus
-            placeholder="Tap kartu ID di sini..."
+            placeholder="Atau ketik ID manual di sini..."
             aria-label="ID kartu peminjam"
             value={idCard}
             onChange={(e) => setIdCard(e.target.value)}

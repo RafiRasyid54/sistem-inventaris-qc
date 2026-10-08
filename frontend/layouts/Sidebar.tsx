@@ -27,7 +27,13 @@ const CSS = `
   border-right:3px solid var(--yellow)}
 .pln-sb::before{content:"";position:absolute;right:-60px;bottom:-40px;width:260px;height:260px;opacity:.07;pointer-events:none;
   background:#fff;clip-path:polygon(55% 0,12% 56%,44% 56%,30% 100%,88% 38%,56% 38%)}
-.pln-sb .pln-body{position:relative;flex:1;overflow-y:auto;padding-bottom:12px}
+
+/* versi desktop: menempel setinggi layar, hanya daftar menu yang scroll di dalamnya.
+   !important dipakai karena CSS template (#miniSidebar) punya prioritas lebih tinggi. */
+.pln-sb.is-sticky{position:fixed!important;top:0!important;bottom:0!important;left:0!important;
+  height:100vh!important;height:100dvh!important}
+
+.pln-sb .pln-body{position:relative;flex:1;min-height:0;overflow-y:auto;padding-bottom:12px}
 
 .pln-sb .brand-card{margin:16px 14px 6px;padding:10px 14px;background:#fff;border-radius:14px;
   display:flex;align-items:center;justify-content:center;box-shadow:0 6px 18px rgba(0,0,0,.28)}
@@ -59,7 +65,7 @@ const CSS = `
   border-radius:50%;background:var(--yellow);box-shadow:0 0 0 4px rgba(255,194,14,.25)}
 
 /* kartu akun di bawah */
-.pln-sb .pln-account{position:relative;margin:0 12px 14px;padding:10px;border-radius:14px;
+.pln-sb .pln-account{position:relative;flex:none;margin:0 12px 14px;padding:10px;border-radius:14px;
   background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.14);
   display:flex;align-items:center;gap:10px}
 .pln-sb .pln-account.is-collapsed{justify-content:center;padding:8px 4px}
@@ -81,6 +87,10 @@ const Sidebar: React.FC<SidebarProps> = ({ hideLogo = false, containerId }) => {
   const collapsed = useAppSelector((state) => state.app.collapsed);
   const isCollapsed = collapsed === "collapsed";
 
+  // Versi laci (Offcanvas) memakai hideLogo dan tetap h-100;
+  // versi desktop dibuat sticky setinggi layar.
+  const isDrawer = hideLogo;
+
   const handleSidebarMouseEnter = () => {
     if (isCollapsed) handleCollapsed("expanded");
   };
@@ -99,7 +109,11 @@ const Sidebar: React.FC<SidebarProps> = ({ hideLogo = false, containerId }) => {
   };
 
   return (
-    <div id={containerId} onMouseEnter={handleSidebarMouseEnter} className="h-100 pln-sb">
+    <div
+      id={containerId}
+      onMouseEnter={handleSidebarMouseEnter}
+      className={`pln-sb ${isDrawer ? "h-100" : "is-sticky"}`}
+    >
       <style>{CSS}</style>
 
       <div className="pln-body">

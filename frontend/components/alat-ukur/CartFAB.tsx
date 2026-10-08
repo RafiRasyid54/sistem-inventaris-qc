@@ -1,72 +1,85 @@
 import React from 'react';
-import { ShoppingBag, ChevronRight } from 'lucide-react';
+import { IconShoppingBag, IconChevronRight } from '@tabler/icons-react';
 
 interface CartFABProps {
   count: number;
   onClick: () => void;
 }
 
+// Warna tema PLN
+const NAVY = '#06355f';
+const NAVY_HOVER = '#0b4a82';
+const YELLOW = '#ffc20e';
+
 export const CartFAB: React.FC<CartFABProps> = ({ count, onClick }) => {
   if (count === 0) return null;
 
   return (
-    <div 
+    <div
       style={{
         position: 'fixed',
-        bottom: '24px',
+        bottom: 'calc(24px + env(safe-area-inset-bottom, 0px))',
         left: '50%',
         transform: 'translateX(-50%)',
-        zIndex: 9999,
+        // Di bawah backdrop modal Bootstrap (1050) supaya tidak menimpa modal
+        zIndex: 1040,
+        maxWidth: 'calc(100vw - 24px)',
       }}
     >
       <button
+        type="button"
         onClick={onClick}
+        aria-label={`Buka keranjang peminjaman, ${count} alat`}
         style={{
-          backgroundColor: '#2563eb', // Biru terang yang mencolok
+          backgroundColor: NAVY,
           color: '#ffffff',
-          padding: '12px 24px',
+          padding: '10px 22px 10px 12px',
           borderRadius: '9999px',
           display: 'flex',
           alignItems: 'center',
           gap: '12px',
-          boxShadow: '0 15px 35px rgba(37, 99, 235, 0.5)',
-          border: '1px solid #60a5fa',
+          boxShadow: '0 15px 35px rgba(6, 53, 95, 0.35)',
+          border: `2px solid ${YELLOW}`,
           cursor: 'pointer',
           fontWeight: 500,
           transition: 'all 0.2s ease',
+          maxWidth: '100%',
         }}
-        onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#1d4ed8')}
-        onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = '#2563eb')}
+        onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = NAVY_HOVER)}
+        onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = NAVY)}
       >
         {/* Ikon Tas & Badge Jumlah */}
-        <div 
+        <div
           style={{
             position: 'relative',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            backgroundColor: '#1e40af',
-            padding: '8px',
+            backgroundColor: YELLOW,
+            width: '38px',
+            height: '38px',
             borderRadius: '50%',
+            flex: 'none',
           }}
         >
-          <ShoppingBag size={20} color="#ffffff" />
-          <span 
+          <IconShoppingBag size={20} color={NAVY} />
+          <span
             style={{
               position: 'absolute',
               top: '-6px',
               right: '-6px',
-              backgroundColor: '#f59e0b', // Oranye/Amber untuk badge angka
+              backgroundColor: '#e2231a',
               color: '#ffffff',
               fontSize: '11px',
               fontWeight: 'bold',
-              width: '20px',
+              minWidth: '20px',
               height: '20px',
-              borderRadius: '50%',
+              padding: '0 4px',
+              borderRadius: '9999px',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              border: '2px solid #2563eb',
+              border: `2px solid ${NAVY}`,
             }}
           >
             {count}
@@ -74,15 +87,26 @@ export const CartFAB: React.FC<CartFABProps> = ({ count, onClick }) => {
         </div>
 
         {/* Teks Informasi */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', whiteSpace: 'nowrap', fontSize: '14px' }}>
-          <span style={{ fontWeight: 600, color: '#ffffff' }}>
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            whiteSpace: 'nowrap',
+            fontSize: '14px',
+            overflow: 'hidden',
+          }}
+        >
+          <span style={{ fontWeight: 700, color: '#ffffff' }}>
             Keranjang Peminjaman ({count} Alat)
           </span>
-          <span style={{ color: '#93c5fd' }}>|</span>
-          <span style={{ color: '#dbeafe', textDecoration: 'underline' }}>Lihat & Proses</span>
+          <span style={{ color: '#7fa6cc' }}>|</span>
+          <span style={{ color: YELLOW, fontWeight: 600, textDecoration: 'underline' }}>
+            Lihat &amp; Proses
+          </span>
         </div>
 
-        <ChevronRight size={18} color="#dbeafe" />
+        <IconChevronRight size={18} color={YELLOW} style={{ flex: 'none' }} />
       </button>
     </div>
   );
