@@ -1,13 +1,21 @@
 "use client";
-import { useEffect, useState } from "react";
-import { Modal, Form, Row, Col, Button, Spinner } from "react-bootstrap";
-import { IconClipboardCheck, IconDeviceFloppy, IconAlertTriangle } from "@tabler/icons-react";
-import apiFetch from "/lib/api";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { Modal, Form, Row, Col, Button, Spinner, InputGroup } from "react-bootstrap";
+import {
+  IconClipboardCheck,
+  IconDeviceFloppy,
+  IconAlertTriangle,
+  IconBarcode,
+  IconCircleCheck,
+} from "@tabler/icons-react";
+import apiFetch from "/lib/apiFetch";
+import { useBarcodeScanner } from "hooks/useBarcodeScanner";
 
 interface AlatUkurOption {
   id: string;
   kode_alat: string;
   nama_alat: string;
+  sn?: string | null;
 }
 
 export interface KalibrasiFormValues {
@@ -25,6 +33,8 @@ interface KalibrasiFormModalProps {
   onSubmit: (values: KalibrasiFormValues) => void;
   submitting?: boolean;
   error?: string | null;
+  // Kode hasil scan dari halaman induk (scan saat modal belum terbuka).
+  initialScanCode?: string | null;
 }
 
 const emptyForm = (): KalibrasiFormValues => ({
@@ -55,7 +65,21 @@ const CSS = `
 .pln-form .form-label{font-size:.8rem;font-weight:600;color:#14233b;margin-bottom:4px}
 .pln-form .form-control,.pln-form .form-select{background-color:#f6f9fc;border-color:#dbe5f1;border-radius:10px}
 .pln-form .form-control:focus,.pln-form .form-select:focus{background-color:#fff;border-color:#0b6bb8;box-shadow:0 0 0 3px rgba(11,107,184,.16)}
+.pln-form .input-group-text{background-color:#e6f0fa;border-color:#dbe5f1;color:#0b6bb8;border-radius:10px 0 0 10px}
 .pln-form .pf-hint{font-size:.72rem;color:#8794a8;margin-top:4px}
+.pln-form .pf-scan-err{font-size:.8rem;color:#a8160f;margin-top:6px}
+.pln-form .pf-scan-ok{background:#e8f6ee;border:1px solid #bfe3cd;border-radius:12px;padding:10px 14px;margin-top:10px;
+  display:flex;justify-content:space-between;align-items:center;gap:10px}
+.pln-form .pf-scan-ok .k{font-weight:800;color:#06355f;display:block;line-height:1.2}
+.pln-form .pf-scan-ok .n{font-size:.82rem;color:#3d5a49}
+.pln-form .pf-ready{display:flex;align-items:center;gap:12px;margin-top:10px;padding:10px 14px;border:1px dashed #9db9d6;
+  border-radius:12px;background:#f6f9fc;font-size:.84rem;color:#06355f;font-weight:600}
+.pln-form .pf-ring{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;background:#e6f0fa;color:#0b6bb8;position:relative;flex:none}
+.pln-form .pf-ring::after{content:"";position:absolute;inset:-5px;border-radius:50%;border:2px solid #0b6bb8;opacity:.35;animation:pfPulse 1.8s ease-out infinite}
+@keyframes pfPulse{from{transform:scale(.85);opacity:.5}to{transform:scale(1.25);opacity:0}}
+@media (prefers-reduced-motion:reduce){.pln-form .pf-ring::after{animation:none}}
+.pln-form .pf-link{background:none;border:0;padding:0;margin-top:8px;color:#0b6bb8;font-size:.8rem;font-weight:600}
+.pln-form .pf-link:hover{text-decoration:underline}
 .pln-form .modal-footer{border:0;padding:16px 24px 22px;gap:8px}
 .pln-form .pf-btn{border:0;border-radius:11px;padding:9px 18px;font-weight:700;font-size:.9rem;display:inline-flex;align-items:center;gap:6px}
 .pln-form .pf-ghost{background:#eef3f9;color:#06355f}
@@ -73,14 +97,29 @@ const KalibrasiFormModal = ({
   onSubmit,
   submitting = false,
   error = null,
+  initialScanCode = null,
 }: KalibrasiFormModalProps) => {
   const [form, setForm] = useState<KalibrasiFormValues>(emptyForm());
   const [alatList, setAlatList] = useState<AlatUkurOption[]>([]);
   const [loadingAlat, setLoadingAlat] = useState(false);
 
+  // ---- Scan barcode ----
+  const [mode, setMode] = useState<"scan" | "manual">("scan");
+  const [scanValue, setScanValue] = useState("");
+  const [scanError, setScanError] = useState<string | null>(null);
+  const scanRef = useRef<HTMLInputElement>(null);
+  const isProcessingScanRef = useRef(false);
+  const initialScanDone = useRef(false);
+
+  const selectedAlat = alatList.find((a) => a.id === form.alatUkurId) ?? null;
+
   useEffect(() => {
     if (show) {
       setForm(emptyForm());
+      setMode("scan");
+      setScanValue("");
+      setScanError(null);
+      initialScanDone.current = false;
       setLoadingAlat(true);
       apiFetch<{ status: string; data: AlatUkurOption[] }>("/alat-ukur")
         .then((res) => setAlatList(res.data ?? []))
@@ -88,6 +127,72 @@ const KalibrasiFormModal = ({
         .finally(() => setLoadingAlat(false));
     }
   }, [show]);
+
+  // Cocokkan kode hasil scan dengan kode_alat, SN, atau id (tidak peka huruf besar-kecil).
+  const processScan = useCallback(
+    (raw: string) => {
+      const code = raw.trim();
+      if (!code) return;
+      if (isProcessingScanRef.current) return;
+      isProcessingScanRef.current = true;
+
+      try {
+        if (loadingAlat) {
+          setScanError("Data alat ukur masih dimuat, silakan scan ulang sebentar lagi.");
+          return;
+        }
+
+        const codeUpper = code.toUpperCase();
+        const found = alatList.find(
+          (a) =>
+            String(a.kode_alat || "").trim().toUpperCase() === codeUpper ||
+            String(a.sn || "").trim().toUpperCase() === codeUpper ||
+            String(a.id).trim().toUpperCase() === codeUpper
+        );
+
+        if (found) {
+          setForm((p) => ({ ...p, alatUkurId: found.id }));
+          setScanError(null);
+        } else {
+          setScanError(`Kode "${code}" tidak dikenali sebagai alat ukur terdaftar.`);
+        }
+        setScanValue("");
+        scanRef.current?.focus();
+      } finally {
+        isProcessingScanRef.current = false;
+      }
+    },
+    [alatList, loadingAlat]
+  );
+
+  // Scanner fisik bekerja seperti keyboard; ditangkap walau kursor tidak di kolom scan.
+  useBarcodeScanner({
+    enabled: show && mode === "scan" && !submitting,
+    onScan: processScan,
+  });
+
+  // Jika modal dibuka dari hasil scan di halaman induk, langsung cocokkan kodenya
+  // begitu daftar alat selesai dimuat.
+  useEffect(() => {
+    if (!show || loadingAlat || !initialScanCode || initialScanDone.current) return;
+    if (alatList.length === 0) return;
+    initialScanDone.current = true;
+    processScan(initialScanCode);
+  }, [show, loadingAlat, alatList, initialScanCode, processScan]);
+
+  const handleScanKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      // Cegah Enter dari scanner ikut men-submit form.
+      e.preventDefault();
+      processScan(scanValue);
+    }
+  };
+
+  const clearSelection = () => {
+    setForm((p) => ({ ...p, alatUkurId: "" }));
+    setScanError(null);
+    setTimeout(() => scanRef.current?.focus(), 0);
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -100,6 +205,7 @@ const KalibrasiFormModal = ({
       <Modal
         show={show}
         onHide={submitting ? undefined : onClose}
+        onEntered={() => scanRef.current?.focus()}
         centered
         backdrop={submitting ? "static" : true}
         backdropClassName="pln-modal-backdrop"
@@ -128,20 +234,100 @@ const KalibrasiFormModal = ({
             <div className="pf-sec">Alat yang dikalibrasi</div>
             <Row className="g-3">
               <Col md={12}>
-                <Form.Label>Alat Ukur<Req /></Form.Label>
-                <Form.Select
-                  required
-                  value={form.alatUkurId}
-                  onChange={(e) => setForm((p) => ({ ...p, alatUkurId: e.target.value }))}
-                  disabled={loadingAlat || submitting}
-                >
-                  <option value="">{loadingAlat ? "Memuat..." : "Pilih alat ukur..."}</option>
-                  {alatList.map((a) => (
-                    <option key={a.id} value={a.id}>
-                      {a.kode_alat} — {a.nama_alat}
-                    </option>
-                  ))}
-                </Form.Select>
+                {mode === "scan" ? (
+                  <>
+                    <Form.Label>Scan Barcode Alat Ukur<Req /></Form.Label>
+                    <InputGroup>
+                      <InputGroup.Text><IconBarcode size={18} /></InputGroup.Text>
+                      <Form.Control
+                        ref={scanRef}
+                        type="text"
+                        autoComplete="off"
+                        placeholder={loadingAlat ? "Memuat data alat..." : "Arahkan scanner ke barcode alat..."}
+                        value={scanValue}
+                        onChange={(e) => {
+                          setScanValue(e.target.value);
+                          if (scanError) setScanError(null);
+                        }}
+                        onKeyDown={handleScanKeyDown}
+                        disabled={submitting}
+                      />
+                    </InputGroup>
+
+                    {scanError && <div className="pf-scan-err" role="alert">{scanError}</div>}
+
+                    {selectedAlat ? (
+                      <div className="pf-scan-ok">
+                        <div className="d-flex align-items-center gap-2">
+                          <IconCircleCheck size={22} color="#198754" />
+                          <div>
+                            <span className="k">{selectedAlat.kode_alat}</span>
+                            <span className="n">
+                              {selectedAlat.nama_alat}
+                              {selectedAlat.sn ? ` · SN ${selectedAlat.sn}` : ""}
+                            </span>
+                          </div>
+                        </div>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline-secondary"
+                          onClick={clearSelection}
+                          disabled={submitting}
+                        >
+                          Ganti
+                        </Button>
+                      </div>
+                    ) : (
+                      <>
+                        <div className="pf-ready">
+                          <span className="pf-ring"><IconBarcode size={22} /></span>
+                          <span>{loadingAlat ? "Memuat data alat..." : "Siap membaca barcode alat"}</span>
+                        </div>
+                        <div className="pf-hint">
+                          Scan dengan scanner (kode alat atau SN), atau ketik kodenya lalu tekan Enter.
+                        </div>
+                      </>
+                    )}
+
+                    <button
+                      type="button"
+                      className="pf-link"
+                      onClick={() => setMode("manual")}
+                      disabled={submitting}
+                    >
+                      Barcode rusak? Pilih manual dari daftar
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <Form.Label>Alat Ukur<Req /></Form.Label>
+                    <Form.Select
+                      required
+                      value={form.alatUkurId}
+                      onChange={(e) => setForm((p) => ({ ...p, alatUkurId: e.target.value }))}
+                      disabled={loadingAlat || submitting}
+                    >
+                      <option value="">{loadingAlat ? "Memuat..." : "Pilih alat ukur..."}</option>
+                      {alatList.map((a) => (
+                        <option key={a.id} value={a.id}>
+                          {a.kode_alat} — {a.nama_alat}
+                        </option>
+                      ))}
+                    </Form.Select>
+                    <button
+                      type="button"
+                      className="pf-link"
+                      onClick={() => {
+                        setMode("scan");
+                        setTimeout(() => scanRef.current?.focus(), 0);
+                      }}
+                      disabled={submitting}
+                    >
+                      Kembali ke scan barcode
+                    </button>
+                  </>
+                )}
               </Col>
             </Row>
 

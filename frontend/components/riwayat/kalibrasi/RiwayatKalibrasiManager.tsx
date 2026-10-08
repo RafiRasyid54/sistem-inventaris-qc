@@ -19,9 +19,12 @@ import {
   IconCircleCheck,
   IconAlertTriangle,
   IconFilterOff,
+  IconFileTypePdf,
+  IconFileSpreadsheet,
 } from "@tabler/icons-react";
 
 import { RiwayatKalibrasiType } from "types/RiwayatTypes";
+import { exportToExcel, exportToPDF, ExportColumn } from "components/riwayat/common/exportUtils";
 import TanstackTable from "components/table/TanstackTable";
 import Flex from "components/common/Flex";
 import DasherBreadcrumb from "components/common/DasherBreadcrumb";
@@ -65,6 +68,38 @@ const CSS = `
 .pln-rk .rk-empty.is-filter .rk-empty-icon{background:#fff8e1;color:#9a6a00}
 .pln-rk .rk-empty h5{font-weight:800;color:var(--navy)}
 `;
+
+// ---------- Export PDF & Excel ----------
+const EXPORT_COLUMNS: ExportColumn[] = [
+  { header: "Kode Alat", key: "kodeAlat" },
+  { header: "Nama Alat", key: "namaAlat" },
+  { header: "Tanggal Kalibrasi", key: "tanggalKalibrasi" },
+  { header: "Jatuh Tempo", key: "tanggalJatuhTempo" },
+  { header: "Status", key: "status" },
+  { header: "Hasil", key: "kondisi" },
+  { header: "Pelaksana", key: "pelaksana" },
+  { header: "Keterangan", key: "keterangan" },
+];
+
+const BULAN = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
+
+// "2026-10-07" / "2026-10-07T00:00:00Z" -> "07 Okt 2026" (tanpa konversi zona waktu)
+const formatTanggal = (value?: string | null): string => {
+  const m = value ? String(value).match(/^(\d{4})-(\d{2})-(\d{2})/) : null;
+  return m ? `${m[3]} ${BULAN[Number(m[2]) - 1]} ${m[1]}` : value ? String(value) : "-";
+};
+
+const STATUS_LABEL: Record<string, string> = {
+  berlaku: "Berlaku",
+  mendekati: "Mendekati jatuh tempo",
+  lewat: "Lewat jatuh tempo",
+};
+
+const KONDISI_LABEL: Record<string, string> = {
+  Baik: "Baik",
+  RPP: "RPP (rusak, perlu perbaikan)",
+  RT: "RT (rusak total)",
+};
 
 const RiwayatKalibrasiManager = () => {
   const [data, setData] = useState<RiwayatKalibrasiType[]>([]);
@@ -115,6 +150,38 @@ const RiwayatKalibrasiManager = () => {
   }, [data, searchTerm, statusFilter]);
 
   const columns = useMemo(() => getRiwayatKalibrasiColumns(), []);
+
+  // ---------- Export PDF & Excel (memakai data yang sudah terfilter) ----------
+  const buildExportRows = () =>
+    filteredData.map((item) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const r = item as any;
+      return {
+        kodeAlat: item.kodeAlat,
+        namaAlat: item.namaAlat,
+        tanggalKalibrasi: formatTanggal(r.tanggalKalibrasiRaw ?? r.tanggalKalibrasi),
+        tanggalJatuhTempo: formatTanggal(item.tanggalJatuhTempoRaw),
+        status: STATUS_LABEL[getStatusKalibrasi(item.tanggalJatuhTempoRaw)] ?? "-",
+        kondisi: KONDISI_LABEL[item.kondisi] ?? item.kondisi,
+        pelaksana: item.pelaksana || "-",
+        keterangan: r.keterangan || "-",
+      };
+    });
+
+  const handleExportPDF = () =>
+    exportToPDF(
+      buildExportRows() as unknown as Record<string, unknown>[],
+      EXPORT_COLUMNS,
+      "riwayat-kalibrasi",
+      "Riwayat Kalibrasi Alat Ukur"
+    );
+
+  const handleExportExcel = () =>
+    exportToExcel(
+      buildExportRows() as unknown as Record<string, unknown>[],
+      EXPORT_COLUMNS,
+      "riwayat-kalibrasi"
+    );
 
   const handleSubmit = async (values: KalibrasiFormValues) => {
     setSubmitting(true);
@@ -231,6 +298,27 @@ const RiwayatKalibrasiManager = () => {
             <span className="riwayat-info rk-info text-secondary small ms-auto">
               Menampilkan <b>{filteredData.length}</b> dari {data.length} data
             </span>
+
+            <div className="d-flex gap-2">
+              <Button
+                variant="outline-danger"
+                size="sm"
+                className="d-inline-flex align-items-center gap-1"
+                onClick={handleExportPDF}
+                disabled={filteredData.length === 0}
+              >
+                <IconFileTypePdf size={16} /> PDF
+              </Button>
+              <Button
+                variant="outline-success"
+                size="sm"
+                className="d-inline-flex align-items-center gap-1"
+                onClick={handleExportExcel}
+                disabled={filteredData.length === 0}
+              >
+                <IconFileSpreadsheet size={16} /> Excel
+              </Button>
+            </div>
           </div>
         </div>
 

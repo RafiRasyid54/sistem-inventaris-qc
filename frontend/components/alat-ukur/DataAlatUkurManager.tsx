@@ -33,6 +33,8 @@ import {
   IconAlertTriangle,
   IconScan,
   IconBuildingStore,
+  IconFileTypePdf,
+  IconFileSpreadsheet,
 } from "@tabler/icons-react";
 
 import Flex from "components/common/Flex";
@@ -48,6 +50,7 @@ import { CartFAB } from "./CartFAB";
 import apiFetch from "/lib/apiFetch";
 import { AlatUkur } from "../../types/DataAlatUkurTypes";
 import { prosesPeminjamanApi } from "services/peminjamanService";
+import { exportToExcel, exportToPDF, ExportColumn } from "components/riwayat/common/exportUtils";
 
 interface AlatUkurApiResponse {
   status: string;
@@ -118,6 +121,22 @@ const CSS = `
 @media (prefers-reduced-motion:reduce){.pda-scan .pda-ring::after{animation:none}}
 .pda-scan h5{font-weight:800;color:#06355f}
 `;
+
+// ---------- Export PDF & Excel ----------
+const EXPORT_COLUMNS: ExportColumn[] = [
+  { header: "Kode Alat", key: "kodeAlat" },
+  { header: "Nama Alat", key: "namaAlat" },
+  { header: "Merk", key: "merk" },
+  { header: "SN", key: "sn" },
+  { header: "Kondisi", key: "kondisi" },
+  { header: "Ketersediaan", key: "ketersediaan" },
+];
+
+const KONDISI_LABEL: Record<string, string> = {
+  Baik: "Baik",
+  RPP: "RPP (rusak, perlu perbaikan)",
+  RT: "RT (rusak total)",
+};
 
 const DataAlatUkurManager = () => {
   const [data, setData] = useState<AlatUkur[]>([]);
@@ -448,6 +467,28 @@ const DataAlatUkurManager = () => {
     }
   };
 
+  // ---------- Export PDF & Excel (memakai data yang sudah terfilter) ----------
+  const buildExportRows = () =>
+    filteredData.map((item) => {
+      const statusPinjam = (item as { status_peminjaman?: string }).status_peminjaman;
+      const dipinjam = statusPinjam === "Dipinjam" || statusPinjam === "sedang_dipinjam";
+      const rusak = item.kondisi === "RPP" || item.kondisi === "RT";
+      return {
+        kodeAlat: item.kode_alat || "-",
+        namaAlat: item.nama_alat || "-",
+        merk: item.merk || "-",
+        sn: item.sn || "-",
+        kondisi: KONDISI_LABEL[item.kondisi as string] ?? item.kondisi ?? "-",
+        ketersediaan: dipinjam ? "Sedang dipinjam" : rusak ? "Tidak bisa dipinjam (rusak)" : "Tersedia",
+      };
+    });
+
+  const handleExportPDF = () =>
+    exportToPDF(buildExportRows() as unknown as Record<string, unknown>[], EXPORT_COLUMNS, "data-alat-ukur", "Data Alat Ukur");
+
+  const handleExportExcel = () =>
+    exportToExcel(buildExportRows() as unknown as Record<string, unknown>[], EXPORT_COLUMNS, "data-alat-ukur");
+
   const step = !peminjamAktif ? 1 : cart.length === 0 ? 2 : 3;
   const stepClass = (n: number) => (step === n ? "is-now" : step > n ? "is-done" : "");
 
@@ -540,7 +581,29 @@ const DataAlatUkurManager = () => {
           </InputGroup>
 
           {!loading && (
-            <span className="pda-count"><b>{filteredData.length}</b>{searchTerm ? ` dari ${data.length}` : ""} alat ukur</span>
+            <div className="d-flex flex-wrap align-items-center gap-3">
+              <span className="pda-count"><b>{filteredData.length}</b>{searchTerm ? ` dari ${data.length}` : ""} alat ukur</span>
+              <div className="d-flex gap-2">
+                <Button
+                  variant="outline-danger"
+                  size="sm"
+                  className="d-inline-flex align-items-center gap-1"
+                  onClick={handleExportPDF}
+                  disabled={filteredData.length === 0}
+                >
+                  <IconFileTypePdf size={16} /> PDF
+                </Button>
+                <Button
+                  variant="outline-success"
+                  size="sm"
+                  className="d-inline-flex align-items-center gap-1"
+                  onClick={handleExportExcel}
+                  disabled={filteredData.length === 0}
+                >
+                  <IconFileSpreadsheet size={16} /> Excel
+                </Button>
+              </div>
+            </div>
           )}
         </div>
 

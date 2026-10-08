@@ -22,6 +22,8 @@ import {
   IconAlertTriangle,
   IconRefresh,
   IconInfoCircle,
+  IconFileTypePdf,
+  IconFileSpreadsheet,
 } from "@tabler/icons-react";
 
 // import custom types
@@ -29,6 +31,7 @@ import { PeminjamanAktifItemType } from "types/DataAlatUkurTypes";
 
 // import services / API fetch
 import { getPeminjamanAktif } from "services/peminjamanService";
+import { exportToExcel, exportToPDF, ExportColumn } from "components/riwayat/common/exportUtils";
 
 // import custom components & columns
 import TanstackTable from "components/table/TanstackTable";
@@ -67,6 +70,26 @@ const CSS = `
 /* Modal Backdrop Khusus */
 .pln-alert-backdrop.modal-backdrop{--bs-backdrop-bg:#041f38;--bs-backdrop-opacity:.68;backdrop-filter:blur(3px)}
 `;
+
+// ---------- Export PDF & Excel ----------
+const EXPORT_COLUMNS: ExportColumn[] = [
+  { header: "Kode Alat", key: "kodeBarang" },
+  { header: "Nama Alat", key: "namaBarang" },
+  { header: "Jumlah", key: "jumlah" },
+  { header: "Peminjam", key: "namaPeminjam" },
+  { header: "ID / RFID", key: "peminjamId" },
+  { header: "Kategori", key: "kategori" },
+  { header: "Waktu Peminjaman", key: "waktuPinjam" },
+  { header: "Keterangan", key: "keterangan" },
+];
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const formatWaktuPinjam = (item: any): string => {
+  const raw = item.tanggal_pinjam || item.created_at || item.tanggalPinjam;
+  if (!raw) return "-";
+  const d = new Date(raw);
+  return isNaN(d.getTime()) ? String(raw) : d.toLocaleString("id-ID", { dateStyle: "medium", timeStyle: "short" });
+};
 
 const PeminjamanAktifManager = () => {
   const [data, setData] = useState<PeminjamanAktifItemType[]>([]);
@@ -136,6 +159,29 @@ const PeminjamanAktifManager = () => {
     []
   );
 
+  // ---------- Export PDF & Excel (memakai data yang sudah terfilter: tab + pencarian) ----------
+  const buildExportRows = () =>
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    filteredData.map((item: any) => ({
+      kodeBarang: item.kodeBarang || "-",
+      namaBarang: item.namaBarang || "-",
+      jumlah: item.jumlah ?? 1,
+      namaPeminjam: item.namaPeminjam || "-",
+      peminjamId: item.peminjamId || "-",
+      kategori: item.kategori || item.kategori_peminta || item.peminta?.kategori || "Internal",
+      waktuPinjam: formatWaktuPinjam(item),
+      keterangan: item.keterangan || "-",
+    }));
+
+  const exportTitle = `Peminjaman Aktif - ${kategoriTab === "Vendor" ? "Eksternal / Vendor" : "Internal PLN"}`;
+  const exportFile = `peminjaman-aktif-${kategoriTab.toLowerCase()}`;
+
+  const handleExportPDF = () =>
+    exportToPDF(buildExportRows() as unknown as Record<string, unknown>[], EXPORT_COLUMNS, exportFile, exportTitle);
+
+  const handleExportExcel = () =>
+    exportToExcel(buildExportRows() as unknown as Record<string, unknown>[], EXPORT_COLUMNS, exportFile);
+
   return (
     <div className="peminjamanaktif-page position-relative pb-6 pln-pa">
       <style>{CSS}</style>
@@ -200,7 +246,7 @@ const PeminjamanAktifManager = () => {
             </div>
           </div>
 
-          {/* SEARCH BAR & COUNT */}
+          {/* SEARCH BAR, COUNT & EXPORT */}
           <div className="riwayat-toolbar-row d-flex flex-wrap gap-2 justify-content-between align-items-center">
             <InputGroup className="riwayat-search" style={{ maxWidth: "400px" }}>
               <InputGroup.Text>
@@ -225,9 +271,31 @@ const PeminjamanAktifManager = () => {
               )}
             </InputGroup>
             
-            <span className="riwayat-info pa-count">
-              Menampilkan <b>{filteredData.length}</b> data {kategoriTab} aktif
-            </span>
+            <div className="d-flex flex-wrap align-items-center gap-3">
+              <span className="riwayat-info pa-count">
+                Menampilkan <b>{filteredData.length}</b> data {kategoriTab} aktif
+              </span>
+              <div className="d-flex gap-2">
+                <Button
+                  variant="outline-danger"
+                  size="sm"
+                  className="d-inline-flex align-items-center gap-1"
+                  onClick={handleExportPDF}
+                  disabled={filteredData.length === 0}
+                >
+                  <IconFileTypePdf size={16} /> PDF
+                </Button>
+                <Button
+                  variant="outline-success"
+                  size="sm"
+                  className="d-inline-flex align-items-center gap-1"
+                  onClick={handleExportExcel}
+                  disabled={filteredData.length === 0}
+                >
+                  <IconFileSpreadsheet size={16} /> Excel
+                </Button>
+              </div>
+            </div>
           </div>
         </div>
 

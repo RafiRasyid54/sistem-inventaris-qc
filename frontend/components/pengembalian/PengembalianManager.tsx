@@ -7,7 +7,9 @@ import {
   IconAlertTriangle, 
   IconLock, 
   IconBuildingStore, 
-  IconId 
+  IconId,
+  IconFileTypePdf,
+  IconFileSpreadsheet,
 } from "@tabler/icons-react";
 import { createLaporanKerusakan } from "services/laporanKerusakanService";
 
@@ -18,6 +20,7 @@ import { PeminjamanAktifItemType } from "types/DataAlatUkurTypes";
 import { getPeminjamanAktif, tandaiDikembalikan } from "services/peminjamanService";
 import { getPeminta } from "services/pemintaService";
 import { usePermission } from "hooks/usePermissions";
+import { exportToExcel, exportToPDF, ExportColumn } from "components/riwayat/common/exportUtils";
 
 // import custom components
 import Flex from "components/common/Flex";
@@ -40,6 +43,26 @@ const CSS = `
 .pln-pg .pg-step.is-done i{background:#12a36b;color:#fff}
 .pln-alert-backdrop.modal-backdrop{--bs-backdrop-bg:#041f38;--bs-backdrop-opacity:.68;backdrop-filter:blur(3px)}
 `;
+
+// ---------- Export PDF & Excel (rekap alat yang belum dikembalikan) ----------
+const EXPORT_COLUMNS: ExportColumn[] = [
+  { header: "Kode Alat", key: "kodeBarang" },
+  { header: "Nama Alat", key: "namaBarang" },
+  { header: "Jumlah", key: "jumlah" },
+  { header: "Peminjam", key: "namaPeminjam" },
+  { header: "ID / RFID", key: "peminjamId" },
+  { header: "Kategori", key: "kategori" },
+  { header: "Waktu Peminjaman", key: "waktuPinjam" },
+  { header: "Keterangan", key: "keterangan" },
+];
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const formatWaktuPinjam = (item: any): string => {
+  const raw = item.tanggal_pinjam || item.created_at || item.tanggalPinjam;
+  if (!raw) return "-";
+  const d = new Date(raw);
+  return isNaN(d.getTime()) ? String(raw) : d.toLocaleString("id-ID", { dateStyle: "medium", timeStyle: "short" });
+};
 
 const PengembalianManager = () => {
   const canProcess = usePermission("process_transaksi");
@@ -296,6 +319,35 @@ const PengembalianManager = () => {
     }
   };
 
+  // ---------- Export PDF & Excel: rekap semua alat yang belum dikembalikan ----------
+  const buildExportRows = () =>
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    items.map((item: any) => ({
+      kodeBarang: item.kodeBarang || "-",
+      namaBarang: item.namaBarang || "-",
+      jumlah: item.jumlah ?? 1,
+      namaPeminjam: item.namaPeminjam || "-",
+      peminjamId: item.peminjamId || "-",
+      kategori: item.kategori || item.kategori_peminta || item.peminta?.kategori || "Internal",
+      waktuPinjam: formatWaktuPinjam(item),
+      keterangan: item.keterangan || "-",
+    }));
+
+  const handleExportPDF = () =>
+    exportToPDF(
+      buildExportRows() as unknown as Record<string, unknown>[],
+      EXPORT_COLUMNS,
+      "alat-ukur-belum-kembali",
+      "Alat Ukur Belum Dikembalikan"
+    );
+
+  const handleExportExcel = () =>
+    exportToExcel(
+      buildExportRows() as unknown as Record<string, unknown>[],
+      EXPORT_COLUMNS,
+      "alat-ukur-belum-kembali"
+    );
+
   const step = itemsPeminjam ? 2 : 1;
   const stepClass = (n: number) => (step === n ? "is-now" : step > n ? "is-done" : "");
 
@@ -364,7 +416,25 @@ const PengembalianManager = () => {
         </div>
       ) : !itemsPeminjam ? (
         <>
-          <div className="d-flex justify-content-end mb-3">
+          <div className="d-flex justify-content-end flex-wrap gap-2 mb-3">
+            <Button
+              variant="outline-danger"
+              size="sm"
+              className="d-inline-flex align-items-center gap-1"
+              onClick={handleExportPDF}
+              disabled={items.length === 0}
+            >
+              <IconFileTypePdf size={16} /> PDF
+            </Button>
+            <Button
+              variant="outline-success"
+              size="sm"
+              className="d-inline-flex align-items-center gap-1"
+              onClick={handleExportExcel}
+              disabled={items.length === 0}
+            >
+              <IconFileSpreadsheet size={16} /> Excel
+            </Button>
              <Button variant="outline-primary" onClick={() => setVendorModalOpen(true)} className="d-flex align-items-center gap-2 fw-semibold bg-white shadow-sm">
                 <IconBuildingStore size={18} /> Pengembalian Eksternal (Vendor)
              </Button>

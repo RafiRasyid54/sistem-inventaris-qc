@@ -52,8 +52,9 @@ function sortByNama(items: PeminjamType[]): PeminjamType[] {
   });
 }
 
+// PERBAIKAN: key Nama diganti ke "namaLabel" (dibentuk di buildExportData)
 const EXPORT_COLUMNS: ExportColumn[] = [
-  { header: "Nama", key: "nama" },
+  { header: "Nama", key: "namaLabel" },
   { header: "Divisi", key: "divisi" },
   { header: "RFID UID", key: "id" },
   { header: "Status", key: "statusLabel" },
@@ -248,11 +249,19 @@ const PeminjamManager = () => {
     }
   }, []);
 
+  // PERBAIKAN: bentuk field namaLabel dengan fallback ke beberapa kemungkinan nama field
   const buildExportData = () =>
-    peminjamList.map((item) => ({
-      ...item,
-      statusLabel: item.aktif ? "Aktif" : "Nonaktif",
-    }));
+    peminjamList.map((item) => {
+      const raw = item as unknown as Record<string, unknown>;
+      const nama = String(
+        raw.nama ?? raw.nama_peminta ?? raw.namaPeminta ?? raw.name ?? ""
+      );
+      return {
+        ...item,
+        namaLabel: nama || "-",
+        statusLabel: item.aktif ? "Aktif" : "Nonaktif",
+      };
+    });
 
   const handleExportPDF = () => {
     exportToPDF(

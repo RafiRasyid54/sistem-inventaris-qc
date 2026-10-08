@@ -224,7 +224,7 @@ const RiwayatPeminjamanManager = () => {
   };
 
   const handleExportPDF = () =>
-    exportToPDF(filteredList, EXPORT_COLUMNS, getFilteredExportFileName(`Riwayat_Peminjaman_${kategoriTab}`, namaFilter), "Riwayat Peminjaman Tools");
+    exportToPDF(filteredList, EXPORT_COLUMNS, getFilteredExportFileName(`Riwayat_Peminjaman_${kategoriTab}`, namaFilter), "Riwayat Peminjaman Alat Ukur");
   const handleExportExcel = () =>
     exportToExcel(filteredList, EXPORT_COLUMNS, getFilteredExportFileName(`Riwayat_Peminjaman_${kategoriTab}`, namaFilter));
 
@@ -241,9 +241,9 @@ const RiwayatPeminjamanManager = () => {
         <Col>
           <Flex justifyContent="between" alignItems="center" className="mb-4 w-100 pr-head" breakpoint="md">
             <div>
-              <h1 className="mb-2 h2">Riwayat Peminjaman Tools</h1>
+              <h1 className="mb-2 h2">Riwayat Peminjaman Alat Ukur</h1>
               <p className="text-secondary mb-2">
-                Menampilkan riwayat seluruh transaksi peminjaman tools yang telah dikembalikan.
+                Menampilkan riwayat seluruh transaksi peminjaman alat ukur yang telah dikembalikan.
               </p>
               <DasherBreadcrumb />
             </div>
