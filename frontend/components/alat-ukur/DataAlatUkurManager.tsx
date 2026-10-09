@@ -66,6 +66,20 @@ const namaPeminjam = (p: any): string =>
   p?.instansi_vendor ||
   "Pengguna";
 
+// ---------- Helper status alat (dinormalisasi supaya tidak sensitif huruf/spasi) ----------
+const isDipinjam = (item: AlatUkur): boolean => {
+  const s = String((item as any).status_peminjaman ?? "")
+    .trim()
+    .toLowerCase()
+    .replace(/[\s_-]+/g, "");
+  return s === "dipinjam" || s === "sedangdipinjam";
+};
+
+const isRusak = (item: AlatUkur): boolean => {
+  const k = String(item.kondisi ?? "").trim().toUpperCase();
+  return k === "RPP" || k === "RT";
+};
+
 const CSS = `
 .pln-da{--navy:#06355f;--blue:#0b6bb8;--yellow:#ffc20e;--line:#dbe5f1;--mute:#62708a}
 .pln-da .btn-primary{background:var(--blue);border-color:var(--blue)}
@@ -301,13 +315,12 @@ const DataAlatUkurManager = () => {
         return;
       }
 
-      const statusPinjam = (item as any).status_peminjaman;
-      if (statusPinjam === "Dipinjam" || statusPinjam === "sedang_dipinjam") {
+      if (isDipinjam(item)) {
         showNotice(`Alat "${item.nama_alat}" sedang dipinjam.`);
         return;
       }
 
-      if (item.kondisi === "RPP" || item.kondisi === "RT") {
+      if (isRusak(item)) {
         showNotice(`Alat "${item.nama_alat}" dalam kondisi rusak (${item.kondisi}).`);
         return;
       }
@@ -428,6 +441,14 @@ const DataAlatUkurManager = () => {
           const kodeAlat = item.kode_alat;
           if (!kodeAlat) throw new Error(`Alat "${item.nama_alat}" tidak valid.`);
 
+          // Pengaman terakhir sebelum request ke backend
+          if (isDipinjam(item)) {
+            throw new Error(`Alat "${item.nama_alat}" sedang dipinjam.`);
+          }
+          if (isRusak(item)) {
+            throw new Error(`Alat "${item.nama_alat}" dalam kondisi rusak (${item.kondisi}).`);
+          }
+
           await prosesPeminjamanApi({
             kodeAlat,
             pemintaId: values?.peminjamId || peminjamAktif?.id,
@@ -441,13 +462,15 @@ const DataAlatUkurManager = () => {
         setLoanModalOpen(false);
         setSuccessMessage("Peminjaman berhasil diajukan!");
         setTimeout(() => setSuccessMessage(null), 4000);
+        loadAlatUkur(); // refresh supaya status alat yang baru dipinjam ikut terbarui
       } catch (err: any) {
         setLoanError(err?.message || "Gagal menyimpan peminjaman.");
+        loadAlatUkur(); // sebagian alat mungkin sudah terproses sebelum error
       } finally {
         setLoanSubmitting(false);
       }
     },
-    [cart, peminjamAktif]
+    [cart, peminjamAktif, loadAlatUkur]
   );
 
   const handleCloseScanModal = () => {
@@ -470,9 +493,8 @@ const DataAlatUkurManager = () => {
   // ---------- Export PDF & Excel (memakai data yang sudah terfilter) ----------
   const buildExportRows = () =>
     filteredData.map((item) => {
-      const statusPinjam = (item as { status_peminjaman?: string }).status_peminjaman;
-      const dipinjam = statusPinjam === "Dipinjam" || statusPinjam === "sedang_dipinjam";
-      const rusak = item.kondisi === "RPP" || item.kondisi === "RT";
+      const dipinjam = isDipinjam(item);
+      const rusak = isRusak(item);
       return {
         kodeAlat: item.kode_alat || "-",
         namaAlat: item.nama_alat || "-",
