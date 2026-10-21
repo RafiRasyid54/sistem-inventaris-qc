@@ -9,10 +9,9 @@ use App\Http\Controllers\Api\AlatUkurController;
 use App\Http\Controllers\Api\PeminjamanController;
 use App\Http\Controllers\Api\RiwayatKalibrasiController;
 use App\Http\Controllers\Api\UserController;
-use App\Http\Controllers\Api\RolePermissionController;
 use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\PemintaController;
-use App\Http\Controllers\Api\PekerjaanController; // <-- DITAMBAHKAN IMPORT INI
+use App\Http\Controllers\Api\PekerjaanController;
 use App\Http\Controllers\Api\LaporanKerusakanController;
 
 // ==========================================
@@ -51,26 +50,14 @@ Route::middleware('auth:sanctum')->group(function () {
     // Logout
     Route::post('/logout', [AuthController::class, 'logout']);
 
-    // User yang sedang login
+    // User yang sedang login (Disederhanakan tanpa permission check)
     Route::get('/user', function (Request $request) {
         $user = $request->user();
-
-        $roles = method_exists($user, 'getRoleNames')
-            ? $user->getRoleNames()->map(
-                fn ($role) => ['name' => $role]
-            )
-            : [];
-
-        $permissions = method_exists($user, 'getAllPermissions')
-            ? $user->getAllPermissions()->pluck('name')
-            : [];
 
         return response()->json([
             'id' => $user->id,
             'name' => $user->name ?? $user->full_name ?? null,
             'email' => $user->email,
-            'roles' => $roles,
-            'all_permissions' => $permissions,
         ]);
     });
 
@@ -91,7 +78,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // ==========================================
     Route::apiResource('alat-ukur', AlatUkurController::class);
     
-    // TAMBAHKAN BARIS INI: Mendaftarkan route utama untuk riwayat kalibrasi
+    // Route utama untuk riwayat kalibrasi
     Route::apiResource('riwayat-kalibrasi', RiwayatKalibrasiController::class);
 
     // Riwayat kalibrasi berdasarkan alat ukur
@@ -122,19 +109,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::patch('/users/{id}/reset-password', [UserController::class, 'resetPassword']);
     Route::patch('/users/{id}/aktifkan', [UserController::class, 'activate']);
 
-
     // ==========================================
-    // F. MODUL ROLE & PERMISSION
+    // F. MODUL ROLE & PERMISSION (DIHAPUS)
     // ==========================================
-
-    Route::get('/roles', [RolePermissionController::class, 'index']);
-    Route::get('/permissions/matrix', [RolePermissionController::class, 'getMatrix']);
-    Route::put('/permissions/matrix', [RolePermissionController::class, 'updateMatrix']);
-    Route::post('/roles', [RolePermissionController::class, 'store']);
-    Route::patch('/roles/{id}/color', [RolePermissionController::class, 'updateColor']);
-    Route::delete('/roles/{id}', [RolePermissionController::class, 'destroy']);
-    Route::get('/roles/{id}/permissions', [RolePermissionController::class, 'getRolePermissions']);
-    Route::put('/roles/{id}/permissions', [RolePermissionController::class, 'updateRolePermissions']);
+    // Seluruh rute RolePermissionController telah dihilangkan
 
 
     // ==========================================

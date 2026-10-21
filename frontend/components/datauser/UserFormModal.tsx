@@ -3,14 +3,14 @@ import { useEffect, useState } from "react";
 import { Modal, Form, Row, Col, Button } from "react-bootstrap";
 import { IconUser, IconPencil, IconPlus, IconEye, IconEyeOff } from "@tabler/icons-react";
 
-import { UserFormValues, UserItemType, UserRole } from "types/DataUserTypes";
-import api from "lib/api";
+import { UserFormValues, UserItemType } from "types/DataUserTypes";
 
+// Sesuaikan default values
 const emptyForm: UserFormValues = {
   full_name: "",
   username: "",
+  email: "",
   password: "",
-  role: "Staff", // Diubah menggunakan huruf kapital awal agar sesuai database
   divisi: "",
 };
 
@@ -19,7 +19,6 @@ interface UserFormModalProps {
   onClose: () => void;
   onSubmit: (values: UserFormValues) => void;
   initialData?: UserItemType | null;
-  isAdmin: boolean;
   error?: string | null;
 }
 
@@ -28,53 +27,25 @@ const UserFormModal = ({
   onClose,
   onSubmit,
   initialData,
-  isAdmin,
   error,
 }: UserFormModalProps) => {
   const [form, setForm] = useState<UserFormValues>(emptyForm);
   const [showPassword, setShowPassword] = useState(false);
   const isEditMode = Boolean(initialData);
 
-  const [roleOptions, setRoleOptions] = useState<string[]>([]);
-
-    useEffect(() => {
-    if (!show) return;
-    const currentUserRole = typeof window !== "undefined" ? localStorage.getItem("userRole") : null;
-    const isSuperAdmin = currentUserRole?.toLowerCase().replace(/[\s_]/g, "") === "superadmin";
-
-    api("/roles")
-      .then((res: any) => {
-        const data = res?.data || res || [];
-        const names = Array.isArray(data) ? data.map((r: any) => r.name) : [];
-        // Sembunyikan opsi "Super Admin" dari dropdown kalau yang login bukan Super Admin
-        const filteredNames = isSuperAdmin ? names : names.filter((n) => n !== "Super Admin");
-        setRoleOptions(filteredNames);
-      })
-      .catch(() => setRoleOptions([]));
-  }, [show]);
   useEffect(() => {
     if (show) {
-          if (initialData) {
-            
-          // --- LOGIKA MAPPING ---
-          // Memastikan data lama dari DB (huruf kecil) cocok dengan dropdown baru (Kapital)
-          let mappedRole = initialData.role as string;
-          if (mappedRole === "staff") mappedRole = "Staff";
-          if (mappedRole === "super_admin" || mappedRole === "superadmin") mappedRole = "Super Admin";
-          if (mappedRole === "admin") mappedRole = "Admin";
-          if (mappedRole === "pegawai") mappedRole = "Pegawai";
-          // ----------------------
-
-          setForm({
-            full_name: initialData.full_name,
-            username: initialData.username,
-            password: "",
-            role: mappedRole as UserRole,
-            divisi: initialData.divisi || "",
-          });
-        } else {
-          setForm(emptyForm);
-        }
+      if (initialData) {
+        setForm({
+          full_name: initialData.full_name || "",
+          username: initialData.username || "",
+          email: initialData.email || "", // Fallback untuk email
+          password: "", // Selalu dikosongkan saat mode edit
+          divisi: initialData.divisi || "", // Fallback untuk divisi
+        });
+      } else {
+        setForm(emptyForm);
+      }
     }
   }, [show, initialData]);
 
@@ -106,22 +77,36 @@ const UserFormModal = ({
               </Form.Label>
               <Form.Control
                 required
-                value={form.full_name}
+                value={form.full_name || ""}
                 onChange={(e) => handleChange("full_name", e.target.value)}
               />
             </Col>
-           <Col md={6}>
+
+            <Col md={6}>
               <Form.Label>
                 Username <span className="text-danger">*</span>
               </Form.Label>
               <Form.Control
                 required
                 type="text"
-                value={form.username}
+                value={form.username || ""}
                 onChange={(e) => handleChange("username", e.target.value)}
               />
             </Col>
-             {!isEditMode && (
+
+            <Col md={6}>
+              <Form.Label>
+                Email <span className="text-danger">*</span>
+              </Form.Label>
+              <Form.Control
+                required
+                type="email"
+                value={form.email || ""}
+                onChange={(e) => handleChange("email", e.target.value)}
+              />
+            </Col>
+
+            {!isEditMode && (
               <Col md={6}>
                 <Form.Label>
                   Password <span className="text-danger">*</span>
@@ -130,7 +115,7 @@ const UserFormModal = ({
                   <Form.Control
                     required
                     type={showPassword ? "text" : "password"}
-                    value={form.password}
+                    value={form.password || ""}
                     onChange={(e) => handleChange("password", e.target.value)}
                     style={{ paddingRight: "40px" }}
                   />
@@ -150,30 +135,11 @@ const UserFormModal = ({
                 </div>
               </Col>
             )}
-            <Col md={6}>
-              <Form.Label>Role</Form.Label>
-              {isAdmin ? (
-                <Form.Select
-                  value={form.role}
-                  onChange={(e) => handleChange("role", e.target.value as UserRole)}
-                >
-                  {roleOptions.map((roleName) => (
-                    <option key={roleName} value={roleName}>{roleName}</option>
-                  ))}
-                </Form.Select>
-              ) : (
-                <Form.Control value="Staff" disabled readOnly />
-              )}
-              {!isAdmin && (
-                <Form.Text className="text-secondary">
-                  Akun yang Anda buat otomatis berperan sebagai Staff.
-                </Form.Text>
-              )}
-            </Col>
+
             <Col md={6}>
               <Form.Label>Divisi</Form.Label>
               <Form.Control
-                value={form.divisi}
+                value={form.divisi || ""}
                 onChange={(e) => handleChange("divisi", e.target.value)}
               />
             </Col>

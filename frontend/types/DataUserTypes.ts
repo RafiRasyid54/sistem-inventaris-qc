@@ -1,12 +1,10 @@
-// Sesuaikan dengan nama role di Seeder database (Kapital)
-export type UserRole = "Pegawai" | "Staff" | "Admin" | "Team Leader" | "Super Admin";
+// Tipe UserRole dihapus karena sistem RBAC sudah tidak digunakan
 
 export interface UserItemType {
   id: string;
   full_name: string;
   username: string;
-  email: string | null; // <--- TAMBAHKAN BARIS INI
-  role: UserRole;
+  email: string | null;
   divisi: string | null;
   avatar_path: string | null;
   is_active: boolean;
@@ -18,9 +16,9 @@ export interface UserItemType {
 export interface UserFormValues {
   full_name: string;
   username: string;
-  password: string; // wajib diisi saat Tambah, kosong berarti tidak diganti saat Edit
-  role: UserRole;
-  divisi: string;
+  password?: string; // wajib diisi saat Tambah, opsional/kosong berarti tidak diganti saat Edit
+  email?: string;
+  divisi?: string;
 }
 
 export interface ResetPasswordValues {

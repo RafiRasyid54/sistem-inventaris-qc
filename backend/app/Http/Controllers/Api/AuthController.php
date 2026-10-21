@@ -29,20 +29,10 @@ class AuthController extends Controller
 
         $token = $user->createToken('auth_token')->plainTextToken;
 
-        // Ambil relasi roles dan permissions dengan pengaman method_exists
-        if (method_exists($user, 'load')) {
-            $user->load('roles');
-        }
-        
-        $roles = method_exists($user, 'getRoleNames') ? $user->getRoleNames() : [];
-        $allPermissions = method_exists($user, 'getAllPermissions') ? $user->getAllPermissions()->pluck('name') : [];
-
         return response()->json([
             'user' => $user,
             'token' => $token,
             'must_change_password' => $user->must_change_password ?? false,
-            'roles' => $roles,
-            'all_permissions' => $allPermissions,
         ]);
     }
 

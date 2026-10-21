@@ -5,14 +5,15 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
-use Illuminate\Support\Str;
 
 class UserController extends Controller
 {
-    // Kolom yang aman ditampilkan (password tidak pernah ikut)
+    // Kolom yang aman ditampilkan (password tidak pernah ikut, role dihapus)
     private const SAFE_COLUMNS = [
-        'id', 'full_name', 'username', 'email', 'role', 'divisi', 'no_hp', 'avatar_path', 'is_active', 'must_change_password', 'created_at',
+        'id', 'full_name', 'username', 'email', 'divisi', 'no_hp', 'avatar_path', 'is_active', 'must_change_password', 'created_at',
     ];
 
     public function index()
@@ -62,6 +63,8 @@ class UserController extends Controller
 
         if (empty($data['password'])) {
             unset($data['password']);
+        } else {
+            $data['password'] = Hash::make($data['password']);
         }
 
         $user->update($data);
@@ -84,14 +87,14 @@ class UserController extends Controller
             return response()->json(['errors' => $validator->errors()], 422);
         }
 
-        if (! \Illuminate\Support\Facades\Hash::check($request->password_lama, $user->password)) {
+        if (! Hash::check($request->password_lama, $user->password)) {
             return response()->json([
                 'errors' => ['password_lama' => ['Password lama tidak sesuai.']],
             ], 422);
         }
 
         $user->update([
-            'password' => $request->password_baru,
+            'password' => Hash::make($request->password_baru),
             'must_change_password' => false,
         ]);
 
@@ -100,33 +103,25 @@ class UserController extends Controller
 
     public function store(Request $request)
     {
-        // Pengecekan hasRole telah dihapus karena sudah diatasi oleh routes middleware
-
-        $rules = [
+        $validator = Validator::make($request->all(), [
             'full_name' => 'required|string|max:255',
             'username' => 'required|string|max:255|unique:users,username',
             'email' => 'nullable|email|unique:users,email',
             'password' => 'required|string|min:6',
             'divisi' => 'nullable|string|max:255',
             'no_hp' => 'nullable|string|max:20',
-            'role' => 'required|exists:roles,name',
-        ];
-
-        $validator = Validator::make($request->all(), $rules);
+        ]);
 
         if ($validator->fails()) {
             return response()->json(['errors' => $validator->errors()], 422);
         }
 
         $data = $validator->validated();
-
+        $data['password'] = Hash::make($data['password']);
         $data['must_change_password'] = false;
         $data['is_active'] = true;
 
         $user = User::create($data);
-
-        // Tempelkan role Spatie ke user yang baru dibuat
-        $user->assignRole($data['role']);
 
         return response()->json($user->only(self::SAFE_COLUMNS), 201);
     }
@@ -140,16 +135,11 @@ class UserController extends Controller
             return response()->json(['message' => 'User tidak ditemukan'], 404);
         }
 
-        if ($targetUser->hasRole('Super Admin') && !auth()->user()->hasRole('Super Admin')) {
-            return response()->json(['message' => 'Anda tidak memiliki izin untuk mengubah akun ini.'], 403);
-        }
-
         $validator = Validator::make($request->all(), [
             'full_name' => 'sometimes|required|string|max:255',
             'username' => 'sometimes|required|string|max:255|unique:users,username,' . $targetUser->id,
             'email' => 'sometimes|nullable|email|unique:users,email,' . $targetUser->id,
             'password' => 'nullable|string|min:6',
-            'role' => 'sometimes|required|exists:roles,name',
             'divisi' => 'sometimes|nullable|string|max:255',
             'no_hp' => 'sometimes|nullable|string|max:20',
         ]);
@@ -162,14 +152,11 @@ class UserController extends Controller
 
         if (empty($data['password'])) {
             unset($data['password']);
+        } else {
+            $data['password'] = Hash::make($data['password']);
         }
 
         $targetUser->update($data);
-
-        // Jika ada perubahan role, sinkronisasikan dengan tabel Spatie
-        if (isset($data['role'])) {
-            $targetUser->syncRoles([$data['role']]);
-        }
 
         return response()->json($targetUser->only(self::SAFE_COLUMNS));
     }
@@ -180,10 +167,6 @@ class UserController extends Controller
 
         if (! $user) {
             return response()->json(['message' => 'User tidak ditemukan'], 404);
-        }
-
-        if ($user->hasRole('Super Admin') && !auth()->user()->hasRole('Super Admin')) {
-            return response()->json(['message' => 'Anda tidak memiliki izin untuk mengubah akun ini.'], 403);
         }
 
         $user->tokens()->delete();
@@ -200,10 +183,6 @@ class UserController extends Controller
             return response()->json(['message' => 'User tidak ditemukan'], 404);
         }
 
-        if ($user->hasRole('Super Admin') && !auth()->user()->hasRole('Super Admin')) {
-            return response()->json(['message' => 'Anda tidak memiliki izin untuk mengubah akun ini.'], 403);
-        }
-
         $user->update(['is_active' => true]);
 
         return response()->json(['message' => 'User berhasil diaktifkan']);
@@ -217,10 +196,6 @@ class UserController extends Controller
             return response()->json(['message' => 'User tidak ditemukan'], 404);
         }
 
-        if ($targetUser->hasRole('Super Admin') && !auth()->user()->hasRole('Super Admin')) {
-            return response()->json(['message' => 'Anda tidak memiliki izin untuk mengubah akun ini.'], 403);
-        }
-
         $validator = Validator::make($request->all(), [
             'password_baru' => 'required|string|min:6|confirmed',
         ]);
@@ -230,7 +205,7 @@ class UserController extends Controller
         }
 
         $targetUser->update([
-            'password' => $request->password_baru,
+            'password' => Hash::make($request->password_baru),
         ]);
 
         return response()->json(['message' => 'Password user berhasil direset']);
@@ -245,7 +220,7 @@ class UserController extends Controller
         $user = $request->user();
 
         if ($user->avatar_path) {
-            \Illuminate\Support\Facades\Storage::disk('public')->delete($user->avatar_path);
+            Storage::disk('public')->delete($user->avatar_path);
         }
 
         $path = $request->file('avatar')->store('avatars', 'public');
@@ -254,7 +229,7 @@ class UserController extends Controller
 
         return response()->json([
             'avatar_path' => $path,
-            'avatar_url' => \Illuminate\Support\Facades\Storage::disk('public')->url($path),
+            'avatar_url' => Storage::disk('public')->url($path),
         ]);
     }
 }

@@ -30,7 +30,6 @@ import {
   activateUser,
   resetUserPassword,
 } from "services/userService";
-import api from "lib/api";
 
 import TanstackTable from "components/table/TanstackTable";
 import Flex from "components/common/Flex";
@@ -41,38 +40,25 @@ import DeleteConfirmModal from "components/datauser/DeleteConfirmModal";
 import ActivateConfirmModal from "components/datauser/ActivateConfirmModal";
 import ResetPasswordModal from "components/datauser/ResetPasswordModal";
 
-// Gaya halaman Manajemen User (tema PLN). Semua selector diawali .pln-du.
 const CSS = `
 .pln-du{--navy:#06355f;--blue:#0b6bb8;--yellow:#ffc20e;--line:#dbe5f1;--mute:#62708a}
 .pln-du .btn-yellow{background:var(--yellow);border:0;color:var(--navy);font-weight:700}
 .pln-du .btn-yellow:hover,.pln-du .btn-yellow:focus{background:var(--yellow);color:var(--navy);filter:brightness(1.06)}
 .pln-du .du-head h1{font-weight:800;color:var(--navy)}
 .pln-du .du-head p{max-width:640px}
-
-/* pesan */
 .pln-du .du-msg{border:0;border-radius:12px;display:flex;align-items:center;gap:10px;font-size:.88rem}
-
-/* kartu tabel */
 .pln-du .du-card{border-radius:16px;border:1px solid var(--line);border-top:4px solid var(--blue);overflow:hidden}
 .pln-du .du-card .datatools-toolbar{padding:14px 18px;background:#fff}
 .pln-du .du-card .form-control:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(11,107,184,.16)}
 .pln-du .du-info b{color:var(--navy)}
-
-/* switch tampilkan yang dihapus */
 .pln-du .du-switch .form-check-input:checked{background-color:var(--blue);border-color:var(--blue)}
 .pln-du .du-switch .form-check-input:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(11,107,184,.16)}
-
-/* tabel */
-.pln-du .du-card table thead th{background:#eef3f9;color:var(--navy);font-size:.74rem;font-weight:700;
-  text-transform:uppercase;letter-spacing:.02em;border-bottom:1px solid var(--line);white-space:nowrap;padding:.75rem .9rem}
+.pln-du .du-card table thead th{background:#eef3f9;color:var(--navy);font-size:.74rem;font-weight:700;text-transform:uppercase;letter-spacing:.02em;border-bottom:1px solid var(--line);white-space:nowrap;padding:.75rem .9rem}
 .pln-du .du-card table tbody td{padding:.8rem .9rem;font-size:.85rem;color:#14233b;vertical-align:middle}
 .pln-du .du-card table tbody tr:hover>*{background:#f6f9fc}
 .pln-du .du-card .page-item.active .page-link{background:var(--blue);border-color:var(--blue);color:#fff}
 .pln-du .du-card .page-link{color:var(--navy)}
-
-/* empty state */
-.pln-du .du-empty-icon{width:72px;height:72px;border-radius:50%;margin:0 auto;display:grid;place-items:center;
-  background:#e6f0fa;color:var(--blue)}
+.pln-du .du-empty-icon{width:72px;height:72px;border-radius:50%;margin:0 auto;display:grid;place-items:center;background:#e6f0fa;color:var(--blue)}
 .pln-du .du-empty.is-search .du-empty-icon{background:#fff8e1;color:#9a6a00}
 .pln-du .du-empty h5{font-weight:800;color:var(--navy)}
 `;
@@ -81,11 +67,6 @@ const DataUserManager = () => {
   const [users, setUsers] = useState<UserItemType[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
-  // RBAC dimatikan: semua pengguna dianggap boleh mengelola user.
-  const isAdmin = true;
-  const isSuperAdmin = true;
-  const [roleColorMap, setRoleColorMap] = useState<Record<string, string>>({});
 
   const [searchTerm, setSearchTerm] = useState("");
   const [showDeleted, setShowDeleted] = useState(false);
@@ -119,28 +100,6 @@ const DataUserManager = () => {
     loadUsers();
   }, []);
 
-  const loadRoleColors = () => {
-    api("/roles")
-      .then((res: any) => {
-        const data = res?.data || res || [];
-        const list = Array.isArray(data) ? data : [];
-        const map: Record<string, string> = {};
-        list.forEach((r: any) => { map[r.name] = r.color ?? "secondary"; });
-        setRoleColorMap(map);
-      })
-      .catch(() => setRoleColorMap({}));
-  };
-
-  useEffect(() => {
-    loadRoleColors();
-    const handleRolesUpdated = () => {
-      loadRoleColors();
-      loadUsers();
-    };
-    window.addEventListener("roles-updated", handleRolesUpdated);
-    return () => window.removeEventListener("roles-updated", handleRolesUpdated);
-  }, []);
-
   const showSuccess = (msg: string) => {
     setSuccessMessage(msg);
     setTimeout(() => setSuccessMessage(null), 4000);
@@ -149,8 +108,7 @@ const DataUserManager = () => {
   const filteredUsers = useMemo(() => {
     const keyword = searchTerm.trim().toLowerCase();
     return users
-      .filter((u) => isSuperAdmin || u.role !== "Super Admin") // Hanya Super Admin yang bisa melihat user Super Admin
-      .filter((u) => showDeleted || u.is_active) // Sembunyikan yang sudah "dihapus" kecuali toggle dinyalakan
+      .filter((u) => showDeleted || u.is_active)
       .filter(
         (u) =>
           keyword === "" ||
@@ -159,11 +117,9 @@ const DataUserManager = () => {
           (u.email ?? "").toLowerCase().includes(keyword)
       )
       .sort((a, b) => {
-        // Yang aktif selalu di atas, nonaktif selalu di bawah
         if (a.is_active !== b.is_active) {
           return a.is_active ? -1 : 1;
         }
-        // Di dalam grup yang sama, urutkan abjad nama
         return a.full_name.localeCompare(b.full_name);
       });
   }, [users, searchTerm, showDeleted]);
@@ -200,11 +156,11 @@ const DataUserManager = () => {
     setFormError(null);
     try {
       if (activeUser) {
-        const updated = await updateUser(activeUser.id, values, isAdmin);
+        const updated = await updateUser(activeUser.id, values);
         setUsers((prev) => prev.map((u) => (u.id === updated.id ? updated : u)));
         showSuccess("User berhasil diperbarui.");
       } else {
-        const created = await createUser(values, isAdmin);
+        const created = await createUser(values);
         setUsers((prev) => [...prev, created]);
         showSuccess("User baru berhasil ditambahkan.");
       }
@@ -215,7 +171,6 @@ const DataUserManager = () => {
     }
   };
 
-  // Error aksi hapus/aktifkan ditampilkan sebagai alert di halaman (pengganti alert() bawaan browser)
   const handleConfirmDeactivate = async () => {
     if (!activeUser) return;
     try {
@@ -268,14 +223,12 @@ const DataUserManager = () => {
   const columns = useMemo(
     () =>
       getDataUserColumns({
-        isAdmin,
-        roleColorMap,
         onEdit: openEditModal,
         onDeactivate: openDeactivateModal,
         onActivate: openActivateModal,
         onResetPassword: openResetModal,
       }),
-    [roleColorMap]
+    []
   );
 
   return (
@@ -411,7 +364,6 @@ const DataUserManager = () => {
         }}
         onSubmit={handleFormSubmit}
         initialData={activeUser}
-        isAdmin={isAdmin}
         error={formError}
       />
 

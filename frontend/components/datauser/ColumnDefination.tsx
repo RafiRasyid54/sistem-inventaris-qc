@@ -1,110 +1,82 @@
-"use client";
 import { ColumnDef } from "@tanstack/react-table";
-import { Dropdown, Badge } from "react-bootstrap";
-import { IconDotsVertical } from "@tabler/icons-react";
-
+import { Badge, Dropdown } from "react-bootstrap";
+import { IconDotsVertical, IconPencil, IconTrash, IconCheck, IconKey } from "@tabler/icons-react";
 import { UserItemType } from "types/DataUserTypes";
-import ActionMenu from "components/common/ActionMenu";
 
+// Hapus isAdmin dan roleColorMap
 interface ColumnHandlers {
-  isAdmin: boolean;
-  roleColorMap: Record<string, string>;
-  onEdit: (item: UserItemType) => void;
-  onDeactivate: (item: UserItemType) => void;
-  onActivate: (item: UserItemType) => void;
-  onResetPassword: (item: UserItemType) => void;
+  onEdit: (user: UserItemType) => void;
+  onDeactivate: (user: UserItemType) => void;
+  onActivate: (user: UserItemType) => void;
+  onResetPassword: (user: UserItemType) => void;
 }
 
-// Peta warna role diambil dari database (lihat DataUserManager), bukan hardcode di sini.
-// Kalau data role belum ter-load (misal masih loading), fallback ke abu-abu.
-const getRoleBadgeStyle = (role: string, roleColorMap: Record<string, string>) => {
-  const color = roleColorMap[role] ?? "secondary";
-  return { bg: `${color}-subtle`, text: `${color}-emphasis`, label: role };
-};
-
 export const getDataUserColumns = ({
-  isAdmin,
-  roleColorMap,
   onEdit,
   onDeactivate,
   onActivate,
   onResetPassword,
-}: ColumnHandlers): ColumnDef<UserItemType>[] => {
-  const baseColumns: ColumnDef<UserItemType>[] = [
-    {
-      accessorKey: "full_name",
-      header: "Nama Lengkap",
-    },
-    {
-      accessorKey: "username",
-      header: "Username",
-    },
-    {
-      accessorKey: "role",
-      header: "Role",
-      cell: ({ row }) => {
-        const badgeStyle = getRoleBadgeStyle(row.original.role, roleColorMap);
-        return (
-          <Badge bg={badgeStyle.bg} text={badgeStyle.text}>
-            {badgeStyle.label}
-          </Badge>
-        );
-      },
-    },
-    {
-      accessorKey: "divisi",
-      header: "Divisi",
-      cell: ({ row }) => row.original.divisi || "-",
-    },
-    {
-      accessorKey: "is_active",
-      header: "Status",
-      cell: ({ row }) => (
-        <Badge
-          bg={row.original.is_active ? "success-subtle" : "secondary-subtle"}
-          text={row.original.is_active ? "success-emphasis" : "secondary-emphasis"}
-        >
-          {row.original.is_active ? "Aktif" : "Nonaktif"}
+}: ColumnHandlers): ColumnDef<UserItemType>[] => [
+  {
+    accessorKey: "full_name",
+    header: "Nama Lengkap",
+    cell: (info) => <span className="fw-semibold text-dark">{info.getValue() as string}</span>,
+  },
+  {
+    accessorKey: "username",
+    header: "Username",
+  },
+  {
+    accessorKey: "email",
+    header: "Email",
+    cell: (info) => info.getValue() ? info.getValue() as string : <span className="text-muted">-</span>,
+  },
+  {
+    accessorKey: "divisi",
+    header: "Divisi",
+    cell: (info) => info.getValue() ? info.getValue() as string : <span className="text-muted">-</span>,
+  },
+  {
+    accessorKey: "is_active",
+    header: "Status",
+    cell: (info) => {
+      const isActive = info.getValue() as boolean;
+      return (
+        <Badge bg={isActive ? "success" : "danger"} className="rounded-pill">
+          {isActive ? "Aktif" : "Nonaktif"}
         </Badge>
-      ),
+      );
     },
-  ];
-
-  // Kolom "Aksi" cuma ditambahkan kalau yang login Admin -- staff tidak melihat kolom ini sama sekali
-  if (!isAdmin) {
-    return baseColumns;
-  }
-
-  return [
-    ...baseColumns,
-    {
-      id: "aksi",
-      header: "Aksi",
-      cell: ({ row }) => {
-        const target = row.original;
-
-        return (
-          <ActionMenu
-            toggleButton={<IconDotsVertical size={20} />}
-            className="btn btn-ghost btn-icon btn-sm rounded-circle"
-            drop="start"
-            align="start"
-          >
-            <Dropdown.Item onClick={() => onEdit(target)}>Edit</Dropdown.Item>
-            <Dropdown.Item onClick={() => onResetPassword(target)}>Reset Password</Dropdown.Item>
-            {target.is_active && (
-              <Dropdown.Item className="text-danger" onClick={() => onDeactivate(target)}>
-                Hapus
+  },
+  {
+    id: "actions",
+    header: "Aksi",
+    cell: ({ row }) => {
+      const user = row.original;
+      return (
+        <Dropdown align="end">
+          <Dropdown.Toggle variant="light" size="sm" className="btn-icon rounded-circle no-caret">
+            <IconDotsVertical size={16} />
+          </Dropdown.Toggle>
+          <Dropdown.Menu>
+            <Dropdown.Item onClick={() => onEdit(user)} className="d-flex align-items-center gap-2">
+              <IconPencil size={16} className="text-primary" /> Edit
+            </Dropdown.Item>
+            <Dropdown.Item onClick={() => onResetPassword(user)} className="d-flex align-items-center gap-2">
+              <IconKey size={16} className="text-warning" /> Reset Password
+            </Dropdown.Item>
+            {user.is_active ? (
+              <Dropdown.Item onClick={() => onDeactivate(user)} className="d-flex align-items-center gap-2 text-danger">
+                <IconTrash size={16} /> Nonaktifkan
+              </Dropdown.Item>
+            ) : (
+              <Dropdown.Item onClick={() => onActivate(user)} className="d-flex align-items-center gap-2 text-success">
+                <IconCheck size={16} /> Aktifkan
               </Dropdown.Item>
             )}
-            {!target.is_active && (
-              <Dropdown.Item className="text-success" onClick={() => onActivate(target)}>
-                Pulihkan
-              </Dropdown.Item>
-            )}
-          </ActionMenu>
-        );
-      },
+          </Dropdown.Menu>
+        </Dropdown>
+      );
     },
-  ];
-};
+  },
+];
