@@ -1,6 +1,7 @@
 "use client";
 import { ColumnDef } from "@tanstack/react-table";
 import { Badge } from "react-bootstrap";
+import { IconFileTypePdf } from "@tabler/icons-react";
 import { RiwayatKalibrasiType } from "types/RiwayatTypes";
 import { getStatusKalibrasi } from "services/riwayatKalibrasiService";
 
@@ -68,6 +69,26 @@ export const getRiwayatKalibrasiColumns =
     {
       accessorKey: "pelaksana",
       header: "Pelaksana",
+    },
+    {
+      id: "sertifikat",
+      header: "Sertifikat",
+      enableSorting: false,
+      cell: ({ row }) => {
+        const url = row.original.fileSertifikatUrl;
+        return url ? (
+          <a
+            href={url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="btn btn-sm btn-outline-primary d-inline-flex align-items-center gap-1"
+          >
+            <IconFileTypePdf size={14} /> Buka
+          </a>
+        ) : (
+          <span className="text-secondary">-</span>
+        );
+      },
     },
     {
       accessorKey: "keterangan",

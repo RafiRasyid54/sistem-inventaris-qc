@@ -20,6 +20,12 @@ use App\Http\Controllers\Api\LaporanKerusakanController;
 
 Route::post('/login', [AuthController::class, 'login']);
 
+// Sertifikat kalibrasi (PDF privat). Dibuka lewat link bertanda tangan
+// (temporary signed URL), jadi tidak butuh token Sanctum.
+Route::get('/riwayat-kalibrasi/{id}/sertifikat', [RiwayatKalibrasiController::class, 'sertifikat'])
+    ->name('kalibrasi.sertifikat')
+    ->middleware('signed');
+
 
 // ==========================================
 // 2. ROUTE TEST AUTH SANCTUM
@@ -77,13 +83,13 @@ Route::middleware('auth:sanctum')->group(function () {
     // C. MODUL ALAT UKUR & KALIBRASI
     // ==========================================
     Route::apiResource('alat-ukur', AlatUkurController::class);
-    
+
     // Route utama untuk riwayat kalibrasi
     Route::apiResource('riwayat-kalibrasi', RiwayatKalibrasiController::class);
 
     // Riwayat kalibrasi berdasarkan alat ukur
     Route::get('/alat-ukur/{alat_ukur_id}/riwayat-kalibrasi', [RiwayatKalibrasiController::class, 'getByAlatUkur']);
-    
+
     // Riwayat peminjaman berdasarkan alat ukur
     Route::get('/alat-ukur/{alat_ukur_id}/riwayat-peminjaman', [PeminjamanController::class, 'getByAlatUkur']);
 

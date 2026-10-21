@@ -37,7 +37,7 @@ class LaporanKerusakanController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'tanggal' => 'required|date',
-            'alat_ukur_id' => 'required|uuid|exists:alat_ukur,id', 
+            'alat_ukur_id' => 'required|uuid|exists:alat_ukur,id',
             'peminjaman_id' => 'nullable|uuid|exists:peminjaman,id',
             'jumlah' => 'required|integer|min:1',
             'keterangan' => 'nullable|string',
@@ -54,7 +54,14 @@ class LaporanKerusakanController extends Controller
         try {
             $laporan = DB::transaction(function () use ($data) {
                 $data['id'] = (string) Str::uuid();
-                return LaporanKerusakanAlatUkur::create($data); 
+                $laporan = LaporanKerusakanAlatUkur::create($data);
+
+                // BARU: alat yang dilaporkan rusak otomatis tidak bisa dipinjam
+                AlatUkur::where('id', $data['alat_ukur_id'])->update([
+                    'kondisi' => $data['status'] === 'rusak_permanen' ? 'RT' : 'RPP',
+                ]);
+
+                return $laporan;
             });
         } catch (\RuntimeException $e) {
             return response()->json(['message' => $e->getMessage()], 422);
@@ -97,7 +104,7 @@ class LaporanKerusakanController extends Controller
         return response()->json($laporan->load('alatUkur'));
     }
 
-    // DELETE 
+    // DELETE
     public function destroy(string $id)
     {
         $laporan = LaporanKerusakanAlatUkur::find($id);
@@ -131,47 +138,32 @@ class LaporanKerusakanController extends Controller
 
         $validator = Validator::make($request->all(), [
             'catatan_perbaikan' => 'nullable|string',
-            'tingkat_kerusakan' => 'nullable|in:ringan,berat',
         ]);
 
         if ($validator->fails()) {
             return response()->json(['errors' => $validator->errors()], 422);
         }
 
-        $validatedRepair = $validator->validated();
-        $catatanPerbaikan = $validatedRepair['catatan_perbaikan'] ?? null;
-        $tingkatKerusakan = $validatedRepair['tingkat_kerusakan'] ?? null;
+        $catatanPerbaikan = $validator->validated()['catatan_perbaikan'] ?? null;
 
-        $laporan = DB::transaction(function () use ($laporan, $catatanPerbaikan, $tingkatKerusakan) {
-            
+        $laporan = DB::transaction(function () use ($laporan, $catatanPerbaikan) {
+
             $alatUkur = AlatUkur::find($laporan->alat_ukur_id);
 
             if ($alatUkur) {
                 // Set flag wajib kalibrasi (tanpa menambah stok)
-                $alatUkur->kondisi = 'Baik'; 
-                $alatUkur->tanggal_kalibrasi_terakhir = null; 
+                $alatUkur->kondisi = 'Baik';
+                $alatUkur->tanggal_kalibrasi_terakhir = null;
                 $alatUkur->tanggal_kalibrasi_selanjutnya = null;
                 $alatUkur->keterangan = "Baru diperbaiki (" . now()->format('Y-m-d') . "). WAJIB KALIBRASI ULANG sebelum dipinjam. Catatan: " . $catatanPerbaikan;
-                
-                $alatUkur->save();
-            }
 
-            $perbaikanKe = null;
-            if ($tingkatKerusakan !== 'ringan') {
-                $perbaikanKe = LaporanKerusakanAlatUkur::where('alat_ukur_id', $laporan->alat_ukur_id)
-                    ->where('status', 'selesai_diperbaiki')
-                    ->where(function ($q) {
-                        $q->whereNull('tingkat_kerusakan')->orWhere('tingkat_kerusakan', 'berat');
-                    })
-                    ->count() + 1;
+                $alatUkur->save();
             }
 
             $laporan->update([
                 'status' => 'selesai_diperbaiki',
                 'tanggal_diperbaiki' => now(),
                 'catatan_perbaikan' => $catatanPerbaikan,
-                'tingkat_kerusakan' => $tingkatKerusakan,
-                'perbaikan_ke' => $perbaikanKe,
             ]);
 
             return $laporan;
@@ -198,7 +190,12 @@ class LaporanKerusakanController extends Controller
             ], 422);
         }
 
-        $laporan->update(['status' => 'rusak_permanen']);
+        DB::transaction(function () use ($laporan) {
+            $laporan->update(['status' => 'rusak_permanen']);
+
+            // BARU: kondisi alat ikut menjadi Rusak Total
+            AlatUkur::where('id', $laporan->alat_ukur_id)->update(['kondisi' => 'RT']);
+        });
 
         return response()->json([
             'message' => 'Laporan berhasil ditandai sebagai Rusak Permanen.',

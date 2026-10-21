@@ -25,6 +25,7 @@ export interface KalibrasiFormValues {
   kondisi: "Baik" | "RPP" | "RT";
   pelaksanaKalibrasi: string;
   keterangan: string;
+  fileSertifikat: File | null;
 }
 
 interface KalibrasiFormModalProps {
@@ -37,6 +38,8 @@ interface KalibrasiFormModalProps {
   initialScanCode?: string | null;
 }
 
+const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB
+
 const emptyForm = (): KalibrasiFormValues => ({
   alatUkurId: "",
   tanggalKalibrasi: new Date().toISOString().slice(0, 10),
@@ -44,6 +47,7 @@ const emptyForm = (): KalibrasiFormValues => ({
   kondisi: "Baik",
   pelaksanaKalibrasi: "",
   keterangan: "",
+  fileSertifikat: null,
 });
 
 // Gaya form bertema PLN. Selector diawali .pln-form / .pln-modal-backdrop.
@@ -103,6 +107,10 @@ const KalibrasiFormModal = ({
   const [alatList, setAlatList] = useState<AlatUkurOption[]>([]);
   const [loadingAlat, setLoadingAlat] = useState(false);
 
+  // ---- Upload sertifikat ----
+  const [fileError, setFileError] = useState<string | null>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
+
   // ---- Scan barcode ----
   const [mode, setMode] = useState<"scan" | "manual">("scan");
   const [scanValue, setScanValue] = useState("");
@@ -119,6 +127,8 @@ const KalibrasiFormModal = ({
       setMode("scan");
       setScanValue("");
       setScanError(null);
+      setFileError(null);
+      if (fileRef.current) fileRef.current.value = "";
       initialScanDone.current = false;
       setLoadingAlat(true);
       apiFetch<{ status: string; data: AlatUkurOption[] }>("/alat-ukur")
@@ -192,6 +202,26 @@ const KalibrasiFormModal = ({
     setForm((p) => ({ ...p, alatUkurId: "" }));
     setScanError(null);
     setTimeout(() => scanRef.current?.focus(), 0);
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0] ?? null;
+    setFileError(null);
+
+    if (file) {
+      const isPdf =
+        file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf");
+      if (!isPdf) {
+        setFileError("File harus berformat PDF.");
+      } else if (file.size > MAX_FILE_SIZE) {
+        setFileError("Ukuran file maksimal 5 MB.");
+      } else {
+        setForm((p) => ({ ...p, fileSertifikat: file }));
+        return;
+      }
+      e.target.value = "";
+    }
+    setForm((p) => ({ ...p, fileSertifikat: null }));
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -381,6 +411,22 @@ const KalibrasiFormModal = ({
                   onChange={(e) => setForm((p) => ({ ...p, pelaksanaKalibrasi: e.target.value }))}
                   disabled={submitting}
                 />
+              </Col>
+            </Row>
+
+            <div className="pf-sec">Sertifikat kalibrasi</div>
+            <Row className="g-3">
+              <Col md={12}>
+                <Form.Label>File Sertifikat (PDF)</Form.Label>
+                <Form.Control
+                  ref={fileRef}
+                  type="file"
+                  accept="application/pdf,.pdf"
+                  onChange={handleFileChange}
+                  disabled={submitting}
+                />
+                {fileError && <div className="pf-scan-err" role="alert">{fileError}</div>}
+                <div className="pf-hint">Opsional. Format PDF, maksimal 5 MB.</div>
               </Col>
             </Row>
 

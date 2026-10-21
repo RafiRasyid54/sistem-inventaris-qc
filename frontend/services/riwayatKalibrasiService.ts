@@ -30,12 +30,12 @@ function mapKalibrasiFromApi(
     kondisi: item.kondisi,
     pelaksana: item.pelaksana_kalibrasi ?? "-",
     keterangan: item.keterangan ?? "-",
+    fileSertifikatUrl: item.file_sertifikat_url ?? null,
   };
 }
 
 /**
  * Ambil semua riwayat kalibrasi (lintas alat).
- * Butuh RiwayatKalibrasiController@index (lihat catatan di atas).
  */
 export async function getRiwayatKalibrasi(): Promise<RiwayatKalibrasiType[]> {
   const response: any = await apiFetch("/riwayat-kalibrasi");
@@ -57,21 +57,34 @@ export interface CreateKalibrasiPayload {
   kondisi: "Baik" | "RPP" | "RT";
   pelaksanaKalibrasi?: string;
   keterangan?: string;
+  fileSertifikat?: File;
 }
 
 export async function createRiwayatKalibrasi(
   payload: CreateKalibrasiPayload
 ): Promise<void> {
+  // Pakai FormData karena ada file. Jangan set header Content-Type manual,
+  // browser akan mengisi boundary multipart-nya sendiri.
+  const fd = new FormData();
+  fd.append("alat_ukur_id", payload.alatUkurId);
+  fd.append("tanggal_kalibrasi", payload.tanggalKalibrasi);
+  if (payload.tanggalJatuhTempo) {
+    fd.append("tanggal_jatuh_tempo", payload.tanggalJatuhTempo);
+  }
+  fd.append("kondisi", payload.kondisi);
+  if (payload.pelaksanaKalibrasi) {
+    fd.append("pelaksana_kalibrasi", payload.pelaksanaKalibrasi);
+  }
+  if (payload.keterangan) {
+    fd.append("keterangan", payload.keterangan);
+  }
+  if (payload.fileSertifikat) {
+    fd.append("file_sertifikat", payload.fileSertifikat);
+  }
+
   await apiFetch("/riwayat-kalibrasi", {
     method: "POST",
-    body: JSON.stringify({
-      alat_ukur_id: payload.alatUkurId,
-      tanggal_kalibrasi: payload.tanggalKalibrasi,
-      tanggal_jatuh_tempo: payload.tanggalJatuhTempo || null,
-      kondisi: payload.kondisi,
-      pelaksana_kalibrasi: payload.pelaksanaKalibrasi || null,
-      keterangan: payload.keterangan || null,
-    }),
+    body: fd,
   });
 }
 

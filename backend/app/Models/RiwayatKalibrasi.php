@@ -4,34 +4,38 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\URL;
 
 class RiwayatKalibrasi extends Model
 {
     use HasFactory;
 
-    // 1. Tentukan nama tabel secara eksplisit
     protected $table = 'riwayat_kalibrasi';
 
-    // 2. Kolom apa saja yang boleh diisi datanya (sesuai Controller tadi)
     protected $fillable = [
         'alat_ukur_id',
         'tanggal_kalibrasi',
         'tanggal_jatuh_tempo',
-        'kondisi', // Baik, RPP, RT
+        'kondisi',
         'pelaksana_kalibrasi',
         'keterangan',
+        'file_sertifikat',
     ];
 
-    // 3. Pastikan format tanggal dibaca sebagai tipe Date oleh sistem
-    protected $casts = [
-        'tanggal_kalibrasi' => 'date',
-        'tanggal_jatuh_tempo' => 'date',
-    ];
+    protected $appends = ['file_sertifikat_url'];
 
-    /**
-     * 4. Relasi ke Alat Ukur
-     * Artinya: Setiap 1 baris riwayat kalibrasi ini, adalah milik 1 Alat Ukur.
-     */
+    // Link bertanda tangan, berlaku 60 menit sejak data dimuat.
+    public function getFileSertifikatUrlAttribute()
+    {
+        return $this->file_sertifikat
+            ? URL::temporarySignedRoute(
+                'kalibrasi.sertifikat',
+                now()->addMinutes(60),
+                ['id' => $this->id]
+            )
+            : null;
+    }
+
     public function alatUkur()
     {
         return $this->belongsTo(AlatUkur::class, 'alat_ukur_id');

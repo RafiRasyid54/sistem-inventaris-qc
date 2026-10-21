@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Peminjaman;
 use App\Models\AlatUkur;
+use App\Models\LaporanKerusakanAlatUkur;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Carbon\Carbon;
@@ -20,7 +21,7 @@ class PeminjamanController extends Controller
         $data = Peminjaman::with(['alatUkur', 'peminta', 'pekerjaan', 'dicatatOleh'])
             ->orderBy('tanggal_pinjam', 'desc')
             ->get();
-        
+
         return response()->json([
             'status' => 'success',
             'data' => $data
@@ -53,9 +54,9 @@ class PeminjamanController extends Controller
     {
         // 1. Validasi Input dari Frontend (Hasil Scan)
         $validator = Validator::make($request->all(), [
-            'kode_alat' => 'required|string|exists:alat_ukur,kode_alat', 
-            'peminta_id' => 'required|exists:peminta,id', 
-            'pekerjaan_id' => 'required|exists:pekerjaan,id', 
+            'kode_alat' => 'required|string|exists:alat_ukur,kode_alat',
+            'peminta_id' => 'required|exists:peminta,id',
+            'pekerjaan_id' => 'required|exists:pekerjaan,id',
             'keterangan' => 'nullable|string',
         ]);
 
@@ -89,14 +90,27 @@ class PeminjamanController extends Controller
             ], 400);
         }
 
+        // BARU: Alat rusak / sedang dalam perbaikan tidak boleh dipinjam
+        $kondisiRusak = in_array(strtoupper(trim((string) $alat->kondisi)), ['RPP', 'RT'], true);
+        $adaLaporanAktif = LaporanKerusakanAlatUkur::where('alat_ukur_id', $alat->id)
+            ->whereIn('status', ['bisa_diperbaiki', 'rusak_permanen'])
+            ->exists();
+
+        if ($kondisiRusak || $adaLaporanAktif) {
+            return response()->json([
+                'status' => 'error',
+                'message' => "Gagal: Alat '{$alat->nama_alat}' sedang rusak atau dalam perbaikan dan tidak bisa dipinjam."
+            ], 422);
+        }
+
         // 4. Eksekusi Simpan
         $peminjaman = Peminjaman::create([
             'alat_ukur_id' => $alat->id,
             'peminta_id' => $request->peminta_id,
             'pekerjaan_id' => $request->pekerjaan_id,
-            'dicatat_oleh' => $request->user('sanctum')?->id ?? null, 
+            'dicatat_oleh' => $request->user('sanctum')?->id ?? null,
             'tanggal_pinjam' => Carbon::now(),
-            'tanggal_kembali' => null, 
+            'tanggal_kembali' => null,
             'keterangan' => $request->keterangan,
         ]);
 
@@ -188,7 +202,7 @@ class PeminjamanController extends Controller
     public function getByAlatUkur($alat_ukur_id)
     {
         $riwayat = Peminjaman::with(['peminta'])
-            ->where('alat_ukur_id', $alat_ukur_id) 
+            ->where('alat_ukur_id', $alat_ukur_id)
             ->orderBy('created_at', 'desc')
             ->get();
 

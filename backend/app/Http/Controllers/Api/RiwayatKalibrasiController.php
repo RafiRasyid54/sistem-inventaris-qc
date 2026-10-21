@@ -4,162 +4,133 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\RiwayatKalibrasi;
-use App\Models\AlatUkur;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Storage;
 
 class RiwayatKalibrasiController extends Controller
 {
-    /**
-     * Menampilkan seluruh riwayat kalibrasi (semua alat ukur).
-     * Query opsional: ?search=...&status=...
-     */
+    private const DISK = 'local'; // privat, tidak bisa diakses lewat URL langsung
+    private const DIR  = 'sertifikat_kalibrasi';
+
     public function index(Request $request)
     {
-        $query = RiwayatKalibrasi::with('alatUkur')
-            ->orderBy('tanggal_kalibrasi', 'desc');
+        $query = RiwayatKalibrasi::with('alatUkur')->latest('tanggal_kalibrasi');
 
-        if ($request->filled('search')) {
-            $search = $request->search;
-            $query->where(function ($q) use ($search) {
-                $q->where('pelaksana_kalibrasi', 'like', "%{$search}%")
-                  ->orWhereHas('alatUkur', function ($a) use ($search) {
-                      $a->where('kode_alat', 'like', "%{$search}%")
-                        ->orWhere('nama_alat', 'like', "%{$search}%");
-                  });
-            });
+        if ($request->filled('alat_ukur_id')) {
+            $query->where('alat_ukur_id', $request->alat_ukur_id);
         }
-
-        if ($request->filled('status')) {
-            $query->where('kondisi', $request->status);
-        }
-
-        $data = $query->get()->map(function ($item) {
-            $item->status_jatuh_tempo = $this->hitungStatusJatuhTempo($item->tanggal_jatuh_tempo);
-            return $item;
-        });
 
         return response()->json([
-            'status' => 'success',
-            'data' => $data,
+            'success' => true,
+            'data'    => $query->get(),
         ]);
     }
 
-    /**
-     * Menampilkan semua riwayat kalibrasi dari satu alat ukur tertentu.
-     */
     public function getByAlatUkur($alat_ukur_id)
     {
-        $riwayat = RiwayatKalibrasi::where('alat_ukur_id', $alat_ukur_id)
-                    ->orderBy('tanggal_kalibrasi', 'desc')
-                    ->get();
+        $data = RiwayatKalibrasi::with('alatUkur')
+            ->where('alat_ukur_id', $alat_ukur_id)
+            ->latest('tanggal_kalibrasi')
+            ->get();
 
         return response()->json([
-            'status' => 'success',
-            'data' => $riwayat
+            'success' => true,
+            'data'    => $data,
         ]);
     }
 
-    /**
-     * Menyimpan data riwayat kalibrasi baru.
-     */
     public function store(Request $request)
     {
-        $validator = Validator::make($request->all(), [
-            'alat_ukur_id' => 'required|exists:alat_ukur,id',
-            'tanggal_kalibrasi' => 'required|date',
+        $validated = $request->validate([
+            'alat_ukur_id'        => 'required|exists:alat_ukur,id',
+            'tanggal_kalibrasi'   => 'required|date',
             'tanggal_jatuh_tempo' => 'nullable|date',
-            'kondisi' => 'required|in:Baik,RPP,RT',
-            'pelaksana_kalibrasi' => 'nullable|string',
-            'keterangan' => 'nullable|string',
+            'kondisi'             => 'required|in:Baik,RPP,RT',
+            'pelaksana_kalibrasi' => 'nullable|string|max:255',
+            'keterangan'          => 'nullable|string',
+            'file_sertifikat'     => 'nullable|file|mimes:pdf|max:5120', // maks 5 MB
         ]);
 
-        if ($validator->fails()) {
-            return response()->json(['errors' => $validator->errors()], 422);
+        if ($request->hasFile('file_sertifikat')) {
+            $validated['file_sertifikat'] = $request->file('file_sertifikat')
+                ->store(self::DIR, self::DISK);
         }
 
-        $riwayat = RiwayatKalibrasi::create($request->all());
-
-        // Update tanggal kalibrasi terakhir & kondisi di tabel master Alat Ukur
-        $alat = AlatUkur::find($request->alat_ukur_id);
-        $alat->update([
-            'tanggal_kalibrasi_terakhir' => $request->tanggal_kalibrasi,
-            'tanggal_kalibrasi_selanjutnya' => $request->tanggal_jatuh_tempo,
-            'kondisi' => $request->kondisi,
-            'keterangan' => $request->keterangan // Update keterangan master (misal: uncertainty)
-        ]);
+        $kalibrasi = RiwayatKalibrasi::create($validated);
 
         return response()->json([
-            'status' => 'success',
-            'message' => 'Riwayat kalibrasi berhasil ditambahkan dan master alat diperbarui.',
-            'data' => $riwayat
+            'success' => true,
+            'message' => 'Riwayat kalibrasi berhasil ditambahkan',
+            'data'    => $kalibrasi->load('alatUkur'),
         ], 201);
     }
 
-    /**
-     * Memperbarui riwayat kalibrasi tertentu.
-     */
+    // Untuk update dengan file dari frontend, kirim POST + field _method=PUT
+    // (PHP tidak membaca multipart pada request PUT asli).
     public function update(Request $request, $id)
     {
-        $riwayat = RiwayatKalibrasi::find($id);
+        $kalibrasi = RiwayatKalibrasi::findOrFail($id);
 
-        if (!$riwayat) {
-            return response()->json(['message' => 'Riwayat kalibrasi tidak ditemukan.'], 404);
-        }
-
-        $validator = Validator::make($request->all(), [
-            'tanggal_kalibrasi' => 'date',
+        $validated = $request->validate([
+            'alat_ukur_id'        => 'sometimes|required|exists:alat_ukur,id',
+            'tanggal_kalibrasi'   => 'sometimes|required|date',
             'tanggal_jatuh_tempo' => 'nullable|date',
-            'kondisi' => 'in:Baik,RPP,RT',
-            'pelaksana_kalibrasi' => 'nullable|string',
-            'keterangan' => 'nullable|string',
+            'kondisi'             => 'sometimes|required|in:Baik,RPP,RT',
+            'pelaksana_kalibrasi' => 'nullable|string|max:255',
+            'keterangan'          => 'nullable|string',
+            'file_sertifikat'     => 'nullable|file|mimes:pdf|max:5120',
         ]);
 
-        if ($validator->fails()) {
-            return response()->json(['errors' => $validator->errors()], 422);
+        if ($request->hasFile('file_sertifikat')) {
+            if ($kalibrasi->file_sertifikat && Storage::disk(self::DISK)->exists($kalibrasi->file_sertifikat)) {
+                Storage::disk(self::DISK)->delete($kalibrasi->file_sertifikat);
+            }
+            $validated['file_sertifikat'] = $request->file('file_sertifikat')
+                ->store(self::DIR, self::DISK);
         }
 
-        $riwayat->update($request->all());
+        $kalibrasi->update($validated);
 
         return response()->json([
-            'status' => 'success',
-            'message' => 'Riwayat kalibrasi berhasil diperbarui.',
-            'data' => $riwayat
+            'success' => true,
+            'message' => 'Riwayat kalibrasi berhasil diperbarui',
+            'data'    => $kalibrasi->load('alatUkur'),
         ]);
     }
 
-    /**
-     * Menghapus riwayat kalibrasi.
-     */
     public function destroy($id)
     {
-        $riwayat = RiwayatKalibrasi::find($id);
+        $kalibrasi = RiwayatKalibrasi::findOrFail($id);
 
-        if (!$riwayat) {
-            return response()->json(['message' => 'Riwayat kalibrasi tidak ditemukan.'], 404);
+        if ($kalibrasi->file_sertifikat && Storage::disk(self::DISK)->exists($kalibrasi->file_sertifikat)) {
+            Storage::disk(self::DISK)->delete($kalibrasi->file_sertifikat);
         }
 
-        $riwayat->delete();
+        $kalibrasi->delete();
 
         return response()->json([
-            'status' => 'success',
-            'message' => 'Riwayat kalibrasi berhasil dihapus.'
+            'success' => true,
+            'message' => 'Riwayat kalibrasi berhasil dihapus',
         ]);
     }
 
-    /**
-     * Menghitung status jatuh tempo dari tanggal_jatuh_tempo.
-     */
-    private function hitungStatusJatuhTempo($tanggal)
+    // Menampilkan PDF sertifikat. Diakses lewat link bertanda tangan (lihat model + route).
+    public function sertifikat($id)
     {
-        if (!$tanggal) {
-            return 'Tidak ada jadwal';
-        }
+        $kalibrasi = RiwayatKalibrasi::findOrFail($id);
 
-        $hari = today()->diffInDays($tanggal, false);
+        abort_unless(
+            $kalibrasi->file_sertifikat && Storage::disk(self::DISK)->exists($kalibrasi->file_sertifikat),
+            404,
+            'File sertifikat tidak ditemukan'
+        );
 
-        if ($hari < 0) return 'Lewat jatuh tempo';
-        if ($hari <= 30) return 'Mendekati jatuh tempo';
-        return 'Aman';
+        return response()->file(
+            Storage::disk(self::DISK)->path($kalibrasi->file_sertifikat),
+            [
+                'Content-Type'        => 'application/pdf',
+                'Content-Disposition' => 'inline; filename="sertifikat-kalibrasi-' . $kalibrasi->id . '.pdf"',
+            ]
+        );
     }
-} 
+}

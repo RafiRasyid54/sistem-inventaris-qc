@@ -184,27 +184,28 @@ const RiwayatKalibrasiManager = () => {
     );
 
   const handleSubmit = async (values: KalibrasiFormValues) => {
-    setSubmitting(true);
-    setFormError(null);
-    try {
-      await createRiwayatKalibrasi({
-        alatUkurId: values.alatUkurId,
-        tanggalKalibrasi: values.tanggalKalibrasi,
-        tanggalJatuhTempo: values.tanggalJatuhTempo || undefined,
-        kondisi: values.kondisi,
-        pelaksanaKalibrasi: values.pelaksanaKalibrasi || undefined,
-        keterangan: values.keterangan || undefined,
-      });
-      setFormModalOpen(false);
-      setSuccessMessage("Riwayat kalibrasi berhasil dicatat.");
-      setTimeout(() => setSuccessMessage(null), 4000);
-      await loadData();
-    } catch (err: any) {
-      setFormError(err?.message || "Gagal menyimpan riwayat kalibrasi.");
-    } finally {
-      setSubmitting(false);
-    }
-  };
+  setSubmitting(true);
+  setFormError(null);
+  try {
+    await createRiwayatKalibrasi({
+      alatUkurId: values.alatUkurId,
+      tanggalKalibrasi: values.tanggalKalibrasi,
+      tanggalJatuhTempo: values.tanggalJatuhTempo || undefined,
+      kondisi: values.kondisi,
+      pelaksanaKalibrasi: values.pelaksanaKalibrasi || undefined,
+      keterangan: values.keterangan || undefined,
+      fileSertifikat: values.fileSertifikat ?? undefined,
+    });
+    setFormModalOpen(false);
+    setSuccessMessage("Riwayat kalibrasi berhasil dicatat.");
+    setTimeout(() => setSuccessMessage(null), 4000);
+    await loadData();
+  } catch (err: any) {
+    setFormError(err?.message || "Gagal menyimpan riwayat kalibrasi.");
+  } finally {
+    setSubmitting(false);
+  }
+};
 
   return (
     <div className="riwayat-page riwayat-kalibrasi-page pln-rk">

@@ -77,6 +77,8 @@ export interface RiwayatKalibrasiApiResponse {
   kondisi: "Baik" | "RPP" | "RT";
   pelaksana_kalibrasi?: string | null;
   keterangan?: string | null;
+  file_sertifikat?: string | null;
+  file_sertifikat_url?: string | null;
   alat_ukur?: {
     id: string;
     kode_alat: string;
@@ -97,4 +99,5 @@ export interface RiwayatKalibrasiType {
   kondisi: "Baik" | "RPP" | "RT";
   pelaksana: string;
   keterangan: string;
+  fileSertifikatUrl: string | null;
 }
