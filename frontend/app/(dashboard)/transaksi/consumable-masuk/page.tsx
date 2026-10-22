@@ -2,7 +2,7 @@
 import { Metadata } from "next";
 
 // import custom components
-import ConsumableMasukManager from "components/ruangalat ukur/consumablemasuk/ConsumableMasukManager";
+import ConsumableMasukManager from "components/ruangalatukur/consumablemasuk/ConsumableMasukManager";
 
 export const metadata: Metadata = {
   title: "Consumable Masuk | Ruang Alatukur - Admin Panel",

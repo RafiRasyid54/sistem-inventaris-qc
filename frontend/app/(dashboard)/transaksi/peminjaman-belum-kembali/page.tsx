@@ -8,7 +8,7 @@ interface PeminjamanItem {
   jumlah: number;
   tanggal: string;
   nama_pekerjaan: string;
-  alat ukur?: {
+  alatukur?: {
     nama_barang: string;
     kode_barang: string;
   };
