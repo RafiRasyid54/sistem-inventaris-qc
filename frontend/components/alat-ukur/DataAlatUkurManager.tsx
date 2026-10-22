@@ -35,7 +35,12 @@ import {
   IconBuildingStore,
   IconFileTypePdf,
   IconFileSpreadsheet,
+  IconQrcode,
+  IconDownload,
 } from "@tabler/icons-react";
+
+import { QRCodeCanvas } from "qrcode.react";
+import html2canvas from "html2canvas";
 
 import Flex from "components/common/Flex";
 import DasherBreadcrumb from "components/common/DasherBreadcrumb";
@@ -66,7 +71,7 @@ const namaPeminjam = (p: any): string =>
   p?.instansi_vendor ||
   "Pengguna";
 
-// ---------- Helper status alat (dinormalisasi supaya tidak sensitif huruf/spasi) ----------
+// ---------- Helper status alat ----------
 const isDipinjam = (item: AlatUkur): boolean => {
   const s = String((item as any).status_peminjaman ?? "")
     .trim()
@@ -134,6 +139,17 @@ const CSS = `
 @keyframes pdaPulse{from{transform:scale(.85);opacity:.5}to{transform:scale(1.25);opacity:0}}
 @media (prefers-reduced-motion:reduce){.pda-scan .pda-ring::after{animation:none}}
 .pda-scan h5{font-weight:800;color:#06355f}
+
+/* Cetak QR Code */
+@media print {
+  body * { visibility: hidden; }
+  #print-qr-area, #print-qr-area * { visibility: visible; }
+  #print-qr-area { 
+    position: absolute; left: 0; top: 0; width: 100%; 
+    display: flex; flex-wrap: wrap; gap: 30px; justify-content: center; padding: 20px;
+  }
+  .modal-header, .modal-footer, .datatools-toolbar { display: none !important; }
+}
 `;
 
 // ---------- Export PDF & Excel ----------
@@ -162,6 +178,7 @@ const DataAlatUkurManager = () => {
   const [detailModalOpen, setDetailModalOpen] = useState(false);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [loanModalOpen, setLoanModalOpen] = useState(false);
+  const [qrModalOpen, setQrModalOpen] = useState(false);
 
   // =======================================================
   // ALUR SCAN KARTU & VENDOR
@@ -170,11 +187,10 @@ const DataAlatUkurManager = () => {
   const [scanCardModalOpen, setScanCardModalOpen] = useState(false);
   const [isVerifyingCard, setIsVerifyingCard] = useState(false);
 
-  // State khusus Vendor
   const [vendorList, setVendorList] = useState<any[]>([]);
   const [vendorModalOpen, setVendorModalOpen] = useState(false);
   const [selectedVendorId, setSelectedVendorId] = useState<string>("");
-  const [pendingVendor, setPendingVendor] = useState<any>(null); // Vendor yg menunggu approve scan
+  const [pendingVendor, setPendingVendor] = useState<any>(null); 
 
   const [activeAlatUkur, setActiveAlatUkur] = useState<AlatUkur | null>(null);
   const [cart, setCart] = useState<AlatUkur[]>([]);
@@ -210,7 +226,6 @@ const DataAlatUkurManager = () => {
     }
   }, []);
 
-  // Load Vendor untuk Dropdown
   const loadVendors = useCallback(async () => {
     try {
       const res = await apiFetch<any>("/peminta?aktif=1");
@@ -255,24 +270,20 @@ const DataAlatUkurManager = () => {
         );
 
         if (pemintaData) {
-          // LOGIKA VENDOR APPROVAL
           if (pendingVendor) {
             if (pemintaData.role === "inventory man") {
-              // Sukses: Inventory man meng-approve vendor
               setPeminjamAktif(pendingVendor);
               setSuccessMessage(
                 `Peminjaman untuk Vendor disetujui oleh ${namaPeminjam(pemintaData)}`
               );
             } else {
-              // Gagal Approve: Kartu bukan inventory man. Peminjam beralih ke pemilik kartu
               setPeminjamAktif(pemintaData);
               showNotice(
                 `Kartu bukan Inventory Man. Peminjam dialihkan menjadi ${namaPeminjam(pemintaData)}`
               );
             }
-            setPendingVendor(null); // Bersihkan state pending
+            setPendingVendor(null); 
           } else {
-            // ALUR NORMAL: Scan kartu internal biasa
             setPeminjamAktif(pemintaData);
             setSuccessMessage(
               `Berhasil mengidentifikasi: ${namaPeminjam(pemintaData)}`
@@ -374,7 +385,7 @@ const DataAlatUkurManager = () => {
 
   useEffect(() => {
     const isModalBlocking =
-      formModalOpen || detailModalOpen || deleteModalOpen || loanModalOpen || vendorModalOpen;
+      formModalOpen || detailModalOpen || deleteModalOpen || loanModalOpen || vendorModalOpen || qrModalOpen;
 
     const handleKeyDown = (e: KeyboardEvent) => {
       if (isModalBlocking) return;
@@ -403,7 +414,7 @@ const DataAlatUkurManager = () => {
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [formModalOpen, detailModalOpen, deleteModalOpen, loanModalOpen, vendorModalOpen, handleUniversalScan]);
+  }, [formModalOpen, detailModalOpen, deleteModalOpen, loanModalOpen, vendorModalOpen, qrModalOpen, handleUniversalScan]);
 
   const handleFormSubmit = async (formData: Partial<AlatUkur>) => {
     try {
@@ -441,7 +452,6 @@ const DataAlatUkurManager = () => {
           const kodeAlat = item.kode_alat;
           if (!kodeAlat) throw new Error(`Alat "${item.nama_alat}" tidak valid.`);
 
-          // Pengaman terakhir sebelum request ke backend
           if (isDipinjam(item)) {
             throw new Error(`Alat "${item.nama_alat}" sedang dipinjam.`);
           }
@@ -462,10 +472,10 @@ const DataAlatUkurManager = () => {
         setLoanModalOpen(false);
         setSuccessMessage("Peminjaman berhasil diajukan!");
         setTimeout(() => setSuccessMessage(null), 4000);
-        loadAlatUkur(); // refresh supaya status alat yang baru dipinjam ikut terbarui
+        loadAlatUkur(); 
       } catch (err: any) {
         setLoanError(err?.message || "Gagal menyimpan peminjaman.");
-        loadAlatUkur(); // sebagian alat mungkin sudah terproses sebelum error
+        loadAlatUkur(); 
       } finally {
         setLoanSubmitting(false);
       }
@@ -475,7 +485,7 @@ const DataAlatUkurManager = () => {
 
   const handleCloseScanModal = () => {
     setScanCardModalOpen(false);
-    setPendingVendor(null); // Reset pending vendor jika batal scan
+    setPendingVendor(null); 
   };
 
   const handleSelectVendorSubmit = (e: React.FormEvent) => {
@@ -486,11 +496,31 @@ const DataAlatUkurManager = () => {
     if (vendor) {
       setPendingVendor(vendor);
       setVendorModalOpen(false);
-      setScanCardModalOpen(true); // Langsung buka modal scan untuk approval
+      setScanCardModalOpen(true); 
     }
   };
 
-  // ---------- Export PDF & Excel (memakai data yang sudah terfilter) ----------
+  // ---------- Download Single QR (Menyatu dengan Teks) ----------
+  const handleDownloadSingleQR = async (kodeAlat: string) => {
+    // Mencari elemen tersembunyi berdasarkan ID
+    const element = document.getElementById(`qr-wrapper-${kodeAlat}`);
+    if (!element) {
+      alert("QR Code untuk alat ini tidak ditemukan di memori layar.");
+      return;
+    }
+
+    try {
+      const canvas = await html2canvas(element, { backgroundColor: "#ffffff" });
+      const link = document.createElement("a");
+      link.download = `QR-${kodeAlat}.png`;
+      link.href = canvas.toDataURL("image/png");
+      link.click();
+    } catch (err) {
+      console.error("Gagal mendownload QR", err);
+      alert("Terjadi kesalahan saat memproses gambar QR.");
+    }
+  };
+
   const buildExportRows = () =>
     filteredData.map((item) => {
       const dipinjam = isDipinjam(item);
@@ -553,7 +583,6 @@ const DataAlatUkurManager = () => {
         </Flex>
       </Col></Row>
 
-      {/* PEMINJAM AKTIF */}
       <div className={`pda-borrower ${peminjamAktif ? "is-ready" : "is-empty"}`}>
         <div className="pda-who">
           <span className="pda-av">
@@ -624,6 +653,17 @@ const DataAlatUkurManager = () => {
                 >
                   <IconFileSpreadsheet size={16} /> Excel
                 </Button>
+                
+                {/* Opsi mencetak semua secara masal ke Printer tetap tersedia */}
+                <Button
+                  variant="outline-dark"
+                  size="sm"
+                  className="d-inline-flex align-items-center gap-1"
+                  onClick={() => setQrModalOpen(true)}
+                  disabled={filteredData.length === 0}
+                >
+                  <IconQrcode size={16} /> Cetak Massal QR
+                </Button>
               </div>
             </div>
           )}
@@ -641,6 +681,7 @@ const DataAlatUkurManager = () => {
               onEdit={(item) => { setActiveAlatUkur(item); setFormModalOpen(true); }}
               onDelete={(item) => { setActiveAlatUkur(item); setDeleteModalOpen(true); }}
               onAddToCart={handleAddToCart}
+              onDownloadQR={handleDownloadSingleQR} // <--- Fungsi ini dikirimkan ke tabel
             />
           )}
         </CardBody>
@@ -673,7 +714,7 @@ const DataAlatUkurManager = () => {
         </Form>
       </Modal>
 
-      {/* MODAL SCAN KARTU (BISA UNTUK INTERNAL ATAU APPROVAL VENDOR) */}
+      {/* MODAL SCAN KARTU */}
       <Modal
         show={scanCardModalOpen}
         onHide={handleCloseScanModal}
@@ -719,11 +760,68 @@ const DataAlatUkurManager = () => {
 
       <LoanFormModal show={loanModalOpen} onClose={() => setLoanModalOpen(false)} onSubmit={handleLoanSubmit} cartItems={cart} submitting={loanSubmitting} error={loanError} {...({ peminjam: peminjamAktif } as any)} />
 
+      {/* MODAL CETAK LABEL QR (Untuk fitur Print Massal) */}
+      <Modal show={qrModalOpen} onHide={() => setQrModalOpen(false)} size="lg" centered>
+        <Modal.Header closeButton>
+          <Modal.Title className="h5 fw-bold text-navy">Cetak Label QR (Massal)</Modal.Title>
+        </Modal.Header>
+        <Modal.Body className="bg-light">
+          <div id="print-qr-area" className="d-flex flex-wrap justify-content-center gap-4 p-3">
+            {filteredData.map((item) => {
+              const kode = item.kode_alat || item.sn || "UNKNOWN";
+              return (
+                <div key={item.id} className="d-flex flex-column align-items-center gap-2">
+                  <div
+                    className="d-flex flex-column align-items-center bg-white p-3"
+                    style={{ border: '2px solid #ccc', width: 'fit-content', borderRadius: '8px' }}
+                  >
+                    <QRCodeCanvas value={kode} size={140} level={"H"} />
+                    <span className="mt-3 fw-bold text-dark text-center" style={{ fontSize: '1.4rem', letterSpacing: '2px' }}>
+                      {kode}
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </Modal.Body>
+        <Modal.Footer className="d-print-none">
+          <Button variant="light" onClick={() => setQrModalOpen(false)}>Tutup</Button>
+          <Button variant="primary" onClick={() => window.print()}>
+            <IconQrcode size={18} className="me-2" /> Print Semua ke Kertas
+          </Button>
+        </Modal.Footer>
+      </Modal>
+
       <CartFAB count={cart.length} onClick={() => {
           if (!peminjamAktif) { showNotice("Tentukan peminjam terlebih dahulu."); setScanCardModalOpen(true); return; }
           if (cart.length === 0) { showNotice("Keranjang masih kosong. Pilih alat dulu."); return; }
           setLoanModalOpen(true);
       }} />
+
+      {/* ========================================================= */}
+      {/* AREA TERSEMBUNYI UNTUK GENERATE GAMBAR QR CODE INDIVIDUAL */}
+      {/* Element ini digunakan oleh html2canvas untuk download      */}
+      {/* ========================================================= */}
+      <div style={{ position: "absolute", top: "-9999px", left: "-9999px", zIndex: -1 }}>
+        {data.map((item) => {
+          const kode = item.kode_alat || item.sn || "UNKNOWN";
+          return (
+            <div
+              key={`hidden-qr-${item.id}`}
+              id={`qr-wrapper-${kode}`}
+              className="d-flex flex-column align-items-center bg-white p-3"
+              style={{ border: '2px solid #ccc', width: 'fit-content', borderRadius: '8px' }}
+            >
+              <QRCodeCanvas value={kode} size={140} level={"H"} />
+              <span className="mt-3 fw-bold text-dark text-center" style={{ fontSize: '1.4rem', letterSpacing: '2px' }}>
+                {kode}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+
     </div>
   );
 };

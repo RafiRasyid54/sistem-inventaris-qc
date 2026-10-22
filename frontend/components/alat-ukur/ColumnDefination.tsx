@@ -17,6 +17,7 @@ interface ColumnDefinitionProps {
   onEdit: (item: AlatUkur) => void;
   onDelete: (item: AlatUkur) => void;
   onAddToCart: (item: AlatUkur) => void;
+  onDownloadQR: (kodeAlat: string) => void; // Prop baru untuk fungsi download dari parent
 }
 
 // Helper untuk format tanggal "Bulan-Tahun"
@@ -33,6 +34,7 @@ export const ColumnDefinition: React.FC<ColumnDefinitionProps> = ({
   onEdit,
   onDelete,
   onAddToCart,
+  onDownloadQR,
 }) => {
   const getKondisiClass = (kondisi?: string) => {
     switch (kondisi?.toLowerCase()) {
@@ -82,48 +84,6 @@ export const ColumnDefinition: React.FC<ColumnDefinitionProps> = ({
     );
   };
 
-  // =======================================================
-  // DOWNLOAD QR CODE
-  // =======================================================
-  const handleDownloadQr = async (item: AlatUkur) => {
-    const kode = item.kode_alat || item.sn || String(item.id ?? "");
-
-    if (!kode) {
-      alert("Alat ini belum memiliki kode_alat / SN untuk dijadikan QR Code.");
-      return;
-    }
-
-    const size = 400;
-    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&data=${encodeURIComponent(
-      kode
-    )}`;
-
-    try {
-      const response = await fetch(qrUrl);
-
-      if (!response.ok) {
-        throw new Error("Gagal mengambil gambar QR Code dari server.");
-      }
-
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = `QR-${kode}.png`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-
-      window.URL.revokeObjectURL(url);
-    } catch (err) {
-      console.error("Gagal download QR code:", err);
-      alert(
-        "Gagal membuat/download QR Code. Pastikan koneksi internet aktif."
-      );
-    }
-  };
-
   return (
     <div className="table-responsive">
       <table className="table table-hover align-middle mb-0">
@@ -149,15 +109,12 @@ export const ColumnDefinition: React.FC<ColumnDefinitionProps> = ({
                 {item.no ?? index + 1}
               </td>
 
-              {/* NAMA ALAT (Ditambah Label Kategori) */}
+              {/* NAMA ALAT */}
               <td>
                 <div className="fw-semibold text-body">
                   {item.nama_alat || "-"}
                 </div>
-                
-                {/* INI BAGIAN YANG MENAMPILKAN BADGE MEKANIK/ELEKTRIK/SIPIL */}
                 <div>{getKategoriBadge(item)}</div>
-                
                 {item.lokasi && (
                   <small className="text-secondary d-block mt-1">
                     {item.lokasi}
@@ -234,10 +191,11 @@ export const ColumnDefinition: React.FC<ColumnDefinitionProps> = ({
                     <ShoppingCart size={16} />
                   </button>
 
+                  {/* TOMBOL DOWNLOAD QR MEMANGGIL FUNGSI DARI PARENT */}
                   <button
                     type="button"
                     className="btn btn-sm btn-ghost-info"
-                    onClick={() => handleDownloadQr(item)}
+                    onClick={() => onDownloadQR(item.kode_alat || item.sn || "UNKNOWN")}
                     title="Download QR Code alat ini"
                   >
                     <QrCode size={16} />

@@ -12,7 +12,8 @@
     "deploy": "touch out/.nojekyll && gh-pages -d out"
   },
   "dependencies": {
-    "@reduxjs/alat ukurkit": "^2.8.2",
+    "@reduxjs/toolkit": "^2.8.2",
+    "@supabase/supabase-js": "^2.118.0",
     "@tabler/icons-react": "^3.34.0",
     "@tabler/icons-webfont": "^3.34.0",
     "@tanstack/react-table": "^8.21.3",
@@ -22,10 +23,12 @@
     "bootstrap": "^5.3.7",
     "bootstrap-icons": "^1.13.1",
     "exceljs": "^4.4.0",
+    "html2canvas": "^1.4.1",
     "jspdf": "^4.2.1",
     "jspdf-autotable": "^5.0.8",
     "next": "15.3.5",
     "qrcode": "^1.5.4",
+    "qrcode.react": "^4.2.0",
     "quill": "^2.0.3",
     "react": "^19.0.0",
     "react-apexcharts": "^1.7.0",

@@ -10,6 +10,12 @@ import {
 } from "@tabler/icons-react";
 import apiFetch from "/lib/apiFetch";
 import { useBarcodeScanner } from "hooks/useBarcodeScanner";
+import { createClient } from "@supabase/supabase-js";
+
+// --- Inisialisasi Supabase Client ---
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 interface AlatUkurOption {
   id: string;
@@ -26,6 +32,7 @@ export interface KalibrasiFormValues {
   pelaksanaKalibrasi: string;
   keterangan: string;
   fileSertifikat: File | null;
+  fileSertifikatUrl?: string | null; // Tambahan untuk URL Supabase
 }
 
 interface KalibrasiFormModalProps {
@@ -34,10 +41,10 @@ interface KalibrasiFormModalProps {
   onSubmit: (values: KalibrasiFormValues) => void;
   submitting?: boolean;
   error?: string | null;
-  // Kode hasil scan dari halaman induk (scan saat modal belum terbuka).
   initialScanCode?: string | null;
 }
 
+// Perbaikan konstanta yang terpotong
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB
 
 const emptyForm = (): KalibrasiFormValues => ({
@@ -50,7 +57,6 @@ const emptyForm = (): KalibrasiFormValues => ({
   fileSertifikat: null,
 });
 
-// Gaya form bertema PLN. Selector diawali .pln-form / .pln-modal-backdrop.
 const CSS = `
 .pln-modal-backdrop.modal-backdrop{--bs-backdrop-bg:#041f38;--bs-backdrop-opacity:.68;backdrop-filter:blur(3px)}
 .pln-form{border:0!important;border-radius:20px!important;overflow:hidden}
@@ -106,12 +112,11 @@ const KalibrasiFormModal = ({
   const [form, setForm] = useState<KalibrasiFormValues>(emptyForm());
   const [alatList, setAlatList] = useState<AlatUkurOption[]>([]);
   const [loadingAlat, setLoadingAlat] = useState(false);
+  const [isUploading, setIsUploading] = useState(false); // State untuk proses upload ke Supabase
 
-  // ---- Upload sertifikat ----
   const [fileError, setFileError] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
-  // ---- Scan barcode ----
   const [mode, setMode] = useState<"scan" | "manual">("scan");
   const [scanValue, setScanValue] = useState("");
   const [scanError, setScanError] = useState<string | null>(null);
@@ -128,6 +133,7 @@ const KalibrasiFormModal = ({
       setScanValue("");
       setScanError(null);
       setFileError(null);
+      setIsUploading(false);
       if (fileRef.current) fileRef.current.value = "";
       initialScanDone.current = false;
       setLoadingAlat(true);
@@ -138,7 +144,6 @@ const KalibrasiFormModal = ({
     }
   }, [show]);
 
-  // Cocokkan kode hasil scan dengan kode_alat, SN, atau id (tidak peka huruf besar-kecil).
   const processScan = useCallback(
     (raw: string) => {
       const code = raw.trim();
@@ -175,14 +180,11 @@ const KalibrasiFormModal = ({
     [alatList, loadingAlat]
   );
 
-  // Scanner fisik bekerja seperti keyboard; ditangkap walau kursor tidak di kolom scan.
   useBarcodeScanner({
-    enabled: show && mode === "scan" && !submitting,
+    enabled: show && mode === "scan" && !submitting && !isUploading,
     onScan: processScan,
   });
 
-  // Jika modal dibuka dari hasil scan di halaman induk, langsung cocokkan kodenya
-  // begitu daftar alat selesai dimuat.
   useEffect(() => {
     if (!show || loadingAlat || !initialScanCode || initialScanDone.current) return;
     if (alatList.length === 0) return;
@@ -192,7 +194,6 @@ const KalibrasiFormModal = ({
 
   const handleScanKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") {
-      // Cegah Enter dari scanner ikut men-submit form.
       e.preventDefault();
       processScan(scanValue);
     }
@@ -204,15 +205,20 @@ const KalibrasiFormModal = ({
     setTimeout(() => scanRef.current?.focus(), 0);
   };
 
+  // Diperbarui untuk mendukung ekstensi PDF dan Excel
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0] ?? null;
     setFileError(null);
 
     if (file) {
-      const isPdf =
-        file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf");
-      if (!isPdf) {
-        setFileError("File harus berformat PDF.");
+      const isAllowedFormat =
+        file.type === "application/pdf" ||
+        file.type === "application/vnd.ms-excel" ||
+        file.type === "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" ||
+        file.name.toLowerCase().match(/\.(pdf|xls|xlsx)$/);
+
+      if (!isAllowedFormat) {
+        setFileError("File harus berformat PDF atau Excel (.xls/.xlsx).");
       } else if (file.size > MAX_FILE_SIZE) {
         setFileError("Ukuran file maksimal 5 MB.");
       } else {
@@ -224,26 +230,66 @@ const KalibrasiFormModal = ({
     setForm((p) => ({ ...p, fileSertifikat: null }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  // Proses upload file ke Supabase terintegrasi di sini
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    onSubmit(form);
+    let uploadedUrl = null;
+
+    if (form.fileSertifikat) {
+      setIsUploading(true);
+      try {
+        const file = form.fileSertifikat;
+        const fileExt = file.name.split(".").pop();
+        // Menghasilkan nama file unik
+        const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
+        const filePath = `sertifikat/${fileName}`;
+
+        // Pastikan nama bucket 'qc_documents' sudah sesuai dengan yang ada di Supabase Anda
+        const { error: uploadError } = await supabase.storage
+          .from("qc_documents")
+          .upload(filePath, file);
+
+        if (uploadError) throw uploadError;
+
+        // Ambil URL Publik
+        const { data } = supabase.storage
+          .from("qc_documents")
+          .getPublicUrl(filePath);
+
+        uploadedUrl = data.publicUrl;
+      } catch (err: any) {
+        console.error("Supabase Upload Error:", err);
+        setFileError("Gagal mengunggah file ke Supabase: " + err.message);
+        setIsUploading(false);
+        return; // Hentikan submission jika upload gagal
+      }
+      setIsUploading(false);
+    }
+
+    // Teruskan data dan URL Supabase ke parent component
+    onSubmit({
+      ...form,
+      fileSertifikatUrl: uploadedUrl,
+    });
   };
+
+  const isProcessDisabled = submitting || isUploading;
 
   return (
     <>
       <style>{CSS}</style>
       <Modal
         show={show}
-        onHide={submitting ? undefined : onClose}
+        onHide={isProcessDisabled ? undefined : onClose}
         onEntered={() => scanRef.current?.focus()}
         centered
-        backdrop={submitting ? "static" : true}
+        backdrop={isProcessDisabled ? "static" : true}
         backdropClassName="pln-modal-backdrop"
         contentClassName="pln-form"
       >
         <div className="pf-stripe" />
         <Form onSubmit={handleSubmit}>
-          <Modal.Header closeButton={!submitting}>
+          <Modal.Header closeButton={!isProcessDisabled}>
             <Modal.Title as="div" className="pf-title">
               <span className="ic"><IconClipboardCheck size={22} /></span>
               <span>
@@ -280,7 +326,7 @@ const KalibrasiFormModal = ({
                           if (scanError) setScanError(null);
                         }}
                         onKeyDown={handleScanKeyDown}
-                        disabled={submitting}
+                        disabled={isProcessDisabled}
                       />
                     </InputGroup>
 
@@ -303,7 +349,7 @@ const KalibrasiFormModal = ({
                           size="sm"
                           variant="outline-secondary"
                           onClick={clearSelection}
-                          disabled={submitting}
+                          disabled={isProcessDisabled}
                         >
                           Ganti
                         </Button>
@@ -324,7 +370,7 @@ const KalibrasiFormModal = ({
                       type="button"
                       className="pf-link"
                       onClick={() => setMode("manual")}
-                      disabled={submitting}
+                      disabled={isProcessDisabled}
                     >
                       Barcode rusak? Pilih manual dari daftar
                     </button>
@@ -336,7 +382,7 @@ const KalibrasiFormModal = ({
                       required
                       value={form.alatUkurId}
                       onChange={(e) => setForm((p) => ({ ...p, alatUkurId: e.target.value }))}
-                      disabled={loadingAlat || submitting}
+                      disabled={loadingAlat || isProcessDisabled}
                     >
                       <option value="">{loadingAlat ? "Memuat..." : "Pilih alat ukur..."}</option>
                       {alatList.map((a) => (
@@ -352,7 +398,7 @@ const KalibrasiFormModal = ({
                         setMode("scan");
                         setTimeout(() => scanRef.current?.focus(), 0);
                       }}
-                      disabled={submitting}
+                      disabled={isProcessDisabled}
                     >
                       Kembali ke scan barcode
                     </button>
@@ -370,7 +416,7 @@ const KalibrasiFormModal = ({
                   required
                   value={form.tanggalKalibrasi}
                   onChange={(e) => setForm((p) => ({ ...p, tanggalKalibrasi: e.target.value }))}
-                  disabled={submitting}
+                  disabled={isProcessDisabled}
                 />
               </Col>
 
@@ -380,7 +426,7 @@ const KalibrasiFormModal = ({
                   type="date"
                   value={form.tanggalJatuhTempo}
                   onChange={(e) => setForm((p) => ({ ...p, tanggalJatuhTempo: e.target.value }))}
-                  disabled={submitting}
+                  disabled={isProcessDisabled}
                 />
               </Col>
             </Row>
@@ -393,7 +439,7 @@ const KalibrasiFormModal = ({
                   required
                   value={form.kondisi}
                   onChange={(e) => setForm((p) => ({ ...p, kondisi: e.target.value as KalibrasiFormValues["kondisi"] }))}
-                  disabled={submitting}
+                  disabled={isProcessDisabled}
                 >
                   <option value="Baik">Baik</option>
                   <option value="RPP">RPP (rusak, perlu perbaikan)</option>
@@ -409,7 +455,7 @@ const KalibrasiFormModal = ({
                   placeholder="Nama pelaksana..."
                   value={form.pelaksanaKalibrasi}
                   onChange={(e) => setForm((p) => ({ ...p, pelaksanaKalibrasi: e.target.value }))}
-                  disabled={submitting}
+                  disabled={isProcessDisabled}
                 />
               </Col>
             </Row>
@@ -417,16 +463,16 @@ const KalibrasiFormModal = ({
             <div className="pf-sec">Sertifikat kalibrasi</div>
             <Row className="g-3">
               <Col md={12}>
-                <Form.Label>File Sertifikat (PDF)</Form.Label>
+                <Form.Label>Dokumen Laporan/Sertifikat</Form.Label>
                 <Form.Control
                   ref={fileRef}
                   type="file"
-                  accept="application/pdf,.pdf"
+                  accept=".pdf,application/pdf,.xls,.xlsx,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
                   onChange={handleFileChange}
-                  disabled={submitting}
+                  disabled={isProcessDisabled}
                 />
                 {fileError && <div className="pf-scan-err" role="alert">{fileError}</div>}
-                <div className="pf-hint">Opsional. Format PDF, maksimal 5 MB.</div>
+                <div className="pf-hint">Opsional. Format PDF atau Excel, maksimal 5 MB.</div>
               </Col>
             </Row>
 
@@ -440,21 +486,21 @@ const KalibrasiFormModal = ({
                   placeholder="Catatan tambahan (opsional)..."
                   value={form.keterangan}
                   onChange={(e) => setForm((p) => ({ ...p, keterangan: e.target.value }))}
-                  disabled={submitting}
+                  disabled={isProcessDisabled}
                 />
               </Col>
             </Row>
           </Modal.Body>
 
           <Modal.Footer>
-            <Button type="button" className="pf-btn pf-ghost" onClick={onClose} disabled={submitting}>
+            <Button type="button" className="pf-btn pf-ghost" onClick={onClose} disabled={isProcessDisabled}>
               Batal
             </Button>
-            <Button type="submit" className="pf-btn pf-save" disabled={!form.alatUkurId || submitting}>
-              {submitting ? (
+            <Button type="submit" className="pf-btn pf-save" disabled={!form.alatUkurId || isProcessDisabled}>
+              {isProcessDisabled ? (
                 <>
                   <Spinner animation="border" size="sm" />
-                  Menyimpan...
+                  {isUploading ? " Mengunggah file..." : " Menyimpan..."}
                 </>
               ) : (
                 <>
