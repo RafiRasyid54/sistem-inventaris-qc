@@ -36,9 +36,9 @@
 // ============================================================
 // Data Alatukur - scoped (UI only, tidak berdampak ke halaman lain)
 // ============================================================
-.dataalat ukur-page {
+.dataalatukur-page {
   // ---- Alatukurbar: search + filter ----
-  .dataalat ukur-alat ukurbar {
+  .dataalatukur-alatukurbar {
     padding: 1rem 1.25rem;
 
     .form-control,
@@ -48,7 +48,7 @@
   }
 
   // Search dengan ikon di depan
-  .dataalat ukur-search {
+  .dataalatukur-search {
     .input-group-text {
       background-color: var(--#{$prefix}body-bg);
       border-right: 0;
@@ -78,7 +78,7 @@
       }
     }
 
-    .dataalat ukur-search-clear {
+    .dataalatukur-search-clear {
       position: absolute;
       right: 0;
       top: 0;
@@ -146,8 +146,8 @@
   }
 
   // ---- Empty state ----
-  .dataalat ukur-empty {
-    .dataalat ukur-empty-icon {
+  .dataalatukur-empty {
+    .dataalatukur-empty-icon {
       display: inline-flex;
       align-items: center;
       justify-content: center;
@@ -161,7 +161,7 @@
 
   // ---- Responsive ----
   @include media-breakpoint-down(md) {
-    .dataalat ukur-alat ukurbar {
+    .dataalatukur-alatukurbar {
       padding: 1rem;
     }
   }
@@ -170,9 +170,9 @@
 // ============================================================
 // Alatukur Detail Modal - scoped (UI only)
 // ============================================================
-.alat ukur-detail-modal {
+.alatukur-detail-modal {
   // Ikon pada judul modal
-  .alat ukur-detail-title-icon {
+  .alatukur-detail-title-icon {
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -184,30 +184,30 @@
   }
 
   // Hero: blok nama barang + status
-  .alat ukur-detail-hero {
+  .alatukur-detail-hero {
     padding: 1.25rem;
     border-radius: $border-radius-lg;
     background-color: var(--#{$prefix}gray-100);
   }
 
-  .alat ukur-detail-status {
+  .alatukur-detail-status {
     font-size: 0.8125rem;
     padding: 0.4rem 0.75rem;
   }
 
   // Kotak ringkasan stok
-  .alat ukur-detail-stat {
+  .alatukur-detail-stat {
     padding: 1rem 0.5rem;
     border-radius: $border-radius-lg;
     height: 100%;
   }
 
   // Item informasi
-  .alat ukur-detail-item {
+  .alatukur-detail-item {
     padding: 0.75rem 0;
   }
 
-  .alat ukur-detail-section {
+  .alatukur-detail-section {
     padding-top: 0.5rem;
     border-top: 1px solid var(--#{$prefix}border-color);
   }
@@ -217,9 +217,9 @@
 // Alatukur Form Modal (Tambah/Edit) - scoped (UI only)
 // Selaras dengan gaya Alatukur Detail Modal.
 // ============================================================
-.alat ukur-form-modal {
+.alatukur-form-modal {
   // Ikon pada judul modal
-  .alat ukur-form-title-icon {
+  .alatukur-form-title-icon {
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -231,14 +231,14 @@
   }
 
   // Info baris "sedang mengubah data" saat mode edit
-  .alat ukur-form-hero {
+  .alatukur-form-hero {
     padding: 1rem 1.25rem;
     border-radius: $border-radius-lg;
     background-color: var(--#{$prefix}gray-100);
   }
 
   // Grup field
-  .alat ukur-form-section {
+  .alatukur-form-section {
     .form-label {
       font-size: 0.8125rem;
       font-weight: 500;
@@ -257,9 +257,9 @@
 // Alatukur Delete Confirm Modal - scoped (UI only)
 // Selaras dengan gaya modal detail/edit, aksen danger.
 // ============================================================
-.alat ukur-delete-modal {
+.alatukur-delete-modal {
   // Ikon pada judul modal (aksen danger untuk aksi destruktif)
-  .alat ukur-delete-title-icon {
+  .alatukur-delete-title-icon {
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -271,7 +271,7 @@
   }
 
   // Ikon peringatan besar di body
-  .alat ukur-delete-icon {
+  .alatukur-delete-icon {
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -283,7 +283,7 @@
   }
 
   // Blok info alat yang akan dihapus
-  .alat ukur-delete-hero {
+  .alatukur-delete-hero {
     padding: 1rem 1.25rem;
     border-radius: $border-radius-lg;
     background-color: var(--#{$prefix}gray-100);
@@ -437,7 +437,7 @@
 // ============================================================
 .dataconsumable-page {
   // ---- Alatukurbar: search + filter ----
-  .dataconsumable-alat ukurbar {
+  .dataconsumable-alatukurbar {
     padding: 1rem 1.25rem;
 
     .form-control,
@@ -558,7 +558,7 @@
 
   // ---- Responsive ----
   @include media-breakpoint-down(md) {
-    .dataconsumable-alat ukurbar {
+    .dataconsumable-alatukurbar {
       padding: 1rem;
     }
   }
@@ -803,7 +803,7 @@
 // ============================================================
 .datapeminjam-page {
   // ---- Alatukurbar: search + filter ----
-  .datapeminjam-alat ukurbar {
+  .datapeminjam-alatukurbar {
     padding: 1rem 1.25rem;
 
     .form-control,
@@ -924,7 +924,7 @@
 
   // ---- Responsive ----
   @include media-breakpoint-down(md) {
-    .datapeminjam-alat ukurbar {
+    .datapeminjam-alatukurbar {
       padding: 1rem;
     }
   }
@@ -1005,7 +1005,7 @@
 // ============================================================
 .peminjamanaktif-page {
   // ---- Alatukurbar: search ----
-  .peminjamanaktif-alat ukurbar {
+  .peminjamanaktif-alatukurbar {
     padding: 1rem 1.25rem;
 
     .form-control {
@@ -1125,7 +1125,7 @@
 
   // ---- Responsive ----
   @include media-breakpoint-down(md) {
-    .peminjamanaktif-alat ukurbar {
+    .peminjamanaktif-alatukurbar {
       padding: 1rem;
     }
   }
@@ -1179,9 +1179,9 @@
 // Pola sama dengan halaman data lain.
 // ============================================================
 .consumablemasuk-page
-.alat ukurmasuk-page {
+.alatukurmasuk-page {
   // ---- Alatukurbar: search ----
-  .consumablemasuk-alat ukurbar {
+  .consumablemasuk-alatukurbar {
     padding: 1rem 1.25rem;
 
     .form-control {
@@ -1301,7 +1301,7 @@
 
   // ---- Responsive ----
   @include media-breakpoint-down(md) {
-    .consumablemasuk-alat ukurbar {
+    .consumablemasuk-alatukurbar {
       padding: 1rem;
     }
   }
@@ -1712,20 +1712,20 @@
 // ============================================================
 .riwayat-page {
   // ---- Alatukurbar: dua baris (search+info, filter+export) ----
-  .riwayat-alat ukurbar {
+  .riwayat-alatukurbar {
     display: flex;
     flex-direction: column;
     gap: 1rem;
     padding: 1rem 1.25rem;
 
-    // filter bar tidak perlu margin bawah karena gap alat ukurbar sudah mengatur jarak
+    // filter bar tidak perlu margin bawah karena gap alatukurbar sudah mengatur jarak
     .riwayat-filterbar {
       margin-bottom: 0;
     }
   }
 
   // Baris 1: Search (kiri, elemen utama ~50%) + Info jumlah (kanan)
-  .riwayat-alat ukurbar-row {
+  .riwayat-alatukurbar-row {
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -1793,7 +1793,7 @@
   // ---- Responsive ----
   // Tablet: search tetap penuh, info turun di bawah search
   @include media-breakpoint-down(lg) {
-    .riwayat-alat ukurbar-row {
+    .riwayat-alatukurbar-row {
       flex-wrap: wrap;
     }
 
@@ -1871,10 +1871,10 @@
   }
 
   // ---- Responsive ----
-  // Mobile: kecilkan padding alat ukurbar. Susunan filter/export vertikal
+  // Mobile: kecilkan padding alatukurbar. Susunan filter/export vertikal
   // sudah ditangani oleh .riwayat-filterbar sendiri.
   @include media-breakpoint-down(md) {
-    .riwayat-alat ukurbar {
+    .riwayat-alatukurbar {
       padding: 1rem;
     }
   }
@@ -2405,7 +2405,7 @@ html.collapsed #miniSidebar,
   }
 }
 
-// Filter alat ukurbar operasional: visual identik dengan alat ukurbar Riwayat/Laporan.
+// Filter alatukurbar operasional: visual identik dengan alatukurbar Riwayat/Laporan.
 .operational-filterbar {
   display: flex;
   flex-wrap: wrap;
@@ -2490,9 +2490,9 @@ html.collapsed #miniSidebar,
 // dan Export. Semua halaman memakai struktur vertikal yang sama.
 .peminjamanaktif-page,
 .consumablemasuk-page,
-.alat ukurmasuk-page,
+.alatukurmasuk-page,
 .riwayat-page {
-  .riwayat-alat ukurbar {
+  .riwayat-alatukurbar {
     display: flex;
     flex-direction: column;
     align-items: flex-start;
@@ -2500,7 +2500,7 @@ html.collapsed #miniSidebar,
     padding: 1rem 1.25rem;
   }
 
-  .riwayat-alat ukurbar-row {
+  .riwayat-alatukurbar-row {
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -2598,11 +2598,11 @@ html.collapsed #miniSidebar,
   }
 
   @include media-breakpoint-down(md) {
-    .riwayat-alat ukurbar {
+    .riwayat-alatukurbar {
       padding: 1rem;
     }
 
-    .riwayat-alat ukurbar-row {
+    .riwayat-alatukurbar-row {
       flex-direction: column;
       align-items: stretch;
       gap: 0.5rem;
@@ -2648,7 +2648,7 @@ html.collapsed #miniSidebar,
 .riwayat-perbaikan-page,
 .peminjamanaktif-page,
 .consumablemasuk-page,
-.alat ukurmasuk-page {
+.alatukurmasuk-page {
   // ---- Baris 1: search + info jumlah data ----
   .riwayat-search {
     flex: 1 1 0;
@@ -2728,7 +2728,7 @@ html.collapsed #miniSidebar,
   @include media-breakpoint-up(lg) {
     // batasi lebar search supaya "Menampilkan X dari Y data" tidak
     // terpisah jauh di ujung kanan (baris 1, tidak diubah selain ini)
-    .riwayat-alat ukurbar-row {
+    .riwayat-alatukurbar-row {
       .riwayat-search {
         flex: 0 1 420px;
         max-width: 420px;
@@ -2774,7 +2774,7 @@ html.collapsed #miniSidebar,
 
 // Action cell Data Alatukur / Data Consumable: slot tetap menjaga tombol titik tiga
 // berada pada koordinat horizontal yang sama meski tombol utama disabled.
-.dataalat ukur-action-cell,
+.dataalatukur-action-cell,
 .dataconsumable-action-cell {
   display: flex;
   align-items: center;
@@ -2782,7 +2782,7 @@ html.collapsed #miniSidebar,
   white-space: nowrap;
 }
 
-.dataalat ukur-action-main,
+.dataalatukur-action-main,
 .dataconsumable-action-main {
   display: flex;
   align-items: center;
@@ -2810,7 +2810,7 @@ html.collapsed #miniSidebar,
   }
 }
 
-.dataalat ukur-action-menu,
+.dataalatukur-action-menu,
 .dataconsumable-action-menu {
   position: relative;
   display: flex;
@@ -2821,7 +2821,7 @@ html.collapsed #miniSidebar,
 }
 
 @include media-breakpoint-down(lg) {
-  .dataalat ukur-action-main,
+  .dataalatukur-action-main,
   .dataconsumable-action-main {
     flex-basis: 40px;
     min-width: 40px;
@@ -2845,7 +2845,7 @@ html.collapsed #miniSidebar,
 }
 
 // Action dropdown berada di atas row/table tanpa mengubah tinggi baris.
-.dataalat ukur-action-menu,
+.dataalatukur-action-menu,
 .dataconsumable-action-menu {
   z-index: 10;
 
@@ -2855,26 +2855,26 @@ html.collapsed #miniSidebar,
 }
 
 // Saat dropdown terbuka, naikkan row/cell pemiliknya di atas row lain.
-.dataalat ukur-action-cell:has(.dropdown-menu.show),
+.dataalatukur-action-cell:has(.dropdown-menu.show),
 .dataconsumable-action-cell:has(.dropdown-menu.show) {
   z-index: 20;
 }
 
 // table-responsive memotong dropdown karena overflow:auto. Lepaskan clipping
 // hanya selama menu terbuka; horizontal scrolling tetap aktif saat tertutup.
-.dataalat ukur-page .table-responsive:has(.dropdown-menu.show),
+.dataalatukur-page .table-responsive:has(.dropdown-menu.show),
 .dataconsumable-page .table-responsive:has(.dropdown-menu.show) {
   overflow: visible;
 }
 
 // Naikkan cell sticky pemilik dropdown, bukan hanya wrapper action.
 // Sticky td membentuk stacking context sendiri; z-index pada child saja tidak cukup.
-.dataalat ukur-page .table-responsive tbody td:has(.dropdown-menu.show),
+.dataalatukur-page .table-responsive tbody td:has(.dropdown-menu.show),
 .dataconsumable-page .table-responsive tbody td:has(.dropdown-menu.show) {
   z-index: 1000 !important;
 }
 
-.dataalat ukur-page .table-responsive tbody tr:has(.dropdown-menu.show),
+.dataalatukur-page .table-responsive tbody tr:has(.dropdown-menu.show),
 .dataconsumable-page .table-responsive tbody tr:has(.dropdown-menu.show) {
   position: relative;
   z-index: 1000;
@@ -2887,11 +2887,11 @@ html.collapsed #miniSidebar,
 // & mobile) -- sebelumnya cuma aktif di layar < lg, tapi sekarang tabel
 // makin banyak kolom sehingga di desktop pun perlu scroll horizontal.
 // ============================================================
-.dataalat ukur-page,
+.dataalatukur-page,
 .dataconsumable-page,
 .datapeminjam-page,
 .consumablemasuk-page,
-.alat ukurmasuk-page,
+.alatukurmasuk-page,
 .riwayat-page {
   .table-responsive {
     // Kolom terakhir (Aksi) selalu terlihat saat scroll horizontal

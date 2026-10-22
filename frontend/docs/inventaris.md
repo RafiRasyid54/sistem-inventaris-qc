@@ -449,7 +449,7 @@ Mengelola master data pegawai yang dapat melakukan peminjaman.
 
 ## Digunakan Pada
 
-Data peminjam akan digunakan sebagai referensi pada transaksi peminjaman alat ukur sehingga staff tidak perlu menginput data pegawai secara berulang.
+Data peminjam akan digunakan sebagai referensi pada transaksi peminjaman alatukur sehingga staff tidak perlu menginput data pegawai secara berulang.
 
 ---
 
@@ -784,7 +784,7 @@ src/
 ├── app/
 │   ├── dashboard/
 │   ├── inventaris/
-│   │   ├── alat ukur/
+│   │   ├── alatukur/
 │   │   ├── consumable/
 │   │   └── peminjam/
 │   ├── transaksi/

@@ -198,7 +198,7 @@ const PeminjamanAktifManager = () => {
             <div>
               <h1 className="mb-2 h2">Peminjaman Aktif</h1>
               <p className="text-secondary mb-2">
-                Daftar alat ukur yang sedang dipinjam beserta informasi peminjamnya.
+                Daftar alatukur yang sedang dipinjam beserta informasi peminjamnya.
               </p>
               <DasherBreadcrumb />
             </div>
@@ -312,7 +312,7 @@ const PeminjamanAktifManager = () => {
               </div>
               <h5 className="mb-1">Tidak ada peminjaman aktif</h5>
               <p className="text-secondary mb-0">
-                Semua alat ukur sudah kembali. Saat ini tidak ada yang sedang dipinjam.
+                Semua alatukur sudah kembali. Saat ini tidak ada yang sedang dipinjam.
               </p>
             </div>
           ) : filteredData.length === 0 ? (

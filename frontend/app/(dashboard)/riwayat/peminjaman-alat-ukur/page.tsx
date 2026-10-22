@@ -7,7 +7,7 @@ import RiwayatPeminjamanManager from "components/riwayat/peminjaman/RiwayatPemin
 export const metadata: Metadata = {
   title: "Riwayat Peminjaman Alatukur | Ruang Alatukur - Admin Panel",
   description:
-    "Menampilkan riwayat seluruh transaksi peminjaman alat ukur yang telah dikembalikan",
+    "Menampilkan riwayat seluruh transaksi peminjaman alatukur yang telah dikembalikan",
 };
 
 const RiwayatPeminjamanPage = () => {

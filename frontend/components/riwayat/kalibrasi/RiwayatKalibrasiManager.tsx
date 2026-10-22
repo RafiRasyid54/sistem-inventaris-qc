@@ -241,7 +241,7 @@ const RiwayatKalibrasiManager = () => {
             <div>
               <h1 className="mb-2 h2">Riwayat Kalibrasi</h1>
               <p className="text-secondary mb-2">
-                Menampilkan riwayat kalibrasi seluruh alat ukur beserta status jatuh temponya.
+                Menampilkan riwayat kalibrasi seluruh alatukur beserta status jatuh temponya.
               </p>
               <DasherBreadcrumb />
             </div>

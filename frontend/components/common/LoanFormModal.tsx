@@ -45,7 +45,7 @@ export interface CartItem {
   kodeBarang?: string;
   kode_alat?: string;
   kode_barang?: string;
-  item_type?: 'alat ukur' | 'consumable';
+  item_type?: 'alatukur' | 'consumable';
   jumlah?: number;
   qty?: number;
 }
@@ -353,7 +353,7 @@ const LoanFormModal = ({
                     </div>
                     <div className="d-flex align-items-center gap-2">
                       {item.item_type && (
-                        <span className={`badge bg-${item.item_type === 'alat ukur' ? 'info' : 'warning'} text-dark`} style={{ fontSize: '9px' }}>
+                        <span className={`badge bg-${item.item_type === 'alatukur' ? 'info' : 'warning'} text-dark`} style={{ fontSize: '9px' }}>
                           {item.item_type.toUpperCase()}
                         </span>
                       )}

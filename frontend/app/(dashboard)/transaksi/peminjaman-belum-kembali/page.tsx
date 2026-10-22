@@ -79,7 +79,7 @@ export default function PeminjamanBelumKembaliPage() {
                     {item.peminta?.nama || 'N/A'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-gray-700">
-                    {item.alat ukur?.nama_barang || 'Alat Dihapus'} <span className="text-xs text-gray-400">({item.alat ukur?.kode_barang})</span>
+                    {item.alatukur?.nama_barang || 'Alat Dihapus'} <span className="text-xs text-gray-400">({item.alatukur?.kode_barang})</span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-gray-700">{item.jumlah}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-gray-700">{new Date(item.tanggal).toLocaleDateString()}</td>

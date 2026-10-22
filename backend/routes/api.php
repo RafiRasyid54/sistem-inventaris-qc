@@ -87,10 +87,10 @@ Route::middleware('auth:sanctum')->group(function () {
     // Route utama untuk riwayat kalibrasi
     Route::apiResource('riwayat-kalibrasi', RiwayatKalibrasiController::class);
 
-    // Riwayat kalibrasi berdasarkan alat ukur
+    // Riwayat kalibrasi berdasarkan alatukur
     Route::get('/alat-ukur/{alat_ukur_id}/riwayat-kalibrasi', [RiwayatKalibrasiController::class, 'getByAlatUkur']);
 
-    // Riwayat peminjaman berdasarkan alat ukur
+    // Riwayat peminjaman berdasarkan alatukur
     Route::get('/alat-ukur/{alat_ukur_id}/riwayat-peminjaman', [PeminjamanController::class, 'getByAlatUkur']);
 
     // ==========================================

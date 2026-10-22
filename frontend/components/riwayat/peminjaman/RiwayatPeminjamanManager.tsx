@@ -243,7 +243,7 @@ const RiwayatPeminjamanManager = () => {
             <div>
               <h1 className="mb-2 h2">Riwayat Peminjaman Alat Ukur</h1>
               <p className="text-secondary mb-2">
-                Menampilkan riwayat seluruh transaksi peminjaman alat ukur yang telah dikembalikan.
+                Menampilkan riwayat seluruh transaksi peminjaman alatukur yang telah dikembalikan.
               </p>
               <DasherBreadcrumb />
             </div>

@@ -216,7 +216,7 @@ const DashboardManager = () => {
             </span>
             <div>
               <h1>Dashboard Pengelola</h1>
-              <p>Peminjaman dan kalibrasi alat ukur PLN, dipantau langsung.</p>
+              <p>Peminjaman dan kalibrasi alatukur PLN, dipantau langsung.</p>
             </div>
           </div>
           <div className="dm-sync">
@@ -261,7 +261,7 @@ const DashboardManager = () => {
   const peringatan = summary?.peringatan_kalibrasi ?? 0;
 
   const stats = [
-    { href: "/inventaris/data-alat-ukur", icon: <IconRuler2 size={24} />, label: "Total alat ukur", value: summary?.total_alat_ukur ?? 0, cls: "s-blue" },
+    { href: "/inventaris/data-alat-ukur", icon: <IconRuler2 size={24} />, label: "Total alatukur", value: summary?.total_alat_ukur ?? 0, cls: "s-blue" },
     { href: "/transaksi/peminjaman-aktif", icon: <IconClockHour4 size={24} />, label: "Sedang dipinjam", value: summary?.sedang_dipinjam ?? 0, cls: "s-yellow" },
     { href: "/inventaris/data-alat-ukur", icon: <IconAlertTriangle size={24} />, label: "Perlu kalibrasi", value: peringatan, cls: peringatan > 0 ? "s-red pulse" : "s-red" },
     { href: "/inventaris/data-peminjam", icon: <IconUsers size={24} />, label: "Peminjam aktif", value: summary?.total_peminta_aktif ?? 0, cls: "s-teal" },

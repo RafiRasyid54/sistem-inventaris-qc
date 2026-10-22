@@ -165,7 +165,7 @@ const PengembalianManager = () => {
       const milikPeminjamIni = items.filter((item) => item.peminjamId === targetPemintaId);
 
       if (milikPeminjamIni.length === 0) {
-        setScanError(`${namaPeminta} tidak sedang meminjam alat ukur apa pun.`);
+        setScanError(`${namaPeminta} tidak sedang meminjam alatukur apa pun.`);
         return;
       }
 
@@ -304,7 +304,7 @@ const PengembalianManager = () => {
         0
       );
       setSuccessMessage(
-        `${batch.length} alat ukur berhasil dikembalikan${
+        `${batch.length} alatukur berhasil dikembalikan${
           totalUnitRusak > 0 ? ` (${totalUnitRusak} unit di antaranya ditandai rusak dan masuk Laporan Kerusakan)` : ""
         }.`
       );
@@ -369,7 +369,7 @@ const PengembalianManager = () => {
             <div>
               <h1 className="mb-2 h2">Pengembalian Alat Ukur</h1>
               <p className="text-secondary mb-2">
-                Scan kartu peminjam, lalu centang alat ukur yang ingin dikembalikan sekaligus.
+                Scan kartu peminjam, lalu centang alatukur yang ingin dikembalikan sekaligus.
               </p>
               <DasherBreadcrumb />
             </div>
@@ -406,7 +406,7 @@ const PengembalianManager = () => {
         <Alert variant="warning" className="pg-msg">
           <IconLock size={20} className="flex-shrink-0" />
           <span>
-            Anda tidak memiliki akses untuk memproses pengembalian alat ukur. Hubungi Admin jika perlu.
+            Anda tidak memiliki akses untuk memproses pengembalian alatukur. Hubungi Admin jika perlu.
           </span>
         </Alert>
       ) : loading ? (

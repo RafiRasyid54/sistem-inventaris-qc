@@ -59,7 +59,7 @@ const fontBody = "'Inter','Segoe UI',sans-serif";
 const fontMono = "ui-monospace,'SFMono-Regular',Menlo,monospace";
 
 // nilai pembacaan kalibrasi yang "menyala" sekali saat halaman dibuka —
-// murni dekoratif, mengacu ke konteks alat ukur/QC
+// murni dekoratif, mengacu ke konteks alatukur/QC
 
 // Gaya yang tidak bisa dibuat inline (fokus, hover). Semua di bawah .pln-login.
 const CSS = `

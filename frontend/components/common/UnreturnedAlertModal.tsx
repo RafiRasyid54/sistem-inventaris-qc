@@ -102,7 +102,7 @@ export default function UnreturnedAlertModal() {
             <b>{unreturnedCount} alat</b> belum dikembalikan
           </h2>
           <p className="pa-text">
-            Masih ada alat ukur yang dipinjam dan belum kembali. Cek daftarnya dan hubungi peminjam.
+            Masih ada alatukur yang dipinjam dan belum kembali. Cek daftarnya dan hubungi peminjam.
           </p>
 
           <div className="pa-actions">

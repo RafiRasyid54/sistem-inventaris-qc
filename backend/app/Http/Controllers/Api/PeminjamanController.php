@@ -123,7 +123,7 @@ class PeminjamanController extends Controller
 
     /**
      * 4. PATCH /api/peminjaman/{id}/kembali
-     * Proses pengembalian alat ukur
+     * Proses pengembalian alatukur
      */
     public function kembali(Request $request, $id)
     {

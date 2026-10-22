@@ -153,7 +153,7 @@ const KalibrasiFormModal = ({
 
       try {
         if (loadingAlat) {
-          setScanError("Data alat ukur masih dimuat, silakan scan ulang sebentar lagi.");
+          setScanError("Data alatukur masih dimuat, silakan scan ulang sebentar lagi.");
           return;
         }
 
@@ -169,7 +169,7 @@ const KalibrasiFormModal = ({
           setForm((p) => ({ ...p, alatUkurId: found.id }));
           setScanError(null);
         } else {
-          setScanError(`Kode "${code}" tidak dikenali sebagai alat ukur terdaftar.`);
+          setScanError(`Kode "${code}" tidak dikenali sebagai alatukur terdaftar.`);
         }
         setScanValue("");
         scanRef.current?.focus();
@@ -384,7 +384,7 @@ const KalibrasiFormModal = ({
                       onChange={(e) => setForm((p) => ({ ...p, alatUkurId: e.target.value }))}
                       disabled={loadingAlat || isProcessDisabled}
                     >
-                      <option value="">{loadingAlat ? "Memuat..." : "Pilih alat ukur..."}</option>
+                      <option value="">{loadingAlat ? "Memuat..." : "Pilih alatukur..."}</option>
                       {alatList.map((a) => (
                         <option key={a.id} value={a.id}>
                           {a.kode_alat} — {a.nama_alat}

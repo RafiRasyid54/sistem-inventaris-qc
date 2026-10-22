@@ -13,7 +13,7 @@ class AlatUkurController extends Controller
     /**
      * GET /api/alat-ukur
      *
-     * Menampilkan semua data alat ukur
+     * Menampilkan semua data alatukur
      * beserta status ketersediaannya.
      */
     public function index()
@@ -29,7 +29,7 @@ class AlatUkurController extends Controller
     /**
      * POST /api/alat-ukur
      *
-     * Tambah data alat ukur baru.
+     * Tambah data alatukur baru.
      */
     public function store(Request $request)
     {
@@ -107,7 +107,7 @@ class AlatUkurController extends Controller
 
         } catch (\Throwable $e) {
 
-            \Log::error('Gagal menambahkan alat ukur', [
+            \Log::error('Gagal menambahkan alatukur', [
                 'message' => $e->getMessage(),
                 'file' => $e->getFile(),
                 'line' => $e->getLine(),
@@ -115,7 +115,7 @@ class AlatUkurController extends Controller
 
             return response()->json([
                 'status' => 'error',
-                'message' => 'Gagal menambahkan alat ukur.',
+                'message' => 'Gagal menambahkan alatukur.',
                 'error' => config('app.debug')
                     ? $e->getMessage()
                     : null,
@@ -126,7 +126,7 @@ class AlatUkurController extends Controller
     /**
      * GET /api/alat-ukur/{id}
      *
-     * Menampilkan detail alat ukur.
+     * Menampilkan detail alatukur.
      */
     public function show($id)
     {
@@ -169,7 +169,7 @@ class AlatUkurController extends Controller
 
         } catch (\Throwable $e) {
 
-            \Log::error('Gagal mengambil detail alat ukur', [
+            \Log::error('Gagal mengambil detail alatukur', [
                 'id' => $id,
                 'message' => $e->getMessage(),
                 'file' => $e->getFile(),
@@ -178,7 +178,7 @@ class AlatUkurController extends Controller
 
             return response()->json([
                 'status' => 'error',
-                'message' => 'Gagal mengambil detail alat ukur.',
+                'message' => 'Gagal mengambil detail alatukur.',
                 'error' => config('app.debug')
                     ? $e->getMessage()
                     : null,
@@ -189,7 +189,7 @@ class AlatUkurController extends Controller
     /**
      * PUT/PATCH /api/alat-ukur/{id}
      *
-     * Edit data alat ukur.
+     * Edit data alatukur.
      */
     public function update(Request $request, $id)
     {
@@ -281,7 +281,7 @@ class AlatUkurController extends Controller
 
         } catch (\Throwable $e) {
 
-            \Log::error('Gagal memperbarui alat ukur', [
+            \Log::error('Gagal memperbarui alatukur', [
                 'id' => $id,
                 'message' => $e->getMessage(),
                 'file' => $e->getFile(),
@@ -290,7 +290,7 @@ class AlatUkurController extends Controller
 
             return response()->json([
                 'status' => 'error',
-                'message' => 'Gagal memperbarui data alat ukur.',
+                'message' => 'Gagal memperbarui data alatukur.',
                 'error' => config('app.debug')
                     ? $e->getMessage()
                     : null,
@@ -301,7 +301,7 @@ class AlatUkurController extends Controller
     /**
      * DELETE /api/alat-ukur/{id}
      *
-     * Hapus alat ukur.
+     * Hapus alatukur.
      */
     public function destroy($id)
     {
@@ -325,7 +325,7 @@ class AlatUkurController extends Controller
 
         } catch (\Throwable $e) {
 
-            \Log::error('Gagal menghapus alat ukur', [
+            \Log::error('Gagal menghapus alatukur', [
                 'id' => $id,
                 'message' => $e->getMessage(),
                 'file' => $e->getFile(),
@@ -334,7 +334,7 @@ class AlatUkurController extends Controller
 
             return response()->json([
                 'status' => 'error',
-                'message' => 'Gagal menghapus alat ukur.',
+                'message' => 'Gagal menghapus alatukur.',
                 'error' => config('app.debug')
                     ? $e->getMessage()
                     : null,

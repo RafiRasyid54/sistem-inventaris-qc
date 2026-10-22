@@ -9,7 +9,7 @@
 }
 
 .ql-container.ql-disabled {
-  .ql-alat ukurtip {
+  .ql-alatukurtip {
     visibility: hidden;
   }
   .ql-editor {
@@ -485,7 +485,7 @@
   }
 }
 
-.ql-snow.ql-alat ukurbar {
+.ql-snow.ql-alatukurbar {
   &:after {
     clear: both;
     content: '';
@@ -625,7 +625,7 @@
 }
 
 .ql-snow {
-  .ql-alat ukurbar {
+  .ql-alatukurbar {
     &:after {
       clear: both;
       content: '';
@@ -776,7 +776,7 @@
   .ql-out-top {
     visibility: hidden;
   }
-  .ql-alat ukurtip {
+  .ql-alatukurtip {
     position: absolute;
     transform: translateY(10px);
     background-color: var(--#{$prefix}white);
@@ -826,7 +826,7 @@
       }
     }
   }
-  .ql-alat ukurtip.ql-flip {
+  .ql-alatukurtip.ql-flip {
     transform: translateY(-10px);
   }
   .ql-formats {
@@ -1256,7 +1256,7 @@
       background-color: var(--#{$prefix}dark);
     }
   }
-  .ql-alat ukurtip.ql-editing {
+  .ql-alatukurtip.ql-editing {
     a.ql-preview {
       display: none;
     }
@@ -1274,17 +1274,17 @@
       }
     }
   }
-  .ql-alat ukurtip[data-mode='link'] {
+  .ql-alatukurtip[data-mode='link'] {
     &::before {
       content: 'Enter link:';
     }
   }
-  .ql-alat ukurtip[data-mode='formula'] {
+  .ql-alatukurtip[data-mode='formula'] {
     &::before {
       content: 'Enter formula:';
     }
   }
-  .ql-alat ukurtip[data-mode='video'] {
+  .ql-alatukurtip[data-mode='video'] {
     &::before {
       content: 'Enter video:';
     }
@@ -1294,7 +1294,7 @@
   }
 }
 
-.ql-alat ukurbar.ql-snow {
+.ql-alatukurbar.ql-snow {
   box-sizing: border-box;
   font-family: $font-family-base;
   padding: 8px;
@@ -1340,7 +1340,7 @@
 }
 
 @media (pointer: coarse) {
-  .ql-snow.ql-alat ukurbar {
+  .ql-snow.ql-alatukurbar {
     button {
       &:hover {
         &:not(.ql-active) {
@@ -1362,7 +1362,7 @@
     }
   }
   .ql-snow {
-    .ql-alat ukurbar {
+    .ql-alatukurbar {
       button {
         &:hover {
           &:not(.ql-active) {

@@ -1,9 +1,9 @@
 // Apex Chart
 
-.apexcharts-alat ukurtip {
+.apexcharts-alatukurtip {
   border-radius: 0.5rem !important;
   box-shadow: $box-shadow-sm !important;
-  .apexcharts-alat ukurtip-series-group {
+  .apexcharts-alatukurtip-series-group {
     background: var(--#{$prefix}white) !important;
     color: var(--#{$prefix}dark);
     padding: 3px 16px 6px 16px !important;
@@ -14,7 +14,7 @@
     line-height: 1 !important;
   }
 }
-.apexcharts-alat ukurtip-marker {
+.apexcharts-alatukurtip-marker {
   width: 8px !important;
   height: 8px !important;
   position: relative;
@@ -22,16 +22,16 @@
   margin-right: 6px !important;
   border-radius: 50%;
 }
-.apexcharts-alat ukurtip.apexcharts-theme-light {
+.apexcharts-alatukurtip.apexcharts-theme-light {
   border: 1px solid var(--#{$prefix}gray-300) !important;
 
   background: var(--#{$prefix}white) !important;
 }
-.apexcharts-alat ukurtip.apexcharts-theme-light .apexcharts-alat ukurtip-title {
+.apexcharts-alatukurtip.apexcharts-theme-light .apexcharts-alatukurtip-title {
   background: var(--#{$prefix}white) !important;
   border-bottom: 1px solid var(--#{$prefix}gray-300) !important;
 }
-.apexcharts-alat ukurtip-title {
+.apexcharts-alatukurtip-title {
   padding: 8px 16px !important;
   font-size: 14px !important;
   margin-bottom: 4px;

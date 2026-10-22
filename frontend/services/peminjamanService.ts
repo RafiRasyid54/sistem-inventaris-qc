@@ -127,13 +127,13 @@ function mapPeminjamanFromApi(
     id: item.id,
     peminjamanId: item.id, // <--- PERBAIKAN: Suntikkan peminjamanId di sini!
 
-    // ID alat ukur
+    // ID alatukur
     alatUkurId: item.alat_ukur?.id ?? "-",
 
     // Informasi waktu (Menggunakan tanggal_pinjam)
     tanggal: formatTanggalJam(item.tanggal_pinjam),
 
-    // Informasi alat ukur (Mapping ke kode_alat & nama_alat)
+    // Informasi alatukur (Mapping ke kode_alat & nama_alat)
     kodeBarang: item.alat_ukur?.kode_alat ?? "-",
     namaBarang: item.alat_ukur?.nama_alat ?? "Alat Tidak Ditemukan",
     merk: item.alat_ukur?.merk ?? "-",
@@ -184,7 +184,7 @@ function mapRiwayatFromApi(
       ? formatTanggalJam(item.tanggal_kembali)
       : "-",
 
-    // Informasi alat ukur
+    // Informasi alatukur
     kode_barang: item.alat_ukur?.kode_alat ?? "-",
     nama_barang: item.alat_ukur?.nama_alat ?? "-",
     merk: item.alat_ukur?.merk ?? "-",

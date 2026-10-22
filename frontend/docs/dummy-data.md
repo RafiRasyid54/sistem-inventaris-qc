@@ -10,7 +10,7 @@ data/
 
 Contoh:
 
-alat ukur.ts
+alatukur.ts
 
 consumables.ts
 
@@ -22,7 +22,7 @@ reports.ts
 
 Gunakan minimal:
 
-20 data alat ukur
+20 data alatukur
 
 20 consumable
 

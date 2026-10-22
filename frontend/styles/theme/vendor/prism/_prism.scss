@@ -15,10 +15,10 @@ pre[class*='language-'] {
   background: $gray-800 !important;
 }
 
-div.code-alat ukurbar {
+div.code-alatukurbar {
   position: relative;
 
-  > .alat ukurbar {
+  > .alatukurbar {
     position: absolute;
     top: 1.3em;
     right: 1.3em;
@@ -26,12 +26,12 @@ div.code-alat ukurbar {
     opacity: 0;
   }
 
-  &:hover > .alat ukurbar,
-  &:focus-within > .alat ukurbar {
+  &:hover > .alatukurbar,
+  &:focus-within > .alatukurbar {
     opacity: 1;
   }
 
-  > .alat ukurbar > .alat ukurbar-item {
+  > .alatukurbar > .alatukurbar-item {
     display: inline-block;
 
     > {

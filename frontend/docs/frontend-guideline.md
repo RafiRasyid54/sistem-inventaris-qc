@@ -215,7 +215,7 @@ import Button from "@/components/ui/button";
 
 import { useAuth } from "@/hooks/useAuth";
 
-import { Alatukur } from "@/types/alat ukur";
+import { Alatukur } from "@/types/alatukur";
 ```
 
 ---
@@ -555,7 +555,7 @@ Gunakan format berikut.
 ```
 feat: tambah halaman dashboard
 
-feat: tambah data alat ukur
+feat: tambah data alatukur
 
 fix: perbaiki pagination
 

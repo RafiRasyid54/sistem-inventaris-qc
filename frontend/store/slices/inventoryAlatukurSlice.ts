@@ -162,7 +162,7 @@ export const checkoutPeminjamanThunk =
       try {
         if (!cartItems || cartItems.length === 0) {
           throw new Error(
-            "Tidak ada alat ukur yang dipilih"
+            "Tidak ada alatukur yang dipilih"
           );
         }
 

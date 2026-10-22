@@ -3,7 +3,7 @@ import RiwayatKalibrasiManager from "components/riwayat/kalibrasi/RiwayatKalibra
 
 export const metadata: Metadata = {
   title: "Riwayat Kalibrasi Alat Ukur | Ruang Alat Ukur - Admin Panel",
-  description: "Menampilkan riwayat kalibrasi seluruh alat ukur beserta status jatuh temponya.",
+  description: "Menampilkan riwayat kalibrasi seluruh alatukur beserta status jatuh temponya.",
 };
 
 const RiwayatKalibrasiPage = () => {

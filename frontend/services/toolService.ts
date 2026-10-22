@@ -69,19 +69,19 @@ function mapAlatukurToApi(values: AlatukurFormValues): AlatukurApiPayload {
   };
 }
 
-function sortByKode(alat ukur: AlatukurItemType[]): AlatukurItemType[] {
-  return [...alat ukur].sort((a, b) =>
+function sortByKode(alatukur: AlatukurItemType[]): AlatukurItemType[] {
+  return [...alatukur].sort((a, b) =>
     b.kodeBarang.localeCompare(a.kodeBarang, undefined, { numeric: true })
   );
 }
 
 export async function getAlatukur(): Promise<AlatukurItemType[]> {
-  const data: AlatukurApiResponse[] = await apiFetch("/alat ukur");
+  const data: AlatukurApiResponse[] = await apiFetch("/alatukur");
   return sortByKode(data.map(mapAlatukurFromApi));
 }
 
 export async function createAlatukur(values: AlatukurFormValues): Promise<AlatukurItemType> {
-  const data: AlatukurApiResponse = await apiFetch("/alat ukur", {
+  const data: AlatukurApiResponse = await apiFetch("/alatukur", {
     method: "POST",
     body: JSON.stringify(mapAlatukurToApi(values)),
   });
@@ -89,7 +89,7 @@ export async function createAlatukur(values: AlatukurFormValues): Promise<Alatuk
 }
 
 export async function updateAlatukur(id: string, values: AlatukurFormValues): Promise<AlatukurItemType> {
-  const data: AlatukurApiResponse = await apiFetch(`/alat ukur/${id}`, {
+  const data: AlatukurApiResponse = await apiFetch(`/alatukur/${id}`, {
     method: "PUT",
     body: JSON.stringify(mapAlatukurToApi(values)),
   });
@@ -97,7 +97,7 @@ export async function updateAlatukur(id: string, values: AlatukurFormValues): Pr
 }
 
 export async function deleteAlatukur(id: string): Promise<void> {
-  await apiFetch(`/alat ukur/${id}`, { method: "DELETE" });
+  await apiFetch(`/alatukur/${id}`, { method: "DELETE" });
 }
 
 export async function updateAlatukurKondisi(
@@ -105,14 +105,14 @@ export async function updateAlatukurKondisi(
   kondisi: "Baik" | "Rusak"
 ): Promise<void> {
   const keadaan = kondisi === "Rusak" ? "R" : "B";
-  await apiFetch(`/alat ukur/${id}`, {
+  await apiFetch(`/alatukur/${id}`, {
     method: "PUT",
     body: JSON.stringify({ keadaan }),
   });
 }
 
 export async function kurangiStokAlatukur(id: string, jumlah: number): Promise<void> {
-  await apiFetch(`/alat ukur/${id}/kurangi-stok`, {
+  await apiFetch(`/alatukur/${id}/kurangi-stok`, {
     method: "PATCH",
     body: JSON.stringify({ jumlah }),
   });

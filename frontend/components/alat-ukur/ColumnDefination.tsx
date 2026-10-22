@@ -186,7 +186,7 @@ export const ColumnDefinition: React.FC<ColumnDefinitionProps> = ({
                     type="button"
                     className="btn btn-sm btn-ghost-primary"
                     onClick={() => onAddToCart(item)}
-                    title="Pinjam alat ukur"
+                    title="Pinjam alatukur"
                   >
                     <ShoppingCart size={16} />
                   </button>
@@ -205,7 +205,7 @@ export const ColumnDefinition: React.FC<ColumnDefinitionProps> = ({
                     type="button"
                     className="btn btn-sm btn-ghost-secondary"
                     onClick={() => onDetail(item)}
-                    title="Detail alat ukur"
+                    title="Detail alatukur"
                   >
                     <Eye size={16} />
                   </button>
@@ -214,7 +214,7 @@ export const ColumnDefinition: React.FC<ColumnDefinitionProps> = ({
                     type="button"
                     className="btn btn-sm btn-ghost-warning"
                     onClick={() => onEdit(item)}
-                    title="Edit alat ukur"
+                    title="Edit alatukur"
                   >
                     <Edit size={16} />
                   </button>
@@ -223,7 +223,7 @@ export const ColumnDefinition: React.FC<ColumnDefinitionProps> = ({
                     type="button"
                     className="btn btn-sm btn-ghost-danger"
                     onClick={() => onDelete(item)}
-                    title="Hapus alat ukur"
+                    title="Hapus alatukur"
                   >
                     <Trash2 size={16} />
                   </button>

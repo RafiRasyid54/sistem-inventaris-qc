@@ -93,7 +93,7 @@ class LaporanKerusakanController extends Controller
 
         try {
             $laporan = DB::transaction(function () use ($laporan, $data) {
-                // Logika cek stok dihapus karena setiap alat ukur adalah unit unik
+                // Logika cek stok dihapus karena setiap alatukur adalah unit unik
                 $laporan->update($data);
                 return $laporan;
             });

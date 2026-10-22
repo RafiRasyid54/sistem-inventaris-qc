@@ -120,7 +120,7 @@ export const AlatUkurDetailModal: React.FC<AlatUkurDetailModalProps> = ({ item, 
             <div className="pd-hero">
               <div className="pd-top">
                 <div>
-                  <div className="pd-lb"><IconInfoCircle size={14} /> Detail alat ukur</div>
+                  <div className="pd-lb"><IconInfoCircle size={14} /> Detail alatukur</div>
                   <h3 className="pd-name">{item.nama_alat}</h3>
                   <span className="pd-code">{kodeAlat || 'Tanpa Kode'}</span>
                 </div>

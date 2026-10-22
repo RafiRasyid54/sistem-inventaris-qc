@@ -219,7 +219,7 @@ const DataAlatUkurManager = () => {
       const res = await apiFetch<AlatUkurApiResponse>("/alat-ukur");
       setData(res.data ?? []);
     } catch (err: any) {
-      setError(err?.message || "Gagal memuat data alat ukur.");
+      setError(err?.message || "Gagal memuat data alatukur.");
       setData([]);
     } finally {
       setLoading(false);
@@ -424,7 +424,7 @@ const DataAlatUkurManager = () => {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(formData),
         });
-        setSuccessMessage("Data alat ukur berhasil diperbarui!");
+        setSuccessMessage("Data alatukur berhasil diperbarui!");
       } else {
         await apiFetch(`/alat-ukur`, {
           method: "POST",
@@ -438,7 +438,7 @@ const DataAlatUkurManager = () => {
       loadAlatUkur();
       setTimeout(() => setSuccessMessage(null), 3000);
     } catch (err: any) {
-      setError(err?.message || "Gagal menyimpan data alat ukur.");
+      setError(err?.message || "Gagal menyimpan data alatukur.");
     }
   };
 
@@ -633,7 +633,7 @@ const DataAlatUkurManager = () => {
 
           {!loading && (
             <div className="d-flex flex-wrap align-items-center gap-3">
-              <span className="pda-count"><b>{filteredData.length}</b>{searchTerm ? ` dari ${data.length}` : ""} alat ukur</span>
+              <span className="pda-count"><b>{filteredData.length}</b>{searchTerm ? ` dari ${data.length}` : ""} alatukur</span>
               <div className="d-flex gap-2">
                 <Button
                   variant="outline-danger"
