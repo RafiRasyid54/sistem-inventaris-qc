@@ -1,4 +1,9 @@
 // Variables
+@use "sass:color";
+
+@function rgb-list($c) {
+  @return #{color.channel($c, "red", $space: rgb)}, #{color.channel($c, "green", $space: rgb)}, #{color.channel($c, "blue", $space: rgb)};
+}
 
 // Color system
 
@@ -65,74 +70,74 @@ $dark: $gray-900 !default;
 // scss-docs-end theme-color-variables
 // primary
 $primary-100: #c8fad6 !default;
-$primary-100-rgb: #{red($primary-100)}, #{green($primary-100)}, #{blue($primary-100)};
+$primary-100-rgb: rgb-list($primary-100);
 
 $primary-200: tint-color($blue, 60%) !default;
 $primary-300: #5be49b !default;
-$primary-300-rgb: #{red($primary-300)}, #{green($primary-300)}, #{blue($primary-300)};
+$primary-300-rgb: rgb-list($primary-300);
 $primary-400: tint-color($blue, 20%) !default;
 $primary-500: $blue !default;
 $primary-600: shade-color($blue, 20%) !default;
 $primary-700: #007867 !default;
-$primary-700-rgb: #{red($primary-700)}, #{green($primary-700)}, #{blue($primary-700)};
+$primary-700-rgb: rgb-list($primary-700);
 $primary-800: shade-color($blue, 60%) !default;
 $primary-900: #004b50 !default;
-$primary-900-rgb: #{red($primary-900)}, #{green($primary-900)}, #{blue($primary-900)};
+$primary-900-rgb: rgb-list($primary-900);
 
 // info
 $info-100: #cafdf5 !default;
-$info-100-rgb: #{red($info-100)}, #{green($info-100)}, #{blue($info-100)};
+$info-100-rgb: rgb-list($info-100);
 $info-300: #61f3f3 !default;
-$info-300-rgb: #{red($info-300)}, #{green($info-300)}, #{blue($info-300)};
+$info-300-rgb: rgb-list($info-300);
 $info-500: $cyan !default;
 $info-700: #006c9c !default;
-$info-700-rgb: #{red($info-700)}, #{green($info-700)}, #{blue($info-700)};
+$info-700-rgb: rgb-list($info-700);
 $info-900: #003768 !default;
-$info-900-rgb: #{red($info-900)}, #{green($info-900)}, #{blue($info-900)};
+$info-900-rgb: rgb-list($info-900);
 
 // success
 $success-100: #d3fcd2 !default;
-$success-100-rgb: #{red($success-100)}, #{green($success-100)}, #{blue($success-100)};
+$success-100-rgb: rgb-list($success-100);
 $success-300: #77ed8b !default;
-$success-300-rgb: #{red($success-300)}, #{green($success-300)}, #{blue($success-300)};
+$success-300-rgb: rgb-list($success-300);
 $success-500: $cyan !default;
 $success-700: #118d57 !default;
-$success-700-rgb: #{red($success-700)}, #{green($success-700)}, #{blue($success-700)};
+$success-700-rgb: rgb-list($success-700);
 $success-900: #065e49 !default;
-$success-900-rgb: #{red($success-900)}, #{green($success-900)}, #{blue($success-900)};
+$success-900-rgb: rgb-list($success-900);
 
 // danger
 $danger-100: #ffe9d5 !default;
-$danger-100-rgb: #{red($danger-100)}, #{green($danger-100)}, #{blue($danger-100)};
+$danger-100-rgb: rgb-list($danger-100);
 $danger-300: #ffac82 !default;
-$danger-300-rgb: #{red($danger-300)}, #{green($danger-300)}, #{blue($danger-300)};
+$danger-300-rgb: rgb-list($danger-300);
 $danger-500: $danger !default;
 $danger-700: #b71d18 !default;
-$danger-700-rgb: #{red($danger-700)}, #{green($danger-700)}, #{blue($danger-700)};
+$danger-700-rgb: rgb-list($danger-700);
 $danger-900: #7a0916 !default;
-$danger-900-rgb: #{red($danger-900)}, #{green($danger-900)}, #{blue($danger-900)};
+$danger-900-rgb: rgb-list($danger-900);
 
 // warning
 $warning-100: #fff5cc !default;
-$warning-100-rgb: #{red($warning-100)}, #{green($warning-100)}, #{blue($warning-100)};
+$warning-100-rgb: rgb-list($warning-100);
 $warning-300: #ffd666 !default;
-$warning-300-rgb: #{red($warning-300)}, #{green($warning-300)}, #{blue($warning-300)};
+$warning-300-rgb: rgb-list($warning-300);
 $warning-500: $warning !default;
 $warning-700: #b76e00 !default;
-$warning-700-rgb: #{red($warning-700)}, #{green($warning-700)}, #{blue($warning-700)};
+$warning-700-rgb: rgb-list($warning-700);
 $warning-900: #7a4100 !default;
-$warning-900-rgb: #{red($warning-900)}, #{green($warning-900)}, #{blue($warning-900)};
+$warning-900-rgb: rgb-list($warning-900);
 
-// warning
+// secondary
 $secondary-100: #f9fafb !default;
-$secondary-100-rgb: #{red($secondary-100)}, #{green($secondary-100)}, #{blue($secondary-100)};
+$secondary-100-rgb: rgb-list($secondary-100);
 $secondary-300: #dfe3e8 !default;
-$secondary-300-rgb: #{red($secondary-300)}, #{green($secondary-300)}, #{blue($secondary-300)};
+$secondary-300-rgb: rgb-list($secondary-300);
 $secondary-500: $secondary !default;
 $secondary-700: #454f5b !default;
-$secondary-700-rgb: #{red($secondary-700)}, #{green($secondary-700)}, #{blue($secondary-700)};
+$secondary-700-rgb: rgb-list($secondary-700);
 $secondary-900: #141a21 !default;
-$secondary-900-rgb: #{red($secondary-900)}, #{green($secondary-900)}, #{blue($secondary-900)};
+$secondary-900-rgb: rgb-list($secondary-900);
 
 $colors: (
   'primary-lighter': $primary-100,

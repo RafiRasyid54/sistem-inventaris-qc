@@ -61,6 +61,28 @@ const CSS = `
 .pln-du .du-empty-icon{width:72px;height:72px;border-radius:50%;margin:0 auto;display:grid;place-items:center;background:#e6f0fa;color:var(--blue)}
 .pln-du .du-empty.is-search .du-empty-icon{background:#fff8e1;color:#9a6a00}
 .pln-du .du-empty h5{font-weight:800;color:var(--navy)}
+
+@media (max-width:576px){
+  .pln-du{max-width:100%;overflow-x:hidden}
+  .pln-du .du-head h1{font-size:1.5rem}
+
+  /* tombol Tambah User selebar layar */
+  .pln-du .du-head>div:last-child{width:100%}
+  .pln-du .du-head .btn-yellow{width:100%;justify-content:center}
+
+  /* toolbar: pencarian penuh, switch dan info sejajar rapi */
+  .pln-du .du-card .datatools-toolbar{padding:12px 14px}
+  .pln-du .du-card .datatools-toolbar .row>div:last-child{
+    justify-content:space-between!important;flex-wrap:wrap;gap:6px 12px!important;margin-top:8px}
+  .pln-du .du-switch{font-size:.8rem}
+  .pln-du .du-info{font-size:.78rem}
+
+  /* isi kartu dan tabel lebih ringkas */
+  .pln-du .du-card .card-body{padding:8px 8px 14px}
+  .pln-du .du-card table thead th{font-size:.68rem;padding:.6rem .6rem}
+  .pln-du .du-card table tbody td{font-size:.8rem;padding:.65rem .6rem}
+  .pln-du .du-card .pagination{flex-wrap:wrap;justify-content:center;gap:4px}
+}
 `;
 
 const DataUserManager = () => {

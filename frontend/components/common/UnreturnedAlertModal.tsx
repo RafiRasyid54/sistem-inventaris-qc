@@ -43,19 +43,8 @@ export default function UnreturnedAlertModal() {
     // Jika bukan di dashboard, jangan lakukan fetch API sama sekali
     if (!isDashboard) return;
 
-    const checkUserAndUnreturnedAlatukur = async () => {
+    const checkUnreturnedAlatukur = async () => {
       try {
-        const userRes: any = await api('/user');
-
-        const userData = userRes?.data || userRes;
-        const roles = userData?.roles || [];
-        const roleNames = Array.isArray(roles) ? roles.map((r: any) => (typeof r === 'string' ? r : r.name)) : [];
-        const primaryRole = roleNames[0] || userData?.role || '';
-
-        if (primaryRole && primaryRole.toLowerCase() === 'super admin') {
-          // Logika bypass role jika dibutuhkan
-        }
-
         const res: any = await api('/peminjaman/belum-kembali');
         const data = res?.data || res;
         const total = Array.isArray(data) ? data.length : (res?.total || 0);
@@ -69,7 +58,7 @@ export default function UnreturnedAlertModal() {
       }
     };
 
-    checkUserAndUnreturnedAlatukur();
+    checkUnreturnedAlatukur();
   }, [pathname, isDashboard]); // Re-run jika pindah route kembali ke dashboard
 
   // Cegah komponen dirender (mengembalikan null) jika bukan di halaman dashboard

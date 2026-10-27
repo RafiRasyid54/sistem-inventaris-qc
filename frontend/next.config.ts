@@ -10,6 +10,7 @@ const nextConfig: NextConfig = {
   // Hapus output: "export" agar Vercel dapat memproses Next.js dengan optimal
   sassOptions: {
     includePaths: [path.join(__dirname, "node_modules")],
+    silenceDeprecations: ["import", "global-builtin", "color-functions", "mixed-decls"],
   },
   // Bypass error build komponen yang tidak terpakai
   typescript: {

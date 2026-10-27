@@ -110,10 +110,25 @@ const CSS = `
 .pln-rp .pr-empty h5{font-weight:800;color:var(--navy)}
 
 @media (max-width:576px){
-  .pln-rp .pr-sec{padding:0 16px!important}
-  .pln-rp .pr-body{padding:12px 12px 20px!important}
-  .pln-rp .pa-tabs{width:100%;display:flex}
-  .pln-rp .pa-tab-btn{flex:1;justify-content:center;padding:8px 10px;font-size:.85rem}
+  .pln-rp .pr-head h1{font-size:1.5rem}
+  .pln-rp .pr-sec{padding:0 14px!important}
+  .pln-rp .pr-sec-top{padding-top:16px!important;gap:10px}
+  .pln-rp .pr-sec-search,.pln-rp .pr-sec-filter{padding-top:12px!important}
+  .pln-rp .pr-sec-filter{padding-bottom:16px!important}
+  .pln-rp .pr-sec-filter>*{gap:10px!important}
+
+  /* tab: satu baris, lebar sama, tidak pecah */
+  .pln-rp .pa-tabs{width:100%;display:flex;gap:2px;padding:4px}
+  .pln-rp .pa-tab-btn{flex:1;justify-content:center;white-space:nowrap;padding:8px 6px;font-size:.8rem;gap:6px;min-width:0}
+  .pln-rp .pa-tab-n{min-width:20px;padding:1px 6px;font-size:.68rem}
+
+  /* tombol export berdampingan (2 kolom) */
+  .pln-rp .pr-sec-filter .btn{flex:1 1 calc(50% - 5px);min-width:0;padding-top:8px;padding-bottom:8px;font-size:.85rem}
+
+  /* tabel lebih ringkas */
+  .pln-rp .pr-body{padding:8px 8px 16px!important}
+  .pln-rp .pr-card table th,.pln-rp .pr-card table td{padding:10px 10px!important;font-size:.82rem}
+  .pln-rp .pr-card table th{font-size:.68rem}
 }
 `;
 
