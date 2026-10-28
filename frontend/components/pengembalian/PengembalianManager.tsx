@@ -1,6 +1,6 @@
 "use client";
 // import node module libraries
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Row, Col, Alert, Spinner, Button, Modal, Form } from "react-bootstrap";
 import { 
   IconCircleCheck, 
@@ -81,6 +81,7 @@ const PengembalianManager = () => {
   const [submitError, setSubmitError] = useState<string | null>(null);
 
   // ---- State Khusus Vendor ----
+  const [pemintaList, setPemintaList] = useState<any[]>([]);
   const [vendorList, setVendorList] = useState<any[]>([]);
   const [vendorModalOpen, setVendorModalOpen] = useState(false);
   const [selectedVendorId, setSelectedVendorId] = useState<string>("");
@@ -91,7 +92,6 @@ const PengembalianManager = () => {
     setLoading(true);
     setError(null);
     try {
-      // Load Peminjaman Aktif & Data Peminta (untuk memfilter vendor)
       const [dataPeminjaman, dataPeminta] = await Promise.all([
         getPeminjamanAktif(),
         getPeminta()
@@ -103,6 +103,7 @@ const PengembalianManager = () => {
       if (Array.isArray(dataPeminta)) rawPeminta = dataPeminta;
       else if (dataPeminta?.data) rawPeminta = dataPeminta.data;
 
+      setPemintaList(rawPeminta);
       setVendorList(rawPeminta.filter((p: any) => p.kategori === "Vendor"));
     } catch (err) {
       const message = err instanceof Error ? err.message : "Gagal memuat data peminjaman aktif";
@@ -116,7 +117,30 @@ const PengembalianManager = () => {
     loadData();
   }, []);
 
-  // ---- Scan kartu peminjam / Approval Vendor ----
+  // ---- Opsi dropdown: peminjam (non-vendor) yang masih punya pinjaman aktif ----
+  const peminjamOptions = useMemo(() => {
+    const vendorIds = new Set(vendorList.map((v) => String(v.id)));
+    const map = new Map<string, string>();
+    items.forEach((i) => {
+      const id = String(i.peminjamId);
+      if (!vendorIds.has(id)) map.set(id, i.namaPeminjam || id);
+    });
+    return Array.from(map, ([id, nama]) => ({ id, nama })).sort((a, b) =>
+      a.nama.localeCompare(b.nama)
+    );
+  }, [items, vendorList]);
+
+  // ---- Opsi dropdown otorisasi vendor: hanya Inventory Man ----
+  const inventoryManOptions = useMemo(
+    () =>
+      pemintaList
+        .filter((p) => p.role === "inventory man")
+        .map((p) => ({ id: String(p.id), nama: p.nama || p.nama_peminta || p.name || "Inventory Man" }))
+        .sort((a, b) => a.nama.localeCompare(b.nama)),
+    [pemintaList]
+  );
+
+  // ---- Scan kartu peminjam / pilih nama / Approval Vendor ----
   const handleScan = async (idCard: string) => {
     setScanning(true);
     setScanError(null);
@@ -129,22 +153,24 @@ const PengembalianManager = () => {
       let targetPemintaId = "";
       let namaPeminta = "";
 
-      // LOGIKA PEMISAHAN: Apakah sedang mode Normal atau Approval Vendor?
       if (pendingVendor) {
-        // 1. MODE APPROVAL VENDOR
-        const verifikator = rawList.find((p: any) => p.rfid_uid === idCard || p.id === idCard);
+        // MODE APPROVAL VENDOR
+        const verifikator = rawList.find(
+          (p: any) => p.rfid_uid === idCard || String(p.id) === String(idCard)
+        );
         
         if (!verifikator || verifikator.role !== "inventory man") {
-          setScanError("Akses Ditolak! Hanya kartu ber-role 'Inventory Man' yang dapat menyetujui pengembalian Vendor.");
+          setScanError("Akses Ditolak! Hanya 'Inventory Man' yang dapat menyetujui pengembalian Vendor.");
           return;
         }
         
-        // Otorisasi berhasil, arahkan query ke barang milik Vendor
         targetPemintaId = pendingVendor.id;
         namaPeminta = pendingVendor.nama_peminta || "Vendor";
       } else {
-        // 2. MODE NORMAL (Pegawai mengembalikan barangnya sendiri)
-        const peminta = rawList.find((p: any) => p.rfid_uid === idCard || p.id === idCard);
+        // MODE NORMAL (Pegawai mengembalikan barangnya sendiri)
+        const peminta = rawList.find(
+          (p: any) => p.rfid_uid === idCard || String(p.id) === String(idCard)
+        );
         
         if (!peminta) {
           setScanError("Kartu tidak dikenali atau peminjam tidak aktif.");
@@ -156,13 +182,13 @@ const PengembalianManager = () => {
           return;
         }
 
-        // Arahkan query ke barang milik Pegawai tersebut
         targetPemintaId = peminta.id;
         namaPeminta = peminta.nama || peminta.nama_peminta || peminta.name || "Pengguna";
       }
 
-      // Cari barang yang sedang dipinjam
-      const milikPeminjamIni = items.filter((item) => item.peminjamId === targetPemintaId);
+      const milikPeminjamIni = items.filter(
+        (item) => String(item.peminjamId) === String(targetPemintaId)
+      );
 
       if (milikPeminjamIni.length === 0) {
         setScanError(`${namaPeminta} tidak sedang meminjam alatukur apa pun.`);
@@ -197,7 +223,6 @@ const PengembalianManager = () => {
       setItemsPeminjam(grouped);
       setRecordsByGroup(records);
       
-      // Bersihkan state otorisasi vendor
       setPendingVendor(null);
       setScanAuthModalOpen(false);
 
@@ -226,7 +251,7 @@ const PengembalianManager = () => {
     if (vendor) {
       setPendingVendor(vendor);
       setVendorModalOpen(false);
-      setScanAuthModalOpen(true); // Buka modal otorisasi kartu
+      setScanAuthModalOpen(true);
     }
   };
 
@@ -252,7 +277,6 @@ const PengembalianManager = () => {
 
           const ambil = Math.min(record.jumlah, sisaDikembalikan);
 
-          // TANGKAP ID
           const realPeminjamanId = record.id || (record as any).peminjamanId || (record as any).id_peminjaman || (record as any).peminjaman_id;
 
           if (!realPeminjamanId || realPeminjamanId === 0 || realPeminjamanId === "0") {
@@ -369,7 +393,7 @@ const PengembalianManager = () => {
             <div>
               <h1 className="mb-2 h2">Pengembalian Alat Ukur</h1>
               <p className="text-secondary mb-2">
-                Scan kartu peminjam, lalu centang alatukur yang ingin dikembalikan sekaligus.
+                Scan kartu atau pilih nama peminjam, lalu centang alatukur yang ingin dikembalikan sekaligus.
               </p>
               <DasherBreadcrumb />
             </div>
@@ -380,7 +404,7 @@ const PengembalianManager = () => {
       {canProcess && (
         <div className="pg-steps" aria-label="Langkah pengembalian">
           <span className={`pg-step ${stepClass(1)}`}>
-            <i>1</i> Scan kartu
+            <i>1</i> Scan kartu / pilih nama
           </span>
           <span className={`pg-step ${stepClass(2)}`}>
             <i>2</i> Pilih alat dan konfirmasi
@@ -435,11 +459,16 @@ const PengembalianManager = () => {
             >
               <IconFileSpreadsheet size={16} /> Excel
             </Button>
-             <Button variant="outline-primary" onClick={() => setVendorModalOpen(true)} className="d-flex align-items-center gap-2 fw-semibold bg-white shadow-sm">
-                <IconBuildingStore size={18} /> Pengembalian Eksternal (Vendor)
-             </Button>
+            <Button variant="outline-primary" onClick={() => setVendorModalOpen(true)} className="d-flex align-items-center gap-2 fw-semibold bg-white shadow-sm">
+              <IconBuildingStore size={18} /> Pengembalian Eksternal (Vendor)
+            </Button>
           </div>
-          <PengembalianAlatScanForm onScan={handleScan} loading={scanning && !scanAuthModalOpen} error={!scanAuthModalOpen ? scanError : null} />
+          <PengembalianAlatScanForm
+            onScan={handleScan}
+            loading={scanning && !scanAuthModalOpen}
+            error={!scanAuthModalOpen ? scanError : null}
+            peminjamOptions={peminjamOptions}
+          />
         </>
       ) : (
         <PengembalianAlatChecklist
@@ -467,7 +496,7 @@ const PengembalianManager = () => {
                 ))}
               </Form.Select>
               <Form.Text className="text-muted mt-2 d-block">
-                Setelah memilih vendor, sistem akan meminta otorisasi dari <b>Inventory Man</b> melalui scan kartu RFID.
+                Setelah memilih vendor, sistem akan meminta otorisasi dari <b>Inventory Man</b> melalui scan kartu RFID atau pilih nama.
               </Form.Text>
             </Form.Group>
           </Modal.Body>
@@ -478,7 +507,7 @@ const PengembalianManager = () => {
         </Form>
       </Modal>
 
-      {/* MODAL OTORISASI SCAN KARTU INVENTORY MAN */}
+      {/* MODAL OTORISASI INVENTORY MAN */}
       <Modal 
         show={scanAuthModalOpen} 
         onHide={() => { setScanAuthModalOpen(false); setPendingVendor(null); setScanError(null); }} 
@@ -517,6 +546,25 @@ const PengembalianManager = () => {
                    }
                  }}
                />
+
+               <div className="text-start mt-3">
+                 <Form.Label className="small fw-semibold mb-1">Atau pilih nama Inventory Man</Form.Label>
+                 <Form.Select
+                   value=""
+                   disabled={inventoryManOptions.length === 0}
+                   onChange={(e) => {
+                     if (e.target.value) handleScan(e.target.value);
+                   }}
+                 >
+                   <option value="">
+                     {inventoryManOptions.length === 0 ? "Tidak ada Inventory Man" : "-- Pilih nama --"}
+                   </option>
+                   {inventoryManOptions.map((p) => (
+                     <option key={p.id} value={p.id}>{p.nama}</option>
+                   ))}
+                 </Form.Select>
+               </div>
+
                {scanError && <Alert variant="danger" className="mt-3 text-start mb-0">{scanError}</Alert>}
              </>
            )}

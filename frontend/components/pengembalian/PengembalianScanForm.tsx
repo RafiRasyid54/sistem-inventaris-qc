@@ -2,12 +2,18 @@
 import { useState } from "react";
 import { Form, Button, Alert } from "react-bootstrap";
 import { IconId, IconAlertTriangle, IconSearch } from "@tabler/icons-react";
-import { useBarcodeScanner } from "/hooks/useBarcodeScanner"; // Pastikan path import sesuai
+import { useBarcodeScanner } from "/hooks/useBarcodeScanner";
+
+export interface PeminjamOption {
+  id: string;
+  nama: string;
+}
 
 interface PengembalianScanFormProps {
   onScan: (idCard: string) => void;
   loading?: boolean;
   error?: string | null;
+  peminjamOptions?: PeminjamOption[];
 }
 
 const CSS = `
@@ -28,18 +34,25 @@ const CSS = `
 .pln-ps .ps-btn:hover:not(:disabled){background:#ffc20e;color:#06355f;filter:brightness(1.06)}
 .pln-ps .ps-btn:disabled{background:#eef3f9;color:#8794a8}
 .pln-ps .ps-err{border:0;border-radius:12px;display:flex;align-items:flex-start;gap:10px;text-align:left;font-size:.88rem}
+.pln-ps .ps-or{display:flex;align-items:center;gap:10px;margin:20px 0 14px;font-size:.78rem;color:#8794a8}
+.pln-ps .ps-or::before,.pln-ps .ps-or::after{content:"";flex:1;height:1px;background:#dbe5f1}
+.pln-ps .form-select{background-color:#f6f9fc;border-color:#dbe5f1;border-radius:12px;padding:12px 14px}
+.pln-ps .form-select:focus{border-color:#0b6bb8;box-shadow:0 0 0 3px rgba(11,107,184,.16)}
 `;
 
-const PengembalianScanForm = ({ onScan, loading = false, error = null }: PengembalianScanFormProps) => {
+const PengembalianScanForm = ({
+  onScan,
+  loading = false,
+  error = null,
+  peminjamOptions = [],
+}: PengembalianScanFormProps) => {
   const [idCard, setIdCard] = useState("");
 
   // Global listener untuk RFID Scanner
   useBarcodeScanner({
     enabled: !loading,
     onScan: (scannedCode) => {
-      // Mengisi kolom secara visual agar pengguna tahu apa yang discan
       setIdCard(scannedCode);
-      // Langsung mengeksekusi pencarian tanpa perlu klik tombol
       onScan(scannedCode);
     },
     minLength: 4,
@@ -61,7 +74,7 @@ const PengembalianScanForm = ({ onScan, loading = false, error = null }: Pengemb
       </div>
       <h5>Tempelkan kartu peminjam</h5>
       <p className="ps-sub">
-        Tidak perlu mengklik apapun. Langsung tap kartu ke <i>reader</i> untuk menampilkan alat yang sedang dipinjam.
+        Tap kartu ke <i>reader</i> untuk menampilkan alat yang sedang dipinjam. Jika reader tidak tersedia, pilih nama peminjam dari daftar.
       </p>
 
       {error && (
@@ -94,6 +107,28 @@ const PengembalianScanForm = ({ onScan, loading = false, error = null }: Pengemb
           </Button>
         </div>
       </Form>
+
+      {/* Dropdown peminjam: cadangan jika reader RFID tidak tersedia */}
+      <div className="ps-or">atau pilih dari daftar</div>
+      <Form.Select
+        aria-label="Pilih nama peminjam"
+        value=""
+        disabled={loading || peminjamOptions.length === 0}
+        onChange={(e) => {
+          if (e.target.value) onScan(e.target.value);
+        }}
+      >
+        <option value="">
+          {peminjamOptions.length === 0
+            ? "Tidak ada peminjaman aktif"
+            : "-- Pilih nama peminjam --"}
+        </option>
+        {peminjamOptions.map((p) => (
+          <option key={p.id} value={p.id}>
+            {p.nama}
+          </option>
+        ))}
+      </Form.Select>
     </div>
   );
 };

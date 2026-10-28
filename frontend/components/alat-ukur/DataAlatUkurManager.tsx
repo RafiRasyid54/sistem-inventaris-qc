@@ -36,7 +36,7 @@ import {
   IconFileTypePdf,
   IconFileSpreadsheet,
   IconQrcode,
-  IconDownload,
+  IconCamera,
 } from "@tabler/icons-react";
 
 import { QRCodeCanvas } from "qrcode.react";
@@ -50,6 +50,7 @@ import { AlatUkurDetailModal } from "./AlatUkurDetailModal";
 import { AlatUkurFormModal } from "./AlatUkurFormModal";
 import { DeleteConfirmModal } from "./DeleteConfirmModal";
 import LoanFormModal from "components/common/LoanFormModal";
+import WebCameraScannerModal from "components/common/WebCameraScannerModal";
 import { CartFAB } from "./CartFAB";
 
 import apiFetch from "/lib/apiFetch";
@@ -179,6 +180,7 @@ const DataAlatUkurManager = () => {
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [loanModalOpen, setLoanModalOpen] = useState(false);
   const [qrModalOpen, setQrModalOpen] = useState(false);
+  const [cameraOpen, setCameraOpen] = useState(false);
 
   // =======================================================
   // ALUR SCAN KARTU & VENDOR
@@ -187,6 +189,7 @@ const DataAlatUkurManager = () => {
   const [scanCardModalOpen, setScanCardModalOpen] = useState(false);
   const [isVerifyingCard, setIsVerifyingCard] = useState(false);
 
+  const [pemintaList, setPemintaList] = useState<any[]>([]);
   const [vendorList, setVendorList] = useState<any[]>([]);
   const [vendorModalOpen, setVendorModalOpen] = useState(false);
   const [selectedVendorId, setSelectedVendorId] = useState<string>("");
@@ -233,8 +236,8 @@ const DataAlatUkurManager = () => {
       if (Array.isArray(res)) rawList = res;
       else if (res?.data && Array.isArray(res.data)) rawList = res.data;
 
-      const vendors = rawList.filter((p) => p.kategori === "Vendor");
-      setVendorList(vendors);
+      setPemintaList(rawList); // dipakai untuk dropdown peminjam manual
+      setVendorList(rawList.filter((p) => p.kategori === "Vendor"));
     } catch (err) {
       console.error("Gagal meload vendor", err);
     }
@@ -244,6 +247,64 @@ const DataAlatUkurManager = () => {
     loadAlatUkur();
     loadVendors();
   }, [loadAlatUkur, loadVendors]);
+
+  // =======================================================
+  // SET PEMINJAM (dipakai scan kartu DAN dropdown manual)
+  // =======================================================
+  const applyPeminta = useCallback(
+    (pemintaData: any) => {
+      if (pendingVendor) {
+        if (pemintaData.role === "inventory man") {
+          setPeminjamAktif(pendingVendor);
+          setSuccessMessage(
+            `Peminjaman untuk Vendor disetujui oleh ${namaPeminjam(pemintaData)}`
+          );
+        } else {
+          setPeminjamAktif(pemintaData);
+          showNotice(
+            `Bukan Inventory Man. Peminjam dialihkan menjadi ${namaPeminjam(pemintaData)}`
+          );
+        }
+        setPendingVendor(null);
+      } else {
+        setPeminjamAktif(pemintaData);
+        setSuccessMessage(`Berhasil mengidentifikasi: ${namaPeminjam(pemintaData)}`);
+      }
+      setScanCardModalOpen(false);
+    },
+    [pendingVendor, showNotice]
+  );
+
+  // Opsi dropdown: mode approval vendor -> hanya Inventory Man; normal -> non-vendor
+  const manualOptions = useMemo(() => {
+    const base = pendingVendor
+      ? pemintaList.filter((p) => p.role === "inventory man")
+      : pemintaList.filter((p) => p.kategori !== "Vendor");
+    return [...base].sort((a, b) => namaPeminjam(a).localeCompare(namaPeminjam(b)));
+  }, [pemintaList, pendingVendor]);
+
+  const renderManualSelect = (label: string) => (
+    <div className="text-start w-100">
+      <Form.Label className="small fw-semibold mb-1">{label}</Form.Label>
+      <Form.Select
+        value=""
+        onChange={(e) => {
+          const p = manualOptions.find((x) => String(x.id) === e.target.value);
+          if (p) applyPeminta(p);
+        }}
+      >
+        <option value="">
+          {manualOptions.length === 0 ? "Data peminjam belum termuat" : "-- Pilih nama --"}
+        </option>
+        {manualOptions.map((p) => (
+          <option key={p.id} value={p.id}>
+            {namaPeminjam(p)}
+            {p.divisi ? ` — ${p.divisi}` : ""}
+          </option>
+        ))}
+      </Form.Select>
+    </div>
+  );
 
   // =======================================================
   // VERIFIKASI KARTU & LOGIKA APPROVAL VENDOR
@@ -270,26 +331,7 @@ const DataAlatUkurManager = () => {
         );
 
         if (pemintaData) {
-          if (pendingVendor) {
-            if (pemintaData.role === "inventory man") {
-              setPeminjamAktif(pendingVendor);
-              setSuccessMessage(
-                `Peminjaman untuk Vendor disetujui oleh ${namaPeminjam(pemintaData)}`
-              );
-            } else {
-              setPeminjamAktif(pemintaData);
-              showNotice(
-                `Kartu bukan Inventory Man. Peminjam dialihkan menjadi ${namaPeminjam(pemintaData)}`
-              );
-            }
-            setPendingVendor(null); 
-          } else {
-            setPeminjamAktif(pemintaData);
-            setSuccessMessage(
-              `Berhasil mengidentifikasi: ${namaPeminjam(pemintaData)}`
-            );
-          }
-          setScanCardModalOpen(false);
+          applyPeminta(pemintaData);
           return true;
         }
 
@@ -301,7 +343,7 @@ const DataAlatUkurManager = () => {
         setIsVerifyingCard(false);
       }
     },
-    [pendingVendor, showNotice]
+    [applyPeminta]
   );
 
   const filteredData = useMemo(() => {
@@ -321,7 +363,7 @@ const DataAlatUkurManager = () => {
   const handleAddToCart = useCallback(
     (item: AlatUkur) => {
       if (!peminjamAktif) {
-        showNotice("Scan kartu identitas atau pilih vendor terlebih dahulu.");
+        showNotice("Pilih peminjam (scan kartu / pilih nama / vendor) terlebih dahulu.");
         setScanCardModalOpen(true);
         return;
       }
@@ -351,6 +393,7 @@ const DataAlatUkurManager = () => {
     [peminjamAktif, cart, showNotice]
   );
 
+  // Dipakai scanner fisik (keyboard wedge) DAN kamera HP
   const handleUniversalScan = useCallback(
     async (rawCode: string) => {
       const code = rawCode.trim();
@@ -385,7 +428,7 @@ const DataAlatUkurManager = () => {
 
   useEffect(() => {
     const isModalBlocking =
-      formModalOpen || detailModalOpen || deleteModalOpen || loanModalOpen || vendorModalOpen || qrModalOpen;
+      formModalOpen || detailModalOpen || deleteModalOpen || loanModalOpen || vendorModalOpen || qrModalOpen || cameraOpen;
 
     const handleKeyDown = (e: KeyboardEvent) => {
       if (isModalBlocking) return;
@@ -414,7 +457,7 @@ const DataAlatUkurManager = () => {
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [formModalOpen, detailModalOpen, deleteModalOpen, loanModalOpen, vendorModalOpen, qrModalOpen, handleUniversalScan]);
+  }, [formModalOpen, detailModalOpen, deleteModalOpen, loanModalOpen, vendorModalOpen, qrModalOpen, cameraOpen, handleUniversalScan]);
 
   const handleFormSubmit = async (formData: Partial<AlatUkur>) => {
     try {
@@ -502,7 +545,6 @@ const DataAlatUkurManager = () => {
 
   // ---------- Download Single QR (Menyatu dengan Teks) ----------
   const handleDownloadSingleQR = async (kodeAlat: string) => {
-    // Mencari elemen tersembunyi berdasarkan ID
     const element = document.getElementById(`qr-wrapper-${kodeAlat}`);
     if (!element) {
       alert("QR Code untuk alat ini tidak ditemukan di memori layar.");
@@ -571,7 +613,7 @@ const DataAlatUkurManager = () => {
           <div>
             <h1 className="mb-2 h2">Data Alat Ukur</h1>
             <p className="text-secondary mb-2">
-              Scan kartu identitas peminjam atau pilih vendor, lalu scan barcode alat.
+              Scan kartu atau pilih nama peminjam / vendor, lalu scan barcode alat (scanner atau kamera HP).
             </p>
             <DasherBreadcrumb />
           </div>
@@ -596,7 +638,7 @@ const DataAlatUkurManager = () => {
             <span className="pda-sub">
               {peminjamAktif
                 ? `Kategori: ${peminjamAktif.kategori || 'Internal'}`
-                : "Tempelkan kartu pada reader, atau pilih vendor."}
+                : "Tempelkan kartu pada reader, pilih nama di bawah, atau pilih vendor."}
             </span>
           </div>
         </div>
@@ -614,6 +656,13 @@ const DataAlatUkurManager = () => {
           <Button variant="outline-danger" size="sm" onClick={() => { setPeminjamAktif(null); setCart([]); }} className="d-flex align-items-center gap-1 fw-semibold bg-white">
             <IconLogout size={16} /> Ganti Peminjam
           </Button>
+        )}
+
+        {/* Dropdown peminjam manual (cadangan jika scanner / PC mati) */}
+        {!peminjamAktif && (
+          <div style={{ flexBasis: "100%" }}>
+            {renderManualSelect("Atau pilih nama peminjam secara manual")}
+          </div>
         )}
       </div>
 
@@ -634,7 +683,15 @@ const DataAlatUkurManager = () => {
           {!loading && (
             <div className="d-flex flex-wrap align-items-center gap-3">
               <span className="pda-count"><b>{filteredData.length}</b>{searchTerm ? ` dari ${data.length}` : ""} alatukur</span>
-              <div className="d-flex gap-2">
+              <div className="d-flex flex-wrap gap-2">
+                <Button
+                  variant="primary"
+                  size="sm"
+                  className="d-inline-flex align-items-center gap-1"
+                  onClick={() => setCameraOpen(true)}
+                >
+                  <IconCamera size={16} /> Scan Kamera
+                </Button>
                 <Button
                   variant="outline-danger"
                   size="sm"
@@ -653,8 +710,6 @@ const DataAlatUkurManager = () => {
                 >
                   <IconFileSpreadsheet size={16} /> Excel
                 </Button>
-                
-                {/* Opsi mencetak semua secara masal ke Printer tetap tersedia */}
                 <Button
                   variant="outline-dark"
                   size="sm"
@@ -681,7 +736,7 @@ const DataAlatUkurManager = () => {
               onEdit={(item) => { setActiveAlatUkur(item); setFormModalOpen(true); }}
               onDelete={(item) => { setActiveAlatUkur(item); setDeleteModalOpen(true); }}
               onAddToCart={handleAddToCart}
-              onDownloadQR={handleDownloadSingleQR} // <--- Fungsi ini dikirimkan ke tabel
+              onDownloadQR={handleDownloadSingleQR}
             />
           )}
         </CardBody>
@@ -703,7 +758,7 @@ const DataAlatUkurManager = () => {
                 ))}
               </Form.Select>
               <Form.Text className="text-muted mt-2 d-block">
-                Setelah memilih vendor, sistem akan meminta persetujuan dari <b>Inventory Man</b> melalui scan kartu.
+                Setelah memilih vendor, sistem akan meminta persetujuan dari <b>Inventory Man</b> melalui scan kartu atau pilih nama.
               </Form.Text>
             </Form.Group>
           </Modal.Body>
@@ -749,6 +804,15 @@ const DataAlatUkurManager = () => {
                   ? `Peminjaman untuk vendor ${pendingVendor.nama_peminta} memerlukan persetujuan. Jika kartu yang di-scan bukan Inventory Man, peminjam akan dialihkan ke pemilik kartu.`
                   : `Kartu harus di-scan dulu sebelum kamu bisa memilih alat.`}
               </p>
+
+              <hr className="my-4" />
+              <div className="mx-auto" style={{ maxWidth: 320 }}>
+                {renderManualSelect(
+                  pendingVendor
+                    ? "Atau pilih nama Inventory Man"
+                    : "Atau pilih nama peminjam secara manual"
+                )}
+              </div>
             </>
           )}
         </Modal.Body>
@@ -759,6 +823,14 @@ const DataAlatUkurManager = () => {
       <DeleteConfirmModal isOpen={deleteModalOpen} onClose={() => setDeleteModalOpen(false)} onConfirm={() => loadAlatUkur()} />
 
       <LoanFormModal show={loanModalOpen} onClose={() => setLoanModalOpen(false)} onSubmit={handleLoanSubmit} cartItems={cart} submitting={loanSubmitting} error={loanError} {...({ peminjam: peminjamAktif } as any)} />
+
+      {/* MODAL KAMERA HP: hasil scan diteruskan ke handleUniversalScan */}
+      <WebCameraScannerModal
+        show={cameraOpen}
+        onClose={() => setCameraOpen(false)}
+        onScanSuccess={handleUniversalScan}
+        title="Scan Barcode Alat"
+      />
 
       {/* MODAL CETAK LABEL QR (Untuk fitur Print Massal) */}
       <Modal show={qrModalOpen} onHide={() => setQrModalOpen(false)} size="lg" centered>
@@ -799,10 +871,7 @@ const DataAlatUkurManager = () => {
           setLoanModalOpen(true);
       }} />
 
-      {/* ========================================================= */}
-      {/* AREA TERSEMBUNYI UNTUK GENERATE GAMBAR QR CODE INDIVIDUAL */}
-      {/* Element ini digunakan oleh html2canvas untuk download      */}
-      {/* ========================================================= */}
+      {/* AREA TERSEMBUNYI UNTUK GENERATE GAMBAR QR CODE INDIVIDUAL (html2canvas) */}
       <div style={{ position: "absolute", top: "-9999px", left: "-9999px", zIndex: -1 }}>
         {data.map((item) => {
           const kode = item.kode_alat || item.sn || "UNKNOWN";
