@@ -38,36 +38,11 @@ import {
   getStatusKalibrasi,
 } from "services/riwayatKalibrasiService";
 
-// Gaya halaman Riwayat Kalibrasi (tema PLN). Semua selector diawali .pln-rk.
-const CSS = `
-.pln-rk{--navy:#06355f;--blue:#0b6bb8;--yellow:#ffc20e;--line:#dbe5f1;--mute:#62708a}
-.pln-rk .btn-yellow{background:var(--yellow);border:0;color:var(--navy);font-weight:700}
-.pln-rk .btn-yellow:hover,.pln-rk .btn-yellow:focus{background:var(--yellow);color:var(--navy);filter:brightness(1.06)}
-.pln-rk .rk-head h1{font-weight:800;color:var(--navy)}
-.pln-rk .rk-head p{max-width:640px}
-
-/* pesan */
-.pln-rk .rk-msg{border:0;border-radius:12px;display:flex;align-items:center;gap:10px;font-size:.88rem}
-
-/* kartu tabel */
-.pln-rk .rk-card{border-radius:16px;border:1px solid var(--line);border-top:4px solid var(--blue);overflow:hidden}
-.pln-rk .rk-card .form-control:focus,.pln-rk .rk-card .form-select:focus{
-  border-color:var(--blue);box-shadow:0 0 0 3px rgba(11,107,184,.16)}
-.pln-rk .rk-info b{color:var(--navy)}
-
-/* tabel */
-.pln-rk .rk-card table thead th{background:#eef3f9;color:var(--navy);font-size:.76rem;font-weight:700;
-  text-transform:uppercase;letter-spacing:.02em;border-bottom:1px solid var(--line)}
-.pln-rk .rk-card table tbody tr:hover>*{background:#f6f9fc}
-.pln-rk .rk-card .page-item.active .page-link{background:var(--blue);border-color:var(--blue);color:#fff}
-.pln-rk .rk-card .page-link{color:var(--navy)}
-
-/* empty state */
-.pln-rk .rk-empty-icon{width:72px;height:72px;border-radius:50%;margin:0 auto;display:grid;place-items:center;
-  background:#e6f0fa;color:var(--blue)}
-.pln-rk .rk-empty.is-filter .rk-empty-icon{background:#fff8e1;color:#9a6a00}
-.pln-rk .rk-empty h5{font-weight:800;color:var(--navy)}
-`;
+// Warna tema PLN
+const NAVY = "#06355f";
+const BLUE = "#0b6bb8";
+const YELLOW = "#ffc20e";
+const LINE = "#dbe5f1";
 
 // ---------- Export PDF & Excel ----------
 const EXPORT_COLUMNS: ExportColumn[] = [
@@ -102,6 +77,20 @@ const KONDISI_LABEL: Record<string, string> = {
 };
 
 const RiwayatKalibrasiManager = () => {
+  // Gunakan role aktual dari sesi login (sama seperti Data Pekerjaan).
+  const [role, setRole] = useState<string | null>(null);
+
+  useEffect(() => {
+    try {
+      setRole(localStorage.getItem("userRole"));
+    } catch {
+      setRole(null);
+    }
+  }, []);
+
+  const normalizedRole = (role ?? "").trim().toLowerCase();
+  const canManage = normalizedRole === "admin" || normalizedRole === "petugas";
+
   const [data, setData] = useState<RiwayatKalibrasiType[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -183,38 +172,47 @@ const RiwayatKalibrasiManager = () => {
       "riwayat-kalibrasi"
     );
 
+  const handleOpenForm = () => {
+    if (!canManage) return;
+    setFormError(null);
+    setFormModalOpen(true);
+  };
+
   const handleSubmit = async (values: KalibrasiFormValues) => {
-  setSubmitting(true);
-  setFormError(null);
-  try {
-    await createRiwayatKalibrasi({
-      alatUkurId: values.alatUkurId,
-      tanggalKalibrasi: values.tanggalKalibrasi,
-      tanggalJatuhTempo: values.tanggalJatuhTempo || undefined,
-      kondisi: values.kondisi,
-      pelaksanaKalibrasi: values.pelaksanaKalibrasi || undefined,
-      keterangan: values.keterangan || undefined,
-      fileSertifikat: values.fileSertifikat ?? undefined,
-    });
-    setFormModalOpen(false);
-    setSuccessMessage("Riwayat kalibrasi berhasil dicatat.");
-    setTimeout(() => setSuccessMessage(null), 4000);
-    await loadData();
-  } catch (err: any) {
-    setFormError(err?.message || "Gagal menyimpan riwayat kalibrasi.");
-  } finally {
-    setSubmitting(false);
-  }
-};
+    if (!canManage) {
+      setFormError("Role Viewer tidak memiliki akses mencatat riwayat kalibrasi.");
+      return;
+    }
+    setSubmitting(true);
+    setFormError(null);
+    try {
+      await createRiwayatKalibrasi({
+        alatUkurId: values.alatUkurId,
+        tanggalKalibrasi: values.tanggalKalibrasi,
+        tanggalJatuhTempo: values.tanggalJatuhTempo || undefined,
+        kondisi: values.kondisi,
+        pelaksanaKalibrasi: values.pelaksanaKalibrasi || undefined,
+        keterangan: values.keterangan || undefined,
+        fileSertifikat: values.fileSertifikat ?? undefined,
+      });
+      setFormModalOpen(false);
+      setSuccessMessage("Riwayat kalibrasi berhasil dicatat.");
+      setTimeout(() => setSuccessMessage(null), 4000);
+      await loadData();
+    } catch (err: any) {
+      setFormError(err?.message || "Gagal menyimpan riwayat kalibrasi.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   return (
-    <div className="riwayat-page riwayat-kalibrasi-page pln-rk">
-      <style>{CSS}</style>
-
+    <div className="riwayat-page riwayat-kalibrasi-page">
       {successMessage && (
         <Alert
           variant="success"
-          className="rk-msg"
+          className="d-flex align-items-center gap-2 small"
+          style={{ border: 0, borderRadius: 12 }}
           dismissible
           onClose={() => setSuccessMessage(null)}
         >
@@ -226,7 +224,8 @@ const RiwayatKalibrasiManager = () => {
       {error && (
         <Alert
           variant="danger"
-          className="rk-msg"
+          className="d-flex align-items-center gap-2 small"
+          style={{ border: 0, borderRadius: 12 }}
           dismissible
           onClose={() => setError(null)}
         >
@@ -237,29 +236,44 @@ const RiwayatKalibrasiManager = () => {
 
       <Row>
         <Col>
-          <Flex justifyContent="between" alignItems="center" className="mb-4 w-100 rk-head" breakpoint="md">
+          <Flex justifyContent="between" alignItems="center" className="mb-4 w-100" breakpoint="md">
             <div>
-              <h1 className="mb-2 h2">Riwayat Kalibrasi</h1>
-              <p className="text-secondary mb-2">
+              <h1 className="mb-2 h2" style={{ fontWeight: 800, color: NAVY }}>
+                Riwayat Kalibrasi
+              </h1>
+              <p className="text-secondary mb-2" style={{ maxWidth: 640 }}>
                 Menampilkan riwayat kalibrasi seluruh alatukur beserta status jatuh temponya.
               </p>
               <DasherBreadcrumb />
             </div>
-            <Button
-              className="btn-yellow d-flex align-items-center gap-2"
-              onClick={() => {
-                setFormError(null);
-                setFormModalOpen(true);
-              }}
-            >
-              <IconPlus size={18} />
-              Catat Kalibrasi Baru
-            </Button>
+            {canManage && (
+              <Button
+                className="d-flex align-items-center gap-2"
+                style={{
+                  backgroundColor: YELLOW,
+                  border: 0,
+                  color: NAVY,
+                  fontWeight: 700,
+                }}
+                onClick={handleOpenForm}
+              >
+                <IconPlus size={18} />
+                Catat Kalibrasi Baru
+              </Button>
+            )}
           </Flex>
         </Col>
       </Row>
 
-      <Card className="card-lg mb-6 rk-card">
+      <Card
+        className="card-lg mb-6"
+        style={{
+          borderRadius: 16,
+          border: `1px solid ${LINE}`,
+          borderTop: `4px solid ${BLUE}`,
+          overflow: "hidden",
+        }}
+      >
         <div className="riwayat-toolbar border-bottom p-3">
           <div className="riwayat-toolbar-row d-flex flex-wrap align-items-center gap-2">
             <InputGroup className="riwayat-search" style={{ maxWidth: "320px" }}>
@@ -296,8 +310,8 @@ const RiwayatKalibrasiManager = () => {
               <option value="lewat">Lewat jatuh tempo</option>
             </Form.Select>
 
-            <span className="riwayat-info rk-info text-secondary small ms-auto">
-              Menampilkan <b>{filteredData.length}</b> dari {data.length} data
+            <span className="riwayat-info text-secondary small ms-auto">
+              Menampilkan <b style={{ color: NAVY }}>{filteredData.length}</b> dari {data.length} data
             </span>
 
             <div className="d-flex gap-2">
@@ -330,19 +344,49 @@ const RiwayatKalibrasiManager = () => {
               Memuat data...
             </div>
           ) : data.length === 0 ? (
-            <div className="rk-empty text-center py-6">
-              <div className="rk-empty-icon mb-3">
+            <div className="text-center py-6">
+              <div
+                className="mx-auto mb-3"
+                style={{
+                  width: 72,
+                  height: 72,
+                  borderRadius: "50%",
+                  display: "grid",
+                  placeItems: "center",
+                  background: "#e6f0fa",
+                  color: BLUE,
+                }}
+              >
                 <IconHistory size={32} />
               </div>
-              <h5 className="mb-1">Belum ada riwayat kalibrasi</h5>
-              <p className="text-secondary mb-0">Catat kalibrasi pertama lewat tombol di atas.</p>
+              <h5 className="mb-1" style={{ fontWeight: 800, color: NAVY }}>
+                Belum ada riwayat kalibrasi
+              </h5>
+              <p className="text-secondary mb-0">
+                {canManage
+                  ? "Catat kalibrasi pertama lewat tombol di atas."
+                  : "Riwayat kalibrasi belum dicatat oleh petugas."}
+              </p>
             </div>
           ) : filteredData.length === 0 ? (
-            <div className="rk-empty is-filter text-center py-6">
-              <div className="rk-empty-icon mb-3">
+            <div className="text-center py-6">
+              <div
+                className="mx-auto mb-3"
+                style={{
+                  width: 72,
+                  height: 72,
+                  borderRadius: "50%",
+                  display: "grid",
+                  placeItems: "center",
+                  background: "#fff8e1",
+                  color: "#9a6a00",
+                }}
+              >
                 <IconFilterOff size={32} />
               </div>
-              <h5 className="mb-1">Tidak ada data yang cocok</h5>
+              <h5 className="mb-1" style={{ fontWeight: 800, color: NAVY }}>
+                Tidak ada data yang cocok
+              </h5>
               <p className="text-secondary mb-0">Coba ubah kata kunci atau filter status.</p>
             </div>
           ) : (
@@ -351,13 +395,15 @@ const RiwayatKalibrasiManager = () => {
         </CardBody>
       </Card>
 
-      <KalibrasiFormModal
-        show={formModalOpen}
-        onClose={() => setFormModalOpen(false)}
-        onSubmit={handleSubmit}
-        submitting={submitting}
-        error={formError}
-      />
+      {canManage && (
+        <KalibrasiFormModal
+          show={formModalOpen}
+          onClose={() => setFormModalOpen(false)}
+          onSubmit={handleSubmit}
+          submitting={submitting}
+          error={formError}
+        />
+      )}
     </div>
   );
 };

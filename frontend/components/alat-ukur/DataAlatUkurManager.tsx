@@ -86,72 +86,53 @@ const isRusak = (item: AlatUkur): boolean => {
   return k === "RPP" || k === "RT";
 };
 
-const CSS = `
-.pln-da{--navy:#06355f;--blue:#0b6bb8;--yellow:#ffc20e;--line:#dbe5f1;--mute:#62708a}
-.pln-da .btn-primary{background:var(--blue);border-color:var(--blue)}
-.pln-da .btn-primary:hover,.pln-da .btn-primary:focus{background:var(--navy);border-color:var(--navy)}
-.pln-da .btn-yellow{background:var(--yellow);border:0;color:var(--navy);font-weight:700}
-.pln-da .btn-yellow:hover{background:var(--yellow);color:var(--navy);filter:brightness(1.06)}
-.pln-da .pda-head h1{font-weight:800;color:var(--navy)}
-.pln-da .pda-head p{max-width:640px}
+// ---------- Warna tema PLN ----------
+const NAVY = "#06355f";
+const BLUE = "#0b6bb8";
+const YELLOW = "#ffc20e";
+const LINE = "#dbe5f1";
+const MUTE = "#62708a";
+const GREEN = "#12a36b";
 
-/* kartu peminjam aktif */
-.pln-da .pda-borrower{border-radius:16px;padding:16px 20px;margin-bottom:12px;display:flex;flex-wrap:wrap;
-  gap:14px;justify-content:space-between;align-items:center;border:1px solid}
-.pln-da .pda-borrower.is-empty{background:#fff8e1;border-color:#ffe08a}
-.pln-da .pda-borrower.is-ready{background:#e8f6ef;border-color:#bfe6d2}
-.pln-da .pda-who{display:flex;align-items:center;gap:14px;min-width:0}
-.pln-da .pda-av{width:48px;height:48px;border-radius:14px;display:grid;place-items:center;flex:none}
-.is-empty .pda-av{background:var(--yellow);color:var(--navy)}
-.is-ready .pda-av{background:#12a36b;color:#fff}
-.pln-da .pda-lb{font-size:.76rem;color:var(--mute);display:block}
-.pln-da .pda-name{font-size:1.1rem;font-weight:800;color:var(--navy);margin:0}
-.pln-da .pda-sub{font-size:.78rem;color:var(--mute)}
+// ---------- Style inline ----------
+const alertStyle: React.CSSProperties = { border: 0, borderRadius: 12 };
 
-/* langkah alur */
-.pln-da .pda-steps{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px}
-.pln-da .pda-step{display:flex;align-items:center;gap:8px;font-size:.8rem;color:var(--mute);padding:5px 12px 5px 6px;
-  border-radius:99px;background:#eef3f9}
-.pln-da .pda-step i{font-style:normal;width:20px;height:20px;border-radius:50%;display:grid;place-items:center;
-  font-size:.7rem;font-weight:800;background:#cfdbea;color:var(--navy)}
-.pln-da .pda-step.is-now{background:var(--navy);color:#fff;font-weight:600}
-.pln-da .pda-step.is-now i{background:var(--yellow);color:var(--navy)}
-.pln-da .pda-step.is-done i{background:#12a36b;color:#fff}
+const primaryBtnStyle: React.CSSProperties = {
+  backgroundColor: BLUE,
+  borderColor: BLUE,
+};
 
-/* pesan */
-.pln-da .pda-msg{border:0;border-radius:12px;display:flex;align-items:center;gap:10px;font-size:.88rem}
+const yellowBtnStyle: React.CSSProperties = {
+  backgroundColor: YELLOW,
+  border: 0,
+  color: NAVY,
+  fontWeight: 700,
+};
 
-/* toolbar tabel */
-.pln-da .pda-card{border-radius:16px;border:1px solid var(--line);border-top:4px solid var(--blue);overflow:hidden}
-.pln-da .pda-bar{padding:14px 18px;display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between}
-.pln-da .pda-count{font-size:.82rem;color:var(--mute)}
-.pln-da .pda-count b{color:var(--navy)}
-.pln-da .pda-bar .input-group{max-width:460px}
-.pln-da .pda-bar .form-control:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(11,107,184,.16)}
+const stepPillStyle = (state: "now" | "done" | "todo"): React.CSSProperties => ({
+  display: "flex",
+  alignItems: "center",
+  gap: 8,
+  fontSize: ".8rem",
+  padding: "5px 12px 5px 6px",
+  borderRadius: 99,
+  background: state === "now" ? NAVY : "#eef3f9",
+  color: state === "now" ? "#fff" : MUTE,
+  fontWeight: state === "now" ? 600 : 400,
+});
 
-/* modal scan kartu */
-.pln-alert-backdrop.modal-backdrop{--bs-backdrop-bg:#041f38;--bs-backdrop-opacity:.68;backdrop-filter:blur(3px)}
-.pda-scan .modal-content{border:0;border-radius:20px;overflow:hidden}
-.pda-scan .pda-stripe{height:6px;background:linear-gradient(90deg,#ffc20e 0 55%,#e2231a 55% 70%,#00a7c4 70%)}
-.pda-scan .pda-ring{width:92px;height:92px;border-radius:50%;margin:0 auto 18px;display:grid;place-items:center;
-  background:#e6f0fa;color:#0b6bb8;position:relative}
-.pda-scan .pda-ring::after{content:"";position:absolute;inset:-8px;border-radius:50%;border:2px solid #0b6bb8;opacity:.35;
-  animation:pdaPulse 1.8s ease-out infinite}
-@keyframes pdaPulse{from{transform:scale(.85);opacity:.5}to{transform:scale(1.25);opacity:0}}
-@media (prefers-reduced-motion:reduce){.pda-scan .pda-ring::after{animation:none}}
-.pda-scan h5{font-weight:800;color:#06355f}
-
-/* Cetak QR Code */
-@media print {
-  body * { visibility: hidden; }
-  #print-qr-area, #print-qr-area * { visibility: visible; }
-  #print-qr-area { 
-    position: absolute; left: 0; top: 0; width: 100%; 
-    display: flex; flex-wrap: wrap; gap: 30px; justify-content: center; padding: 20px;
-  }
-  .modal-header, .modal-footer, .datatools-toolbar { display: none !important; }
-}
-`;
+const stepNumStyle = (state: "now" | "done" | "todo"): React.CSSProperties => ({
+  width: 20,
+  height: 20,
+  borderRadius: "50%",
+  display: "grid",
+  placeItems: "center",
+  fontSize: ".7rem",
+  fontWeight: 800,
+  fontStyle: "normal",
+  background: state === "now" ? YELLOW : state === "done" ? GREEN : "#cfdbea",
+  color: state === "done" ? "#fff" : NAVY,
+});
 
 // ---------- Export PDF & Excel ----------
 const EXPORT_COLUMNS: ExportColumn[] = [
@@ -175,6 +156,24 @@ const DataAlatUkurManager = () => {
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
 
+  // =======================================================
+  // ROLE (dibaca setelah mount agar tidak hydration mismatch)
+  // admin & petugas: tambah/edit/pinjam | admin saja: hapus
+  // Sama seperti Data Pekerjaan: role dinormalisasi (trim + lowercase).
+  // =======================================================
+  const [role, setRole] = useState<string | null>(null);
+  useEffect(() => {
+    try {
+      setRole(localStorage.getItem("userRole"));
+    } catch {
+      setRole(null);
+    }
+  }, []);
+
+  const normalizedRole = (role ?? "").trim().toLowerCase();
+  const canWrite = normalizedRole === "admin" || normalizedRole === "petugas";
+  const canDelete = normalizedRole === "admin";
+
   const [formModalOpen, setFormModalOpen] = useState(false);
   const [detailModalOpen, setDetailModalOpen] = useState(false);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
@@ -193,7 +192,7 @@ const DataAlatUkurManager = () => {
   const [vendorList, setVendorList] = useState<any[]>([]);
   const [vendorModalOpen, setVendorModalOpen] = useState(false);
   const [selectedVendorId, setSelectedVendorId] = useState<string>("");
-  const [pendingVendor, setPendingVendor] = useState<any>(null); 
+  const [pendingVendor, setPendingVendor] = useState<any>(null);
 
   const [activeAlatUkur, setActiveAlatUkur] = useState<AlatUkur | null>(null);
   const [cart, setCart] = useState<AlatUkur[]>([]);
@@ -362,6 +361,11 @@ const DataAlatUkurManager = () => {
 
   const handleAddToCart = useCallback(
     (item: AlatUkur) => {
+      if (!canWrite) {
+        showNotice("Role Anda tidak memiliki akses untuk meminjam alat.");
+        return;
+      }
+
       if (!peminjamAktif) {
         showNotice("Pilih peminjam (scan kartu / pilih nama / vendor) terlebih dahulu.");
         setScanCardModalOpen(true);
@@ -390,12 +394,14 @@ const DataAlatUkurManager = () => {
       );
       setTimeout(() => setSuccessMessage(null), 3000);
     },
-    [peminjamAktif, cart, showNotice]
+    [canWrite, peminjamAktif, cart, showNotice]
   );
 
   // Dipakai scanner fisik (keyboard wedge) DAN kamera HP
   const handleUniversalScan = useCallback(
     async (rawCode: string) => {
+      if (!canWrite) return;
+
       const code = rawCode.trim();
       if (!code) return;
 
@@ -423,10 +429,13 @@ const DataAlatUkurManager = () => {
         isProcessingScanRef.current = false;
       }
     },
-    [data, handleAddToCart, verifyCard]
+    [canWrite, data, handleAddToCart, verifyCard]
   );
 
   useEffect(() => {
+    // Viewer tidak memakai scanner
+    if (!canWrite) return;
+
     const isModalBlocking =
       formModalOpen || detailModalOpen || deleteModalOpen || loanModalOpen || vendorModalOpen || qrModalOpen || cameraOpen;
 
@@ -457,9 +466,13 @@ const DataAlatUkurManager = () => {
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [formModalOpen, detailModalOpen, deleteModalOpen, loanModalOpen, vendorModalOpen, qrModalOpen, cameraOpen, handleUniversalScan]);
+  }, [canWrite, formModalOpen, detailModalOpen, deleteModalOpen, loanModalOpen, vendorModalOpen, qrModalOpen, cameraOpen, handleUniversalScan]);
 
   const handleFormSubmit = async (formData: Partial<AlatUkur>) => {
+    if (!canWrite) {
+      setError("Role Viewer tidak memiliki akses mengelola data alatukur.");
+      return;
+    }
     try {
       if (activeAlatUkur?.id) {
         await apiFetch(`/alat-ukur/${activeAlatUkur.id}`, {
@@ -487,6 +500,11 @@ const DataAlatUkurManager = () => {
 
   const handleLoanSubmit = useCallback(
     async (values: any) => {
+      if (!canWrite) {
+        setLoanError("Role Viewer tidak memiliki akses meminjam alat.");
+        return;
+      }
+
       setLoanSubmitting(true);
       setLoanError(null);
 
@@ -515,31 +533,31 @@ const DataAlatUkurManager = () => {
         setLoanModalOpen(false);
         setSuccessMessage("Peminjaman berhasil diajukan!");
         setTimeout(() => setSuccessMessage(null), 4000);
-        loadAlatUkur(); 
+        loadAlatUkur();
       } catch (err: any) {
         setLoanError(err?.message || "Gagal menyimpan peminjaman.");
-        loadAlatUkur(); 
+        loadAlatUkur();
       } finally {
         setLoanSubmitting(false);
       }
     },
-    [cart, peminjamAktif, loadAlatUkur]
+    [canWrite, cart, peminjamAktif, loadAlatUkur]
   );
 
   const handleCloseScanModal = () => {
     setScanCardModalOpen(false);
-    setPendingVendor(null); 
+    setPendingVendor(null);
   };
 
   const handleSelectVendorSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedVendorId) return;
-    
+
     const vendor = vendorList.find((v) => v.id === selectedVendorId);
     if (vendor) {
       setPendingVendor(vendor);
       setVendorModalOpen(false);
-      setScanCardModalOpen(true); 
+      setScanCardModalOpen(true);
     }
   };
 
@@ -584,114 +602,213 @@ const DataAlatUkurManager = () => {
     exportToExcel(buildExportRows() as unknown as Record<string, unknown>[], EXPORT_COLUMNS, "data-alat-ukur");
 
   const step = !peminjamAktif ? 1 : cart.length === 0 ? 2 : 3;
-  const stepClass = (n: number) => (step === n ? "is-now" : step > n ? "is-done" : "");
+  const stepState = (n: number): "now" | "done" | "todo" =>
+    step === n ? "now" : step > n ? "done" : "todo";
+
+  const borrowerReady = !!peminjamAktif;
 
   return (
-    <div className="datatools-page pln-da">
-      <style>{CSS}</style>
-
+    <div className="datatools-page">
       {successMessage && (
-        <Alert variant="success" className="pda-msg" dismissible onClose={() => setSuccessMessage(null)}>
+        <Alert
+          variant="success"
+          className="d-flex align-items-center gap-2 small"
+          style={alertStyle}
+          dismissible
+          onClose={() => setSuccessMessage(null)}
+        >
           <IconCircleCheck size={20} /><span>{successMessage}</span>
         </Alert>
       )}
 
       {notice && (
-        <Alert variant="warning" className="pda-msg" dismissible onClose={() => setNotice(null)}>
+        <Alert
+          variant="warning"
+          className="d-flex align-items-center gap-2 small"
+          style={alertStyle}
+          dismissible
+          onClose={() => setNotice(null)}
+        >
           <IconAlertTriangle size={20} /><span>{notice}</span>
         </Alert>
       )}
 
       {error && (
-        <Alert variant="danger" className="pda-msg" dismissible onClose={() => setError(null)}>
+        <Alert
+          variant="danger"
+          className="d-flex align-items-center gap-2 small"
+          style={alertStyle}
+          dismissible
+          onClose={() => setError(null)}
+        >
           <IconAlertTriangle size={20} /><span>{error}</span>
         </Alert>
       )}
 
       <Row><Col>
-        <Flex justifyContent="between" alignItems="center" className="mb-4 w-100 pda-head" breakpoint="md">
+        <Flex justifyContent="between" alignItems="center" className="mb-4 w-100" breakpoint="md">
           <div>
-            <h1 className="mb-2 h2">Data Alat Ukur</h1>
-            <p className="text-secondary mb-2">
-              Scan kartu atau pilih nama peminjam / vendor, lalu scan barcode alat (scanner atau kamera HP).
+            <h1 className="mb-2 h2" style={{ fontWeight: 800, color: NAVY }}>Data Alat Ukur</h1>
+            <p className="text-secondary mb-2" style={{ maxWidth: 640 }}>
+              {canWrite
+                ? "Scan kartu atau pilih nama peminjam / vendor, lalu scan barcode alat (scanner atau kamera HP)."
+                : "Daftar alat ukur beserta kondisi dan jadwal kalibrasinya."}
             </p>
             <DasherBreadcrumb />
           </div>
-          <div>
-            <Button className="btn-yellow d-flex align-items-center gap-2" onClick={() => { setActiveAlatUkur(null); setFormModalOpen(true); }}>
-              <IconPlus size={18} /> Tambah Data Alat
-            </Button>
-          </div>
+          {canWrite && (
+            <div>
+              <Button
+                className="d-flex align-items-center gap-2"
+                style={yellowBtnStyle}
+                onClick={() => { setActiveAlatUkur(null); setFormModalOpen(true); }}
+              >
+                <IconPlus size={18} /> Tambah Data Alat
+              </Button>
+            </div>
+          )}
         </Flex>
       </Col></Row>
 
-      <div className={`pda-borrower ${peminjamAktif ? "is-ready" : "is-empty"}`}>
-        <div className="pda-who">
-          <span className="pda-av">
-            {peminjamAktif ? <IconUserCheck size={26} /> : <IconUserQuestion size={26} />}
-          </span>
-          <div className="min-w-0">
-            <span className="pda-lb">Peminjam aktif</span>
-            <h5 className="pda-name">
-              {peminjamAktif ? (peminjamAktif.kategori === 'Vendor' ? `${namaPeminjam(peminjamAktif)} (Vendor)` : namaPeminjam(peminjamAktif)) : "Belum ada peminjam dipilih"}
-            </h5>
-            <span className="pda-sub">
-              {peminjamAktif
-                ? `Kategori: ${peminjamAktif.kategori || 'Internal'}`
-                : "Tempelkan kartu pada reader, pilih nama di bawah, atau pilih vendor."}
+      {canWrite && (
+        <>
+          <div
+            className="d-flex flex-wrap justify-content-between align-items-center gap-3"
+            style={{
+              borderRadius: 16,
+              padding: "16px 20px",
+              marginBottom: 12,
+              border: "1px solid",
+              background: borrowerReady ? "#e8f6ef" : "#fff8e1",
+              borderColor: borrowerReady ? "#bfe6d2" : "#ffe08a",
+            }}
+          >
+            <div className="d-flex align-items-center gap-3" style={{ minWidth: 0 }}>
+              <span
+                style={{
+                  width: 48,
+                  height: 48,
+                  borderRadius: 14,
+                  display: "grid",
+                  placeItems: "center",
+                  flex: "none",
+                  background: borrowerReady ? GREEN : YELLOW,
+                  color: borrowerReady ? "#fff" : NAVY,
+                }}
+              >
+                {borrowerReady ? <IconUserCheck size={26} /> : <IconUserQuestion size={26} />}
+              </span>
+              <div style={{ minWidth: 0 }}>
+                <span className="d-block" style={{ fontSize: ".76rem", color: MUTE }}>Peminjam aktif</span>
+                <h5 className="mb-0" style={{ fontSize: "1.1rem", fontWeight: 800, color: NAVY }}>
+                  {peminjamAktif
+                    ? (peminjamAktif.kategori === "Vendor"
+                        ? `${namaPeminjam(peminjamAktif)} (Vendor)`
+                        : namaPeminjam(peminjamAktif))
+                    : "Belum ada peminjam dipilih"}
+                </h5>
+                <span style={{ fontSize: ".78rem", color: MUTE }}>
+                  {peminjamAktif
+                    ? `Kategori: ${peminjamAktif.kategori || "Internal"}`
+                    : "Tempelkan kartu pada reader, pilih nama di bawah, atau pilih vendor."}
+                </span>
+              </div>
+            </div>
+
+            {!peminjamAktif ? (
+              <div className="d-flex gap-2">
+                <Button
+                  variant="outline-primary"
+                  onClick={() => { setSelectedVendorId(""); setVendorModalOpen(true); }}
+                  className="d-flex align-items-center gap-2 fw-semibold bg-white"
+                >
+                  <IconBuildingStore size={18} /> Pilih Vendor
+                </Button>
+                <Button
+                  variant="primary"
+                  style={primaryBtnStyle}
+                  onClick={() => setScanCardModalOpen(true)}
+                  className="d-flex align-items-center gap-2 fw-semibold"
+                >
+                  <IconId size={18} /> Scan Kartu
+                </Button>
+              </div>
+            ) : (
+              <Button
+                variant="outline-danger"
+                size="sm"
+                onClick={() => { setPeminjamAktif(null); setCart([]); }}
+                className="d-flex align-items-center gap-1 fw-semibold bg-white"
+              >
+                <IconLogout size={16} /> Ganti Peminjam
+              </Button>
+            )}
+
+            {/* Dropdown peminjam manual (cadangan jika scanner / PC mati) */}
+            {!peminjamAktif && (
+              <div style={{ flexBasis: "100%" }}>
+                {renderManualSelect("Atau pilih nama peminjam secara manual")}
+              </div>
+            )}
+          </div>
+
+          <div className="d-flex flex-wrap gap-2 mb-4">
+            <span style={stepPillStyle(stepState(1))}>
+              <i style={stepNumStyle(stepState(1))}>1</i> Tentukan Peminjam
+            </span>
+            <span style={stepPillStyle(stepState(2))}>
+              <i style={stepNumStyle(stepState(2))}>2</i> Pilih Alat
+            </span>
+            <span style={stepPillStyle(stepState(3))}>
+              <i style={stepNumStyle(stepState(3))}>3</i> Checkout
             </span>
           </div>
-        </div>
+        </>
+      )}
 
-        {!peminjamAktif ? (
-          <div className="d-flex gap-2">
-            <Button variant="outline-primary" onClick={() => { setSelectedVendorId(""); setVendorModalOpen(true); }} className="d-flex align-items-center gap-2 fw-semibold bg-white">
-              <IconBuildingStore size={18} /> Pilih Vendor
-            </Button>
-            <Button variant="primary" onClick={() => setScanCardModalOpen(true)} className="d-flex align-items-center gap-2 fw-semibold">
-              <IconId size={18} /> Scan Kartu
-            </Button>
-          </div>
-        ) : (
-          <Button variant="outline-danger" size="sm" onClick={() => { setPeminjamAktif(null); setCart([]); }} className="d-flex align-items-center gap-1 fw-semibold bg-white">
-            <IconLogout size={16} /> Ganti Peminjam
-          </Button>
-        )}
-
-        {/* Dropdown peminjam manual (cadangan jika scanner / PC mati) */}
-        {!peminjamAktif && (
-          <div style={{ flexBasis: "100%" }}>
-            {renderManualSelect("Atau pilih nama peminjam secara manual")}
-          </div>
-        )}
-      </div>
-
-      <div className="pda-steps">
-        <span className={`pda-step ${stepClass(1)}`}><i>1</i> Tentukan Peminjam</span>
-        <span className={`pda-step ${stepClass(2)}`}><i>2</i> Pilih Alat</span>
-        <span className={`pda-step ${stepClass(3)}`}><i>3</i> Checkout</span>
-      </div>
-
-      <Card className="card-lg mb-6 pda-card">
-        <div className="datatools-toolbar border-bottom pda-bar">
-          <InputGroup className="datatools-search">
+      <Card
+        className="card-lg mb-6"
+        style={{
+          borderRadius: 16,
+          border: `1px solid ${LINE}`,
+          borderTop: `4px solid ${BLUE}`,
+          overflow: "hidden",
+        }}
+      >
+        <div className="datatools-toolbar border-bottom d-flex flex-wrap align-items-center justify-content-between gap-2 px-4 py-3">
+          <InputGroup className="datatools-search" style={{ maxWidth: 460 }}>
             <InputGroup.Text><IconSearch size={18} /></InputGroup.Text>
-            <Form.Control type="search" placeholder="Cari kode, nama, merk, SN..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
-            {searchTerm && <Button variant="link" className="datatools-search-clear" onClick={() => setSearchTerm("")}><IconX size={16} /></Button>}
+            <Form.Control
+              type="search"
+              placeholder="Cari kode, nama, merk, SN..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+            {searchTerm && (
+              <Button variant="link" className="datatools-search-clear" onClick={() => setSearchTerm("")}>
+                <IconX size={16} />
+              </Button>
+            )}
           </InputGroup>
 
           {!loading && (
             <div className="d-flex flex-wrap align-items-center gap-3">
-              <span className="pda-count"><b>{filteredData.length}</b>{searchTerm ? ` dari ${data.length}` : ""} alatukur</span>
+              <span style={{ fontSize: ".82rem", color: MUTE }}>
+                <b style={{ color: NAVY }}>{filteredData.length}</b>
+                {searchTerm ? ` dari ${data.length}` : ""} alatukur
+              </span>
               <div className="d-flex flex-wrap gap-2">
-                <Button
-                  variant="primary"
-                  size="sm"
-                  className="d-inline-flex align-items-center gap-1"
-                  onClick={() => setCameraOpen(true)}
-                >
-                  <IconCamera size={16} /> Scan Kamera
-                </Button>
+                {canWrite && (
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    style={primaryBtnStyle}
+                    className="d-inline-flex align-items-center gap-1"
+                    onClick={() => setCameraOpen(true)}
+                  >
+                    <IconCamera size={16} /> Scan Kamera
+                  </Button>
+                )}
                 <Button
                   variant="outline-danger"
                   size="sm"
@@ -737,16 +854,19 @@ const DataAlatUkurManager = () => {
               onDelete={(item) => { setActiveAlatUkur(item); setDeleteModalOpen(true); }}
               onAddToCart={handleAddToCart}
               onDownloadQR={handleDownloadSingleQR}
+              canLoan={canWrite}
+              canEdit={canWrite}
+              canDelete={canDelete}
             />
           )}
         </CardBody>
       </Card>
 
       {/* MODAL PILIH VENDOR */}
-      <Modal show={vendorModalOpen} onHide={() => setVendorModalOpen(false)} centered backdropClassName="pln-alert-backdrop">
+      <Modal show={vendorModalOpen} onHide={() => setVendorModalOpen(false)} centered>
         <Form onSubmit={handleSelectVendorSubmit}>
           <Modal.Header closeButton>
-            <Modal.Title className="h5 fw-bold text-navy">Peminjaman Eksternal</Modal.Title>
+            <Modal.Title className="h5 fw-bold" style={{ color: NAVY }}>Peminjaman Eksternal</Modal.Title>
           </Modal.Header>
           <Modal.Body>
             <Form.Group>
@@ -764,7 +884,7 @@ const DataAlatUkurManager = () => {
           </Modal.Body>
           <Modal.Footer>
             <Button variant="light" onClick={() => setVendorModalOpen(false)}>Batal</Button>
-            <Button variant="primary" type="submit" disabled={!selectedVendorId}>Lanjutkan</Button>
+            <Button variant="primary" style={primaryBtnStyle} type="submit" disabled={!selectedVendorId}>Lanjutkan</Button>
           </Modal.Footer>
         </Form>
       </Modal>
@@ -775,10 +895,14 @@ const DataAlatUkurManager = () => {
         onHide={handleCloseScanModal}
         centered
         backdrop="static"
-        dialogClassName="pda-scan"
-        backdropClassName="pln-alert-backdrop"
+        contentClassName="border-0 rounded-4 overflow-hidden"
       >
-        <div className="pda-stripe" />
+        <div
+          style={{
+            height: 6,
+            background: "linear-gradient(90deg,#ffc20e 0 55%,#e2231a 55% 70%,#00a7c4 70%)",
+          }}
+        />
         <Modal.Header closeButton className="border-0 pb-0">
           <Modal.Title className="h6 d-flex align-items-center gap-2 text-muted">
             <IconScan size={18} />
@@ -789,14 +913,25 @@ const DataAlatUkurManager = () => {
           {isVerifyingCard ? (
             <>
               <Spinner animation="border" variant="primary" className="mb-3" />
-              <h5>Memverifikasi kartu...</h5>
+              <h5 style={{ fontWeight: 800, color: NAVY }}>Memverifikasi kartu...</h5>
             </>
           ) : (
             <>
-              <div className="pda-ring">
+              <div
+                style={{
+                  width: 92,
+                  height: 92,
+                  borderRadius: "50%",
+                  margin: "0 auto 18px",
+                  display: "grid",
+                  placeItems: "center",
+                  background: "#e6f0fa",
+                  color: BLUE,
+                }}
+              >
                 {pendingVendor ? <IconUserCheck size={42} /> : <IconId size={42} />}
               </div>
-              <h5 className="mb-2">
+              <h5 className="mb-2" style={{ fontWeight: 800, color: NAVY }}>
                 {pendingVendor ? "Scan Kartu Inventory Man" : "Tempelkan kartu RFID"}
               </h5>
               <p className="text-secondary small mb-0 mx-auto" style={{ maxWidth: 320 }}>
@@ -818,11 +953,36 @@ const DataAlatUkurManager = () => {
         </Modal.Body>
       </Modal>
 
-      <AlatUkurFormModal isOpen={formModalOpen} item={activeAlatUkur} onClose={() => setFormModalOpen(false)} onSubmit={handleFormSubmit} />
-      <AlatUkurDetailModal item={detailModalOpen ? activeAlatUkur : null} onClose={() => setDetailModalOpen(false)} />
-      <DeleteConfirmModal isOpen={deleteModalOpen} onClose={() => setDeleteModalOpen(false)} onConfirm={() => loadAlatUkur()} />
+      {canWrite && (
+        <AlatUkurFormModal
+          isOpen={formModalOpen}
+          item={activeAlatUkur}
+          onClose={() => setFormModalOpen(false)}
+          onSubmit={handleFormSubmit}
+        />
+      )}
 
-      <LoanFormModal show={loanModalOpen} onClose={() => setLoanModalOpen(false)} onSubmit={handleLoanSubmit} cartItems={cart} submitting={loanSubmitting} error={loanError} {...({ peminjam: peminjamAktif } as any)} />
+      <AlatUkurDetailModal item={detailModalOpen ? activeAlatUkur : null} onClose={() => setDetailModalOpen(false)} />
+
+      {canDelete && (
+        <DeleteConfirmModal
+          isOpen={deleteModalOpen}
+          onClose={() => setDeleteModalOpen(false)}
+          onConfirm={() => loadAlatUkur()}
+        />
+      )}
+
+      {canWrite && (
+        <LoanFormModal
+          show={loanModalOpen}
+          onClose={() => setLoanModalOpen(false)}
+          onSubmit={handleLoanSubmit}
+          cartItems={cart}
+          submitting={loanSubmitting}
+          error={loanError}
+          {...({ peminjam: peminjamAktif } as any)}
+        />
+      )}
 
       {/* MODAL KAMERA HP: hasil scan diteruskan ke handleUniversalScan */}
       <WebCameraScannerModal
@@ -835,7 +995,7 @@ const DataAlatUkurManager = () => {
       {/* MODAL CETAK LABEL QR (Untuk fitur Print Massal) */}
       <Modal show={qrModalOpen} onHide={() => setQrModalOpen(false)} size="lg" centered>
         <Modal.Header closeButton>
-          <Modal.Title className="h5 fw-bold text-navy">Cetak Label QR (Massal)</Modal.Title>
+          <Modal.Title className="h5 fw-bold" style={{ color: NAVY }}>Cetak Label QR (Massal)</Modal.Title>
         </Modal.Header>
         <Modal.Body className="bg-light">
           <div id="print-qr-area" className="d-flex flex-wrap justify-content-center gap-4 p-3">
@@ -845,10 +1005,10 @@ const DataAlatUkurManager = () => {
                 <div key={item.id} className="d-flex flex-column align-items-center gap-2">
                   <div
                     className="d-flex flex-column align-items-center bg-white p-3"
-                    style={{ border: '2px solid #ccc', width: 'fit-content', borderRadius: '8px' }}
+                    style={{ border: "2px solid #ccc", width: "fit-content", borderRadius: "8px" }}
                   >
                     <QRCodeCanvas value={kode} size={140} level={"H"} />
-                    <span className="mt-3 fw-bold text-dark text-center" style={{ fontSize: '1.4rem', letterSpacing: '2px' }}>
+                    <span className="mt-3 fw-bold text-dark text-center" style={{ fontSize: "1.4rem", letterSpacing: "2px" }}>
                       {kode}
                     </span>
                   </div>
@@ -859,17 +1019,22 @@ const DataAlatUkurManager = () => {
         </Modal.Body>
         <Modal.Footer className="d-print-none">
           <Button variant="light" onClick={() => setQrModalOpen(false)}>Tutup</Button>
-          <Button variant="primary" onClick={() => window.print()}>
+          <Button variant="primary" style={primaryBtnStyle} onClick={() => window.print()}>
             <IconQrcode size={18} className="me-2" /> Print Semua ke Kertas
           </Button>
         </Modal.Footer>
       </Modal>
 
-      <CartFAB count={cart.length} onClick={() => {
-          if (!peminjamAktif) { showNotice("Tentukan peminjam terlebih dahulu."); setScanCardModalOpen(true); return; }
-          if (cart.length === 0) { showNotice("Keranjang masih kosong. Pilih alat dulu."); return; }
-          setLoanModalOpen(true);
-      }} />
+      {canWrite && (
+        <CartFAB
+          count={cart.length}
+          onClick={() => {
+            if (!peminjamAktif) { showNotice("Tentukan peminjam terlebih dahulu."); setScanCardModalOpen(true); return; }
+            if (cart.length === 0) { showNotice("Keranjang masih kosong. Pilih alat dulu."); return; }
+            setLoanModalOpen(true);
+          }}
+        />
+      )}
 
       {/* AREA TERSEMBUNYI UNTUK GENERATE GAMBAR QR CODE INDIVIDUAL (html2canvas) */}
       <div style={{ position: "absolute", top: "-9999px", left: "-9999px", zIndex: -1 }}>
@@ -880,17 +1045,16 @@ const DataAlatUkurManager = () => {
               key={`hidden-qr-${item.id}`}
               id={`qr-wrapper-${kode}`}
               className="d-flex flex-column align-items-center bg-white p-3"
-              style={{ border: '2px solid #ccc', width: 'fit-content', borderRadius: '8px' }}
+              style={{ border: "2px solid #ccc", width: "fit-content", borderRadius: "8px" }}
             >
               <QRCodeCanvas value={kode} size={140} level={"H"} />
-              <span className="mt-3 fw-bold text-dark text-center" style={{ fontSize: '1.4rem', letterSpacing: '2px' }}>
+              <span className="mt-3 fw-bold text-dark text-center" style={{ fontSize: "1.4rem", letterSpacing: "2px" }}>
                 {kode}
               </span>
             </div>
           );
         })}
       </div>
-
     </div>
   );
 };

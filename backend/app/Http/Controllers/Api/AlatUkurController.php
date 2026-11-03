@@ -27,12 +27,14 @@ class AlatUkurController extends Controller
 }
 
     /**
-     * POST /api/alat-ukur
+     * POST /api/alat-ukur (admin & petugas)
      *
      * Tambah data alatukur baru.
      */
     public function store(Request $request)
     {
+        abort_unless($request->user()->hasRole('admin', 'petugas'), 403, 'Anda tidak memiliki akses untuk aksi ini.');
+
         $validated = Validator::make($request->all(), [
             'kode_alat' => [
                 'required',
@@ -187,12 +189,14 @@ class AlatUkurController extends Controller
     }
 
     /**
-     * PUT/PATCH /api/alat-ukur/{id}
+     * PUT/PATCH /api/alat-ukur/{id} (admin & petugas)
      *
      * Edit data alatukur.
      */
     public function update(Request $request, $id)
     {
+        abort_unless($request->user()->hasRole('admin', 'petugas'), 403, 'Anda tidak memiliki akses untuk aksi ini.');
+
         $alat = AlatUkur::find($id);
 
         if (!$alat) {
@@ -299,12 +303,14 @@ class AlatUkurController extends Controller
     }
 
     /**
-     * DELETE /api/alat-ukur/{id}
+     * DELETE /api/alat-ukur/{id} (admin saja)
      *
      * Hapus alatukur.
      */
-    public function destroy($id)
+    public function destroy(Request $request, $id)
     {
+        abort_unless($request->user()->hasRole('admin'), 403, 'Anda tidak memiliki akses untuk aksi ini.');
+
         $alat = AlatUkur::find($id);
 
         if (!$alat) {

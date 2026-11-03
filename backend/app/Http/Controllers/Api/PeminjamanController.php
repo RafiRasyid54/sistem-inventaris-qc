@@ -47,11 +47,13 @@ class PeminjamanController extends Controller
     }
 
     /**
-     * 3. POST /api/peminjaman/proses
+     * 3. POST /api/peminjaman/proses (admin & petugas)
      * INI ADALAH CORE DARI SISTEM SCAN < 1 MENIT
      */
     public function prosesPeminjaman(Request $request)
     {
+        abort_unless($request->user()->hasRole('admin', 'petugas'), 403, 'Anda tidak memiliki akses untuk aksi ini.');
+
         // 1. Validasi Input dari Frontend (Hasil Scan)
         $validator = Validator::make($request->all(), [
             'kode_alat' => 'required|string|exists:alat_ukur,kode_alat',
@@ -122,11 +124,13 @@ class PeminjamanController extends Controller
     }
 
     /**
-     * 4. PATCH /api/peminjaman/{id}/kembali
+     * 4. PATCH /api/peminjaman/{id}/kembali (admin & petugas)
      * Proses pengembalian alatukur
      */
     public function kembali(Request $request, $id)
     {
+        abort_unless($request->user()->hasRole('admin', 'petugas'), 403, 'Anda tidak memiliki akses untuk aksi ini.');
+
         $peminjaman = Peminjaman::find($id);
 
         if (!$peminjaman) {
@@ -177,11 +181,13 @@ class PeminjamanController extends Controller
     }
 
     /**
-     * 6. DELETE /api/peminjaman/{id}
+     * 6. DELETE /api/peminjaman/{id} (admin saja)
      * Hapus riwayat
      */
-    public function destroy($id)
+    public function destroy(Request $request, $id)
     {
+        abort_unless($request->user()->hasRole('admin'), 403, 'Anda tidak memiliki akses untuk aksi ini.');
+
         $peminjaman = Peminjaman::find($id);
 
         if (!$peminjaman) {

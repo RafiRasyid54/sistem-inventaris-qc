@@ -15,4 +15,5 @@ export interface MenuItemType {
   badge?: string;
   badgecolor?: string;
   children?: MenuItemType[];
+  roles?: string[]; // role yang boleh melihat menu; kosong = tampil untuk semua role
 }

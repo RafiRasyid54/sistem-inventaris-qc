@@ -1,9 +1,8 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
-use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
@@ -16,17 +15,19 @@ return new class extends Migration
                 id UUID PRIMARY KEY,
                 full_name VARCHAR(255) NOT NULL,
                 username VARCHAR(255) UNIQUE NOT NULL,
-                email VARCHAR(255) UNIQUE NOT NULL,
+                email VARCHAR(255) UNIQUE NULL,
                 email_verified_at TIMESTAMP NULL,
                 password VARCHAR(255) NOT NULL,
                 divisi VARCHAR(100) NULL,
                 no_hp VARCHAR(50) NULL,
                 avatar_path TEXT NULL,
-                is_active SMALLINT DEFAULT 1,
-                must_change_password SMALLINT DEFAULT 0,
+                role VARCHAR(30) NOT NULL DEFAULT \'viewer\',
+                is_active SMALLINT NOT NULL DEFAULT 1,
+                must_change_password SMALLINT NOT NULL DEFAULT 0,
                 remember_token VARCHAR(100) NULL,
                 created_at TIMESTAMP NULL,
-                updated_at TIMESTAMP NULL
+                updated_at TIMESTAMP NULL,
+                CONSTRAINT users_role_check CHECK (role IN (\'admin\', \'petugas\', \'viewer\'))
             )
         ');
     }

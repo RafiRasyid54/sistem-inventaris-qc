@@ -1,5 +1,5 @@
 import apiFetch from "lib/api";
-import { UserItemType, UserFormValues, ResetPasswordValues } from "types/DataUserTypes";
+import { UserItemType, UserFormValues, ResetPasswordValues, UserRole } from "types/DataUserTypes";
 
 interface CreateUserPayload {
   full_name: string;
@@ -7,6 +7,7 @@ interface CreateUserPayload {
   email?: string;
   password?: string;
   divisi?: string;
+  role: UserRole;
 }
 
 interface UpdateUserPayload {
@@ -15,6 +16,7 @@ interface UpdateUserPayload {
   email?: string;
   password?: string;
   divisi?: string;
+  role?: UserRole;
 }
 
 export async function getUsers(): Promise<UserItemType[]> {
@@ -27,9 +29,10 @@ export async function createUser(
   const payload: CreateUserPayload = {
     full_name: values.full_name,
     username: values.username,
-    email: values.email, // <-- EMAIL DITAMBAHKAN DI SINI
+    email: values.email,
     password: values.password,
     divisi: values.divisi,
+    role: values.role,
   };
 
   return apiFetch<UserItemType>("/users", {
@@ -45,8 +48,9 @@ export async function updateUser(
   const payload: UpdateUserPayload = {
     full_name: values.full_name,
     username: values.username,
-    email: values.email, // <-- EMAIL DITAMBAHKAN DI SINI
+    email: values.email,
     divisi: values.divisi,
+    role: values.role,
   };
 
   // Jika password diisi, ikut sertakan dalam update

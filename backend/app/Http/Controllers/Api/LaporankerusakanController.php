@@ -32,9 +32,11 @@ class LaporanKerusakanController extends Controller
         return response()->json($data);
     }
 
-    // POST /api/laporan-kerusakan
+    // POST /api/laporan-kerusakan (admin & petugas)
     public function store(Request $request)
     {
+        abort_unless($request->user()->hasRole('admin', 'petugas'), 403, 'Anda tidak memiliki akses untuk aksi ini.');
+
         $validator = Validator::make($request->all(), [
             'tanggal' => 'required|date',
             'alat_ukur_id' => 'required|uuid|exists:alat_ukur,id',
@@ -70,9 +72,11 @@ class LaporanKerusakanController extends Controller
         return response()->json($laporan, 201);
     }
 
-    // PUT/PATCH /api/laporan-kerusakan/{id}
+    // PUT/PATCH /api/laporan-kerusakan/{id} (admin saja)
     public function update(Request $request, string $id)
     {
+        abort_unless($request->user()->hasRole('admin'), 403, 'Anda tidak memiliki akses untuk aksi ini.');
+
         $laporan = LaporanKerusakanAlatUkur::find($id);
 
         if (! $laporan) {
@@ -104,9 +108,11 @@ class LaporanKerusakanController extends Controller
         return response()->json($laporan->load('alatUkur'));
     }
 
-    // DELETE
-    public function destroy(string $id)
+    // DELETE (admin saja)
+    public function destroy(Request $request, string $id)
     {
+        abort_unless($request->user()->hasRole('admin'), 403, 'Anda tidak memiliki akses untuk aksi ini.');
+
         $laporan = LaporanKerusakanAlatUkur::find($id);
 
         if (! $laporan) {
@@ -121,9 +127,11 @@ class LaporanKerusakanController extends Controller
         return response()->json(['message' => 'Laporan kerusakan berhasil dihapus']);
     }
 
-    // PATCH /api/laporan-kerusakan/{id}/repair
+    // PATCH /api/laporan-kerusakan/{id}/repair (admin saja)
     public function repair(Request $request, string $id)
     {
+        abort_unless($request->user()->hasRole('admin'), 403, 'Anda tidak memiliki akses untuk aksi ini.');
+
         $laporan = LaporanKerusakanAlatUkur::find($id);
 
         if (! $laporan) {
@@ -175,9 +183,11 @@ class LaporanKerusakanController extends Controller
         ]);
     }
 
-    // PATCH /api/laporan-kerusakan/{id}/tandai-permanen
-    public function tandaiPermanen(string $id)
+    // PATCH /api/laporan-kerusakan/{id}/tandai-permanen (admin saja)
+    public function tandaiPermanen(Request $request, string $id)
     {
+        abort_unless($request->user()->hasRole('admin'), 403, 'Anda tidak memiliki akses untuk aksi ini.');
+
         $laporan = LaporanKerusakanAlatUkur::find($id);
 
         if (! $laporan) {

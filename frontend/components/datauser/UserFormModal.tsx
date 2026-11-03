@@ -12,6 +12,7 @@ const emptyForm: UserFormValues = {
   email: "",
   password: "",
   divisi: "",
+  role: "viewer",
 };
 
 interface UserFormModalProps {
@@ -42,6 +43,7 @@ const UserFormModal = ({
           email: initialData.email || "", // Fallback untuk email
           password: "", // Selalu dikosongkan saat mode edit
           divisi: initialData.divisi || "", // Fallback untuk divisi
+          role: initialData.role || "viewer",
         });
       } else {
         setForm(emptyForm);
@@ -142,6 +144,21 @@ const UserFormModal = ({
                 value={form.divisi || ""}
                 onChange={(e) => handleChange("divisi", e.target.value)}
               />
+            </Col>
+
+            <Col md={6}>
+              <Form.Label>
+                Role <span className="text-danger">*</span>
+              </Form.Label>
+              <Form.Select
+                required
+                value={form.role}
+                onChange={(e) => handleChange("role", e.target.value)}
+              >
+                <option value="viewer">Viewer (hanya lihat data)</option>
+                <option value="petugas">Petugas (operasional)</option>
+                <option value="admin">Admin (akses penuh)</option>
+              </Form.Select>
             </Col>
           </Row>
         </Modal.Body>

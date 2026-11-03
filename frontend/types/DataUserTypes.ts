@@ -1,4 +1,5 @@
-// Tipe UserRole dihapus karena sistem RBAC sudah tidak digunakan
+// Harus sama dengan User::ROLES di backend
+export type UserRole = "admin" | "petugas" | "viewer";
 
 export interface UserItemType {
   id: string;
@@ -7,6 +8,7 @@ export interface UserItemType {
   email: string | null;
   divisi: string | null;
   avatar_path: string | null;
+  role: UserRole;
   is_active: boolean;
   must_change_password: boolean;
   created_at: string;
@@ -19,6 +21,7 @@ export interface UserFormValues {
   password?: string; // wajib diisi saat Tambah, opsional/kosong berarti tidak diganti saat Edit
   email?: string;
   divisi?: string;
+  role: UserRole;
 }
 
 export interface ResetPasswordValues {

@@ -136,7 +136,8 @@ const DataUserManager = () => {
           keyword === "" ||
           u.full_name.toLowerCase().includes(keyword) ||
           u.username.toLowerCase().includes(keyword) ||
-          (u.email ?? "").toLowerCase().includes(keyword)
+          (u.email ?? "").toLowerCase().includes(keyword) ||
+          (u.role ?? "").toLowerCase().includes(keyword)
       )
       .sort((a, b) => {
         if (a.is_active !== b.is_active) {
@@ -287,7 +288,7 @@ const DataUserManager = () => {
             <div>
               <h1 className="mb-2 h2">Manajemen User</h1>
               <p className="text-secondary mb-2">
-                Mengelola seluruh akun pengguna sistem.
+                Mengelola seluruh akun pengguna sistem beserta role-nya.
               </p>
               <DasherBreadcrumb />
             </div>
@@ -311,7 +312,7 @@ const DataUserManager = () => {
                 </InputGroup.Text>
                 <Form.Control
                   type="search"
-                  placeholder="Cari nama atau email..."
+                  placeholder="Cari nama, email, atau role..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   aria-label="Cari user"

@@ -18,6 +18,9 @@ interface ColumnDefinitionProps {
   onDelete: (item: AlatUkur) => void;
   onAddToCart: (item: AlatUkur) => void;
   onDownloadQR: (kodeAlat: string) => void; // Prop baru untuk fungsi download dari parent
+  canLoan?: boolean; // admin & petugas
+  canEdit?: boolean; // admin & petugas
+  canDelete?: boolean; // admin saja
 }
 
 // Helper untuk format tanggal "Bulan-Tahun"
@@ -35,6 +38,9 @@ export const ColumnDefinition: React.FC<ColumnDefinitionProps> = ({
   onDelete,
   onAddToCart,
   onDownloadQR,
+  canLoan = false,
+  canEdit = false,
+  canDelete = false,
 }) => {
   const getKondisiClass = (kondisi?: string) => {
     switch (kondisi?.toLowerCase()) {
@@ -97,7 +103,7 @@ export const ColumnDefinition: React.FC<ColumnDefinitionProps> = ({
             <th className="text-secondary small fw-semibold" style={{ minWidth: "170px" }}>Rencana Kalibrasi Berikutnya</th>
             <th className="text-secondary small fw-semibold" style={{ minWidth: "120px" }}>Kondisi</th>
             <th className="text-secondary small fw-semibold" style={{ minWidth: "180px" }}>Keterangan</th>
-            <th className="text-secondary small fw-semibold text-center" style={{ minWidth: "180px" }}>Aksi</th>
+            <th className="text-secondary small fw-semibold text-center" style={{ minWidth: "140px" }}>Aksi</th>
           </tr>
         </thead>
 
@@ -182,14 +188,16 @@ export const ColumnDefinition: React.FC<ColumnDefinitionProps> = ({
               {/* AKSI */}
               <td>
                 <div className="d-flex align-items-center justify-content-center gap-1">
-                  <button
-                    type="button"
-                    className="btn btn-sm btn-ghost-primary"
-                    onClick={() => onAddToCart(item)}
-                    title="Pinjam alatukur"
-                  >
-                    <ShoppingCart size={16} />
-                  </button>
+                  {canLoan && (
+                    <button
+                      type="button"
+                      className="btn btn-sm btn-ghost-primary"
+                      onClick={() => onAddToCart(item)}
+                      title="Pinjam alatukur"
+                    >
+                      <ShoppingCart size={16} />
+                    </button>
+                  )}
 
                   {/* TOMBOL DOWNLOAD QR MEMANGGIL FUNGSI DARI PARENT */}
                   <button
@@ -210,23 +218,27 @@ export const ColumnDefinition: React.FC<ColumnDefinitionProps> = ({
                     <Eye size={16} />
                   </button>
 
-                  <button
-                    type="button"
-                    className="btn btn-sm btn-ghost-warning"
-                    onClick={() => onEdit(item)}
-                    title="Edit alatukur"
-                  >
-                    <Edit size={16} />
-                  </button>
+                  {canEdit && (
+                    <button
+                      type="button"
+                      className="btn btn-sm btn-ghost-warning"
+                      onClick={() => onEdit(item)}
+                      title="Edit alatukur"
+                    >
+                      <Edit size={16} />
+                    </button>
+                  )}
 
-                  <button
-                    type="button"
-                    className="btn btn-sm btn-ghost-danger"
-                    onClick={() => onDelete(item)}
-                    title="Hapus alatukur"
-                  >
-                    <Trash2 size={16} />
-                  </button>
+                  {canDelete && (
+                    <button
+                      type="button"
+                      className="btn btn-sm btn-ghost-danger"
+                      onClick={() => onDelete(item)}
+                      title="Hapus alatukur"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  )}
                 </div>
               </td>
             </tr>

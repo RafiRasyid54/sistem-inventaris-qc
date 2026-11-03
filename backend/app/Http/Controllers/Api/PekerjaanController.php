@@ -28,9 +28,11 @@ class PekerjaanController extends Controller
         ]);
     }
 
-    // Menyimpan pekerjaan baru
+    // Menyimpan pekerjaan baru (admin saja)
     public function store(Request $request)
     {
+        abort_unless($request->user()->hasRole('admin'), 403, 'Anda tidak memiliki akses untuk aksi ini.');
+
         $request->validate([
             'nama_pekerjaan' => 'required|string|max:255|unique:pekerjaan,nama_pekerjaan',
         ]);
@@ -47,9 +49,11 @@ class PekerjaanController extends Controller
         ], 201);
     }
 
-    // Mengubah data pekerjaan
+    // Mengubah data pekerjaan (admin saja)
     public function update(Request $request, $id)
     {
+        abort_unless($request->user()->hasRole('admin'), 403, 'Anda tidak memiliki akses untuk aksi ini.');
+
         $pekerjaan = Pekerjaan::find($id);
 
         if (!$pekerjaan) {
@@ -74,9 +78,11 @@ class PekerjaanController extends Controller
         ]);
     }
 
-    // Toggle Status Aktif / Nonaktif
-    public function toggleStatus($id)
+    // Toggle Status Aktif / Nonaktif (admin saja)
+    public function toggleStatus(Request $request, $id)
     {
+        abort_unless($request->user()->hasRole('admin'), 403, 'Anda tidak memiliki akses untuk aksi ini.');
+
         $pekerjaan = Pekerjaan::find($id);
 
         if (!$pekerjaan) {
@@ -96,9 +102,11 @@ class PekerjaanController extends Controller
         ]);
     }
 
-    // Menghapus data pekerjaan
-    public function destroy($id)
+    // Menghapus data pekerjaan (admin saja)
+    public function destroy(Request $request, $id)
     {
+        abort_unless($request->user()->hasRole('admin'), 403, 'Anda tidak memiliki akses untuk aksi ini.');
+
         $pekerjaan = Pekerjaan::find($id);
 
         if (!$pekerjaan) {

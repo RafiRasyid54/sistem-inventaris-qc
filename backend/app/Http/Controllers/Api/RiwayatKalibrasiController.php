@@ -39,8 +39,11 @@ class RiwayatKalibrasiController extends Controller
         ]);
     }
 
+    // POST (admin & petugas)
     public function store(Request $request)
     {
+        abort_unless($request->user()->hasRole('admin', 'petugas'), 403, 'Anda tidak memiliki akses untuk aksi ini.');
+
         $validated = $request->validate([
             'alat_ukur_id'        => 'required|exists:alat_ukur,id',
             'tanggal_kalibrasi'   => 'required|date',
@@ -65,10 +68,13 @@ class RiwayatKalibrasiController extends Controller
         ], 201);
     }
 
+    // PUT/PATCH (admin & petugas)
     // Untuk update dengan file dari frontend, kirim POST + field _method=PUT
     // (PHP tidak membaca multipart pada request PUT asli).
     public function update(Request $request, $id)
     {
+        abort_unless($request->user()->hasRole('admin', 'petugas'), 403, 'Anda tidak memiliki akses untuk aksi ini.');
+
         $kalibrasi = RiwayatKalibrasi::findOrFail($id);
 
         $validated = $request->validate([
@@ -98,8 +104,11 @@ class RiwayatKalibrasiController extends Controller
         ]);
     }
 
-    public function destroy($id)
+    // DELETE (admin saja)
+    public function destroy(Request $request, $id)
     {
+        abort_unless($request->user()->hasRole('admin'), 403, 'Anda tidak memiliki akses untuk aksi ini.');
+
         $kalibrasi = RiwayatKalibrasi::findOrFail($id);
 
         if ($kalibrasi->file_sertifikat && Storage::disk(self::DISK)->exists($kalibrasi->file_sertifikat)) {

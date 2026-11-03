@@ -11,13 +11,27 @@ use Illuminate\Support\Facades\Validator;
 
 class UserController extends Controller
 {
-    // Kolom yang aman ditampilkan (password tidak pernah ikut, role dihapus)
+    // Kolom yang aman ditampilkan (password tidak pernah ikut)
     private const SAFE_COLUMNS = [
-        'id', 'full_name', 'username', 'email', 'divisi', 'no_hp', 'avatar_path', 'is_active', 'must_change_password', 'created_at',
+        'id', 'full_name', 'username', 'email', 'divisi', 'no_hp', 'avatar_path',
+        'role', 'is_active', 'must_change_password', 'created_at',
     ];
 
-    public function index()
+    // Tolak dengan 403 jika role user yang login tidak termasuk $roles
+    private function onlyRoles(Request $request, string ...$roles): void
     {
+        abort_unless(
+            $request->user()?->hasRole(...$roles),
+            403,
+            'Anda tidak memiliki akses untuk aksi ini.'
+        );
+    }
+
+    // GET /api/users (admin saja)
+    public function index(Request $request)
+    {
+        $this->onlyRoles($request, 'admin');
+
         return response()->json(
             User::select(self::SAFE_COLUMNS)
                 ->orderBy('full_name')
@@ -25,8 +39,11 @@ class UserController extends Controller
         );
     }
 
-    public function show(string $id)
+    // GET /api/users/{id} (admin saja)
+    public function show(Request $request, string $id)
     {
+        $this->onlyRoles($request, 'admin');
+
         $user = User::select(self::SAFE_COLUMNS)->find($id);
 
         if (! $user) {
@@ -42,6 +59,7 @@ class UserController extends Controller
         return response()->json(collect($user)->only(self::SAFE_COLUMNS));
     }
 
+    // Profil sendiri: sengaja TIDAK menerima 'role' agar user tidak bisa menaikkan rolenya sendiri
     public function updateProfile(Request $request)
     {
         $user = $request->user();
@@ -101,8 +119,11 @@ class UserController extends Controller
         return response()->json(['message' => 'Password berhasil diperbarui']);
     }
 
+    // POST /api/users (admin saja)
     public function store(Request $request)
     {
+        $this->onlyRoles($request, 'admin');
+
         $validator = Validator::make($request->all(), [
             'full_name' => 'required|string|max:255',
             'username' => 'required|string|max:255|unique:users,username',
@@ -110,6 +131,7 @@ class UserController extends Controller
             'password' => 'required|string|min:6',
             'divisi' => 'nullable|string|max:255',
             'no_hp' => 'nullable|string|max:20',
+            'role' => 'required|in:' . implode(',', User::ROLES),
         ]);
 
         if ($validator->fails()) {
@@ -126,9 +148,11 @@ class UserController extends Controller
         return response()->json($user->only(self::SAFE_COLUMNS), 201);
     }
 
-    // PUT/PATCH /api/users/{id}
+    // PUT/PATCH /api/users/{id} (admin saja)
     public function update(Request $request, string $id)
     {
+        $this->onlyRoles($request, 'admin');
+
         $targetUser = User::find($id);
 
         if (! $targetUser) {
@@ -142,6 +166,7 @@ class UserController extends Controller
             'password' => 'nullable|string|min:6',
             'divisi' => 'sometimes|nullable|string|max:255',
             'no_hp' => 'sometimes|nullable|string|max:20',
+            'role' => 'sometimes|required|in:' . implode(',', User::ROLES),
         ]);
 
         if ($validator->fails()) {
@@ -149,6 +174,17 @@ class UserController extends Controller
         }
 
         $data = $validator->validated();
+
+        // Admin tidak boleh mengubah role akunnya sendiri (cegah kehilangan akses admin)
+        if (
+            isset($data['role'])
+            && $targetUser->id === $request->user()->id
+            && $data['role'] !== $targetUser->role
+        ) {
+            return response()->json([
+                'errors' => ['role' => ['Anda tidak dapat mengubah role akun sendiri.']],
+            ], 422);
+        }
 
         if (empty($data['password'])) {
             unset($data['password']);
@@ -161,12 +197,19 @@ class UserController extends Controller
         return response()->json($targetUser->only(self::SAFE_COLUMNS));
     }
 
+    // DELETE /api/users/{id} (admin saja)
     public function destroy(Request $request, string $id)
     {
+        $this->onlyRoles($request, 'admin');
+
         $user = User::find($id);
 
         if (! $user) {
             return response()->json(['message' => 'User tidak ditemukan'], 404);
+        }
+
+        if ($user->id === $request->user()->id) {
+            return response()->json(['message' => 'Anda tidak dapat menghapus akun sendiri.'], 422);
         }
 
         $user->tokens()->delete();
@@ -175,8 +218,11 @@ class UserController extends Controller
         return response()->json(['message' => 'User berhasil dihapus']);
     }
 
+    // PATCH /api/users/{id}/aktifkan (admin saja)
     public function activate(Request $request, string $id)
     {
+        $this->onlyRoles($request, 'admin');
+
         $user = User::find($id);
 
         if (! $user) {
@@ -188,8 +234,11 @@ class UserController extends Controller
         return response()->json(['message' => 'User berhasil diaktifkan']);
     }
 
+    // PATCH /api/users/{id}/reset-password (admin saja)
     public function resetPassword(Request $request, string $id)
     {
+        $this->onlyRoles($request, 'admin');
+
         $targetUser = User::find($id);
 
         if (! $targetUser) {

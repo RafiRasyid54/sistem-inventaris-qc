@@ -6,10 +6,9 @@ import {
   IconBoxSeam,
   IconArrowsExchange,
   IconHistory,
-  IconShoppingCart,
-  IconTool,
   IconReportAnalytics,
   IconUsers,
+  IconShieldLock,
 } from "@tabler/icons-react";
 
 // import custom type
@@ -17,6 +16,8 @@ import { MenuItemType } from "types/menuTypes";
 
 // ============================================================
 // DASHBOARD MENU
+// Properti `roles` (opsional): menu hanya tampil untuk role yang terdaftar.
+// Tanpa `roles` = tampil untuk semua role.
 // ============================================================
 
 export const DashboardMenu: MenuItemType[] = [
@@ -79,12 +80,13 @@ export const DashboardMenu: MenuItemType[] = [
   },
 
   // ==========================================================
-  // TRANSAKSI
+  // TRANSAKSI (viewer hanya read-only, jadi menu transaksi disembunyikan)
   // ==========================================================
 
   {
     id: uuid(),
     title: "Transaksi",
+    roles: ["admin", "petugas"],
 
     icon: (
       <IconArrowsExchange
@@ -154,24 +156,40 @@ export const DashboardMenu: MenuItemType[] = [
       />
     ),
   },
-  
+
   // ==========================================================
-  // ADMINISTRASI
+  // ADMINISTRASI (admin saja)
   // ==========================================================
 
   {
     id: uuid(),
     title: "Administrasi",
     grouptitle: true,
+    roles: ["admin"],
   },
 
   {
     id: uuid(),
     title: "Manajemen User",
     link: "/data-user",
+    roles: ["admin"],
 
     icon: (
       <IconUsers
+        size={20}
+        strokeWidth={1.5}
+      />
+    ),
+  },
+
+  {
+    id: uuid(),
+    title: "Matriks Hak Akses",
+    link: "/role-matrix",
+    roles: ["admin"],
+
+    icon: (
+      <IconShieldLock
         size={20}
         strokeWidth={1.5}
       />

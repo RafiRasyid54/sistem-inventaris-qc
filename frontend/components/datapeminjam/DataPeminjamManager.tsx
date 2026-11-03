@@ -87,7 +87,19 @@ const CSS = `
 `;
 
 const PeminjamManager = () => {
-  const canManage = true; // Diatur true langsung sesuai permintaan
+  // Role dibaca setelah component mount agar tidak terjadi hydration mismatch.
+  const [role, setRole] = useState<string | null>(null);
+
+  useEffect(() => {
+    try {
+      setRole(localStorage.getItem("userRole"));
+    } catch {
+      setRole(null);
+    }
+  }, []);
+
+  const normalizedRole = (role ?? "").trim().toLowerCase();
+  const canManage = normalizedRole === "admin" || normalizedRole === "petugas";
 
   const [peminjamList, setPeminjamList] = useState<PeminjamType[]>([]);
   const [loading, setLoading] = useState(true);
@@ -151,23 +163,30 @@ const PeminjamManager = () => {
   }, [loadData]);
 
   const openAddModal = useCallback(() => {
+    if (!canManage) return;
     setActiveItem(null);
     setFormError(null);
     setFormModalOpen(true);
-  }, []);
+  }, [canManage]);
 
   const openEditModal = useCallback((item: PeminjamType) => {
+    if (!canManage) return;
     setActiveItem(item);
     setFormError(null);
     setFormModalOpen(true);
-  }, []);
+  }, [canManage]);
 
   const openDeleteModal = useCallback((item: PeminjamType) => {
+    if (!canManage) return;
     setActiveItem(item);
     setDeleteModalOpen(true);
-  }, []);
+  }, [canManage]);
 
   const handleFormSubmit = async (values: PeminjamFormValues) => {
+    if (!canManage) {
+      setFormError("Role Anda tidak memiliki akses untuk mengelola data peminjam.");
+      return;
+    }
     setFormError(null);
     try {
       // Pastikan payload diformat ulang agar field baru pasti ikut terkirim
@@ -197,7 +216,7 @@ const PeminjamManager = () => {
   };
 
   const handleConfirmDelete = async () => {
-    if (!activeItem) return;
+    if (!canManage || !activeItem) return;
     setDeleting(true);
     setActionError(null);
     try {
@@ -218,6 +237,7 @@ const PeminjamManager = () => {
   };
 
   const handleAktifkan = useCallback(async (item: PeminjamType) => {
+    if (!canManage) return;
     setTogglingId(item.id);
     setActionError(null);
     try {
@@ -232,9 +252,10 @@ const PeminjamManager = () => {
     } finally {
       setTogglingId(null);
     }
-  }, []);
+  }, [canManage]);
 
   const handleGantiRole = useCallback(async (item: PeminjamType, roleBaru: "user" | "inventory man") => {
+    if (!canManage) return;
     setActionError(null);
     try {
       const updated = await updateRolePeminta(item.id, roleBaru);
@@ -247,7 +268,7 @@ const PeminjamManager = () => {
     } catch (err: any) {
       setActionError(err?.message || "Gagal mengubah role");
     }
-  }, []);
+  }, [canManage]);
 
   // PERBAIKAN: bentuk field namaLabel dengan fallback ke beberapa kemungkinan nama field
   const buildExportData = () =>
@@ -331,12 +352,14 @@ const PeminjamManager = () => {
               </p>
               <DasherBreadcrumb />
             </div>
-            <div>
-              <Button className="btn-yellow d-flex align-items-center gap-2" onClick={openAddModal}>
-                <IconPlus size={18} />
-                Tambah Data
-              </Button>
-            </div>
+            {canManage && (
+              <div>
+                <Button className="btn-yellow d-flex align-items-center gap-2" onClick={openAddModal}>
+                  <IconPlus size={18} />
+                  Tambah Data
+                </Button>
+              </div>
+            )}
           </Flex>
         </Col>
       </Row>
@@ -427,13 +450,15 @@ const PeminjamManager = () => {
               <p className="text-secondary mb-4">
                 Mulai dengan menambahkan pegawai yang dapat meminjam alat atau mengambil bahan.
               </p>
-              <Button
-                className="btn-yellow d-inline-flex align-items-center gap-2"
-                onClick={openAddModal}
-              >
-                <IconPlus size={18} />
-                Tambah Data
-              </Button>
+              {canManage && (
+                <Button
+                  className="btn-yellow d-inline-flex align-items-center gap-2"
+                  onClick={openAddModal}
+                >
+                  <IconPlus size={18} />
+                  Tambah Data
+                </Button>
+              )}
             </div>
           ) : filteredPeminjam.length === 0 ? (
             <div className="datapeminjam-empty pdp-empty text-center py-6">
@@ -463,6 +488,7 @@ const PeminjamManager = () => {
         </CardBody>
       </Card>
 
+      {canManage && (
       <PeminjamFormModal
         show={formModalOpen}
         onClose={() => {
@@ -474,14 +500,15 @@ const PeminjamManager = () => {
         initialData={activeItem}
         error={formError}
       />
+      )}
 
-      <DeleteConfirmModal
+      {canManage && <DeleteConfirmModal
         show={deleteModalOpen}
         onClose={() => setDeleteModalOpen(false)}
         onConfirm={handleConfirmDelete}
         peminjam={activeItem}
         submitting={deleting}
-      />
+      />}
     </div>
   );
 };

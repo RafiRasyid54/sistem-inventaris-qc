@@ -19,6 +19,7 @@ class UserSeeder extends Seeder
             'email' => 'adminqc@test.com',
             'password' => Hash::make('password'),
             'divisi' => 'Quality Control',
+            'role' => 'admin',
             'must_change_password' => false,
             'is_active' => true,
             'created_at' => now(),

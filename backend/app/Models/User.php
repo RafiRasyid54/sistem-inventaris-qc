@@ -12,6 +12,8 @@ class User extends Authenticatable
 {
     use HasApiTokens, HasFactory, Notifiable;
 
+    public const ROLES = ['admin', 'petugas', 'viewer'];
+
     public $incrementing = false;
     protected $keyType = 'string';
 
@@ -33,6 +35,7 @@ class User extends Authenticatable
         'divisi',
         'no_hp',
         'avatar_path',
+        'role',
         'is_active',
         'must_change_password',
     ];
@@ -50,6 +53,12 @@ class User extends Authenticatable
             'must_change_password' => 'boolean',
             'is_active' => 'boolean',
         ];
+    }
+
+    // Cek role. Akun nonaktif selalu dianggap tidak punya akses.
+    public function hasRole(string ...$roles): bool
+    {
+        return $this->is_active && in_array($this->role, $roles, true);
     }
 
     public function peminjamanDicatat(): \Illuminate\Database\Eloquent\Relations\HasMany

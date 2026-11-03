@@ -47,11 +47,13 @@ class PemintaController extends Controller
     }
 
     /**
-     * POST /api/peminta
+     * POST /api/peminta (admin & petugas)
      * Mendaftarkan peminjam baru (Pegawai Internal atau Vendor)
      */
     public function store(Request $request)
     {
+        abort_unless($request->user()->hasRole('admin', 'petugas'), 403, 'Anda tidak memiliki akses untuk aksi ini.');
+
         // 1. Ubah string kosong dari Frontend menjadi null agar tidak error validasi
         if (empty($request->rfid_uid)) {
             $request->merge(['rfid_uid' => null]);
@@ -97,8 +99,11 @@ class PemintaController extends Controller
         ], 201);
     }
 
+    // PUT/PATCH /api/peminta/{id} (admin & petugas)
     public function update(Request $request, string $id)
     {
+        abort_unless($request->user()->hasRole('admin', 'petugas'), 403, 'Anda tidak memiliki akses untuk aksi ini.');
+
         $peminta = Peminta::find($id);
 
         if (!$peminta) {
@@ -149,11 +154,13 @@ class PemintaController extends Controller
     }
 
     /**
-     * DELETE /api/peminta/{id}
+     * DELETE /api/peminta/{id} (admin saja)
      * Menonaktifkan peminjam
      */
-    public function destroy(string $id)
+    public function destroy(Request $request, string $id)
     {
+        abort_unless($request->user()->hasRole('admin'), 403, 'Anda tidak memiliki akses untuk aksi ini.');
+
         $peminta = Peminta::find($id);
 
         if (!$peminta) {
@@ -170,11 +177,13 @@ class PemintaController extends Controller
     }
 
     /**
-     * PATCH /api/peminta/{id}/aktifkan
+     * PATCH /api/peminta/{id}/aktifkan (admin & petugas)
      * Mengaktifkan kembali peminjam
      */
-    public function aktifkan(string $id)
+    public function aktifkan(Request $request, string $id)
     {
+        abort_unless($request->user()->hasRole('admin', 'petugas'), 403, 'Anda tidak memiliki akses untuk aksi ini.');
+
         $peminta = Peminta::find($id);
 
         if (!$peminta) {

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
-import React, { Fragment } from "react";
+import React, { Fragment, useEffect, useMemo, useState } from "react";
 import { Accordion, Image, ListGroup, Nav } from "react-bootstrap";
 import { IconLogout, IconBolt } from "@tabler/icons-react";
 
@@ -12,6 +12,7 @@ import useMenu from "hooks/useMenu";
 import { useAppSelector } from "store/store";
 import { getAssetPath } from "helper/assetPath";
 import { DashboardMenu } from "routes/DashboardRoute";
+import apiFetch from "lib/api";
 
 interface SidebarProps {
   hideLogo: boolean;
@@ -73,11 +74,38 @@ const CSS = `
   display:grid;place-items:center;flex:none}
 .pln-sb .pln-who{min-width:0;flex:1;line-height:1.25}
 .pln-sb .pln-who b{display:block;font-size:.85rem}
-.pln-sb .pln-who span{font-size:.72rem;color:#9ec6ea}
+.pln-sb .pln-who span{font-size:.72rem;color:#9ec6ea;text-transform:capitalize}
 .pln-sb .pln-logout{width:34px;height:34px;border:0;border-radius:9px;display:grid;place-items:center;flex:none;
   background:rgba(255,122,112,.16);color:var(--red);cursor:pointer;transition:background .15s}
 .pln-sb .pln-logout:hover{background:rgba(255,122,112,.32);color:#ffd2ce}
 `;
+
+type CurrentUser = { full_name?: string; role?: string } | null;
+
+// Membaca data user yang disimpan saat login (dipakai sebagai tampilan awal
+// sebelum respons /profile tiba)
+const readStoredUser = (): CurrentUser => {
+  try {
+    const role = localStorage.getItem("userRole");
+    const name = localStorage.getItem("userName");
+    return role || name ? { full_name: name ?? undefined, role: role ?? undefined } : null;
+  } catch {
+    return null;
+  }
+};
+
+// Menyaring menu berdasarkan role. Judul grup yang tidak punya item tersisa ikut dibuang.
+const filterMenuByRole = (menus: MenuItemType[], role?: string): MenuItemType[] => {
+  const allowed = (m: MenuItemType) => !m.roles || (!!role && m.roles.includes(role));
+
+  const visible = menus.filter(allowed);
+
+  return visible.filter((menu, i) => {
+    if (!menu.grouptitle) return true;
+    const next = visible[i + 1];
+    return Boolean(next && !next.grouptitle);
+  });
+};
 
 const Sidebar: React.FC<SidebarProps> = ({ hideLogo = false, containerId }) => {
   const location = usePathname();
@@ -90,6 +118,28 @@ const Sidebar: React.FC<SidebarProps> = ({ hideLogo = false, containerId }) => {
   // Versi laci (Offcanvas) memakai hideLogo dan tetap h-100;
   // versi desktop dibuat sticky setinggi layar.
   const isDrawer = hideLogo;
+
+  // localStorage hanya ada di browser, jadi dibaca setelah mount (hindari hydration mismatch)
+  const [currentUser, setCurrentUser] = useState<CurrentUser>(null);
+  useEffect(() => {
+    // tampilkan data tersimpan dulu, lalu sinkronkan dengan backend
+    setCurrentUser(readStoredUser());
+
+    apiFetch<CurrentUser>("/profile")
+      .then((u) => {
+        setCurrentUser(u);
+        if (u?.role) localStorage.setItem("userRole", u.role);
+        if (u?.full_name) localStorage.setItem("userName", u.full_name);
+      })
+      .catch(() => {
+        /* abaikan; menu dari data tersimpan tetap tampil */
+      });
+  }, []);
+
+  const menus = useMemo(
+    () => filterMenuByRole(DashboardMenu, currentUser?.role),
+    [currentUser?.role]
+  );
 
   const handleSidebarMouseEnter = () => {
     if (isCollapsed) handleCollapsed("expanded");
@@ -136,7 +186,7 @@ const Sidebar: React.FC<SidebarProps> = ({ hideLogo = false, containerId }) => {
           as="ul"
           bsPrefix={`navbar-nav flex-column ${isCollapsed ? "px-1" : "px-2"}`}
         >
-          {DashboardMenu.map((menu: MenuItemType, index: number) => {
+          {menus.map((menu: MenuItemType, index: number) => {
             if (menu.grouptitle) {
               if (isCollapsed) return null;
               return (
@@ -204,8 +254,8 @@ const Sidebar: React.FC<SidebarProps> = ({ hideLogo = false, containerId }) => {
           <>
             <span className="pln-avatar"><IconBolt size={20} /></span>
             <div className="pln-who">
-              <b className="text-truncate d-block">Pengelola</b>
-              <span>Alat Ukur PLN</span>
+              <b className="text-truncate d-block">{currentUser?.full_name || "Pengelola"}</b>
+              <span>{currentUser?.role || "Alat Ukur PLN"}</span>
             </div>
           </>
         )}

@@ -18,7 +18,6 @@ import DeleteConfirmModal from './DeleteConfirmModal';
 
 // Perbaikan Import Path
 import apiFetch from "/lib/api";
-import { usePermission } from "/hooks/usePermissions";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
 
@@ -49,7 +48,20 @@ const CSS = `
 `;
 
 export default function DataPekerjaanManager() {
-  const canManage = usePermission("manage_master_data");
+  // Gunakan role aktual dari sesi login. Jangan memakai permission hook saja,
+  // karena konfigurasi permission dapat mengembalikan true untuk Viewer.
+  const [role, setRole] = useState<string | null>(null);
+
+  useEffect(() => {
+    try {
+      setRole(localStorage.getItem("userRole"));
+    } catch {
+      setRole(null);
+    }
+  }, []);
+
+  const normalizedRole = (role ?? "").trim().toLowerCase();
+  const canManage = normalizedRole === "admin" || normalizedRole === "petugas";
   const [data, setData] = useState<Pekerjaan[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -89,17 +101,20 @@ export default function DataPekerjaanManager() {
   };
 
   const handleAdd = () => {
+    if (!canManage) return;
     setSelectedPekerjaan(null);
     setIsFormOpen(true);
   };
 
   const handleEdit = (pekerjaan: Pekerjaan) => {
+    if (!canManage) return;
     setSelectedPekerjaan(pekerjaan);
     setIsFormOpen(true);
   };
 
   // 2. TOGGLE STATUS: Mengubah status aktif/nonaktif via API
   const handleToggleStatus = async (pekerjaan: Pekerjaan) => {
+    if (!canManage) return;
     try {
       const json = await apiFetch<{ success: boolean }>(`/pekerjaan/${pekerjaan.id}/toggle-status`, {
         method: 'PATCH',
@@ -114,12 +129,17 @@ export default function DataPekerjaanManager() {
   };
 
   const handleDeleteClick = (pekerjaan: Pekerjaan) => {
+    if (!canManage) return;
     setSelectedPekerjaan(pekerjaan);
     setIsDeleteOpen(true);
   };
 
   // 3. DELETE: Menghapus data via API
   const confirmDelete = async () => {
+    if (!canManage) {
+      setIsDeleteOpen(false);
+      return;
+    }
     if (selectedPekerjaan) {
       try {
         const json = await apiFetch<{ success: boolean }>(`/pekerjaan/${selectedPekerjaan.id}`, {
@@ -140,6 +160,10 @@ export default function DataPekerjaanManager() {
 
   // 4. CREATE / UPDATE: Menyimpan data via API
   const handleFormSubmit = async (formData: Partial<Pekerjaan>) => {
+    if (!canManage) {
+      setErrorMessage("Role Viewer tidak memiliki akses mengelola data pekerjaan.");
+      return;
+    }
     const isEdit = !!selectedPekerjaan;
     const url = isEdit ? `${API_URL}/pekerjaan/${selectedPekerjaan.id}` : `${API_URL}/pekerjaan`;
     const method = isEdit ? 'PUT' : 'POST';
@@ -299,19 +323,19 @@ export default function DataPekerjaanManager() {
         </Card.Body>
       </Card>
 
-      <PekerjaanFormModal
+      {canManage && <PekerjaanFormModal
         isOpen={isFormOpen}
         onClose={() => setIsFormOpen(false)}
         onSubmit={handleFormSubmit}
         initialData={selectedPekerjaan}
-      />
+      />}
 
-      <DeleteConfirmModal
+      {canManage && <DeleteConfirmModal
         isOpen={isDeleteOpen}
         onClose={() => setIsDeleteOpen(false)}
         onConfirm={confirmDelete}
         itemName={selectedPekerjaan?.nama_pekerjaan}
-      />
+      />}
     </div>
   );
 }
