@@ -1,12 +1,17 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   Eye,
   Edit,
   Trash2,
   ShoppingCart,
   QrCode,
+  ArrowUp,
+  ArrowDown,
+  ArrowUpDown,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 
 import { AlatUkur } from "../../types/DataAlatUkurTypes";
@@ -22,6 +27,40 @@ interface ColumnDefinitionProps {
   canEdit?: boolean; // admin & petugas
   canDelete?: boolean; // admin saja
 }
+
+// Kolom yang bisa diurutkan
+type SortKey =
+  | "nama_alat"
+  | "merk"
+  | "kode_alat"
+  | "tanggal_kalibrasi_terakhir"
+  | "tanggal_kalibrasi_selanjutnya"
+  | "kondisi";
+
+type SortDir = "asc" | "desc";
+
+interface SortState {
+  key: SortKey;
+  dir: SortDir;
+}
+
+const PAGE_SIZE_OPTIONS = [10, 25, 50, 100];
+
+// Daftar nomor halaman dengan titik-titik, contoh: 1 … 4 5 6 … 20
+const getPageNumbers = (total: number, current: number): (number | "ellipsis")[] => {
+  if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
+
+  const pages: (number | "ellipsis")[] = [1];
+  const start = Math.max(2, current - 1);
+  const end = Math.min(total - 1, current + 1);
+
+  if (start > 2) pages.push("ellipsis");
+  for (let i = start; i <= end; i++) pages.push(i);
+  if (end < total - 1) pages.push("ellipsis");
+
+  pages.push(total);
+  return pages;
+};
 
 // Helper untuk format tanggal "Bulan-Tahun"
 const formatBulanTahun = (dateString?: string) => {
@@ -42,6 +81,90 @@ export const ColumnDefinition: React.FC<ColumnDefinitionProps> = ({
   canEdit = false,
   canDelete = false,
 }) => {
+  // =======================================================
+  // SORTING: klik header -> A-Z -> Z-A -> urutan asli
+  // =======================================================
+  const [sort, setSort] = useState<SortState | null>(null);
+
+  const handleSort = (key: SortKey) => {
+    setSort((prev) => {
+      if (!prev || prev.key !== key) return { key, dir: "asc" };
+      if (prev.dir === "asc") return { key, dir: "desc" };
+      return null; // klik ketiga: kembali ke urutan asli
+    });
+  };
+
+  const sortedItems = useMemo(() => {
+    if (!sort) return items;
+
+    // Nilai kosong atau "-" dianggap kosong dan selalu ditaruh paling bawah
+    const getValue = (item: AlatUkur): string => {
+      const raw = item[sort.key];
+      const text = raw == null ? "" : String(raw).trim();
+      return text === "-" ? "" : text;
+    };
+
+    return [...items].sort((a, b) => {
+      const va = getValue(a);
+      const vb = getValue(b);
+
+      if (!va && !vb) return 0;
+      if (!va) return 1;
+      if (!vb) return -1;
+
+      // numeric: true -> "3MMC2" tampil sebelum "3MMC10"
+      const result = va.localeCompare(vb, "id", { numeric: true, sensitivity: "base" });
+      return sort.dir === "asc" ? result : -result;
+    });
+  }, [items, sort]);
+
+  // =======================================================
+  // PAGINATION (dilakukan setelah pengurutan)
+  // =======================================================
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(PAGE_SIZE_OPTIONS[0]);
+
+  const totalItems = sortedItems.length;
+  const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
+  const currentPage = Math.min(page, totalPages);
+  const offset = (currentPage - 1) * pageSize;
+
+  // Kembali ke halaman 1 saat data (misalnya hasil pencarian), urutan, atau jumlah per halaman berubah
+  useEffect(() => {
+    setPage(1);
+  }, [items, sort, pageSize]);
+
+  const paginatedItems = useMemo(
+    () => sortedItems.slice(offset, offset + pageSize),
+    [sortedItems, offset, pageSize]
+  );
+
+  const startItem = totalItems === 0 ? 0 : offset + 1;
+  const endItem = Math.min(offset + pageSize, totalItems);
+
+  const renderSortableTh = (label: string, key: SortKey, minWidth: string) => {
+    const active = sort?.key === key;
+    const Icon = !active ? ArrowUpDown : sort?.dir === "asc" ? ArrowUp : ArrowDown;
+
+    return (
+      <th
+        className="text-secondary small fw-semibold user-select-none"
+        style={{ minWidth, cursor: "pointer" }}
+        onClick={() => handleSort(key)}
+        aria-sort={!active ? "none" : sort?.dir === "asc" ? "ascending" : "descending"}
+        title={`Urutkan ${label}`}
+      >
+        <span className="d-inline-flex align-items-center gap-1">
+          {label}
+          <Icon
+            size={13}
+            className={active ? "text-primary" : "text-secondary opacity-50"}
+          />
+        </span>
+      </th>
+    );
+  };
+
   const getKondisiClass = (kondisi?: string) => {
     switch (kondisi?.toLowerCase()) {
       case "baik":
@@ -91,28 +214,29 @@ export const ColumnDefinition: React.FC<ColumnDefinitionProps> = ({
   };
 
   return (
+    <>
     <div className="table-responsive">
       <table className="table table-hover align-middle mb-0">
         <thead className="table-light">
           <tr>
             <th className="text-secondary small fw-semibold" style={{ minWidth: "55px" }}>No</th>
-            <th className="text-secondary small fw-semibold" style={{ minWidth: "180px" }}>Nama Alat Ukur</th>
-            <th className="text-secondary small fw-semibold" style={{ minWidth: "220px" }}>Merk & Spesifikasi</th>
-            <th className="text-secondary small fw-semibold" style={{ minWidth: "200px" }}>Kode Nomor Alat Ukur</th>
-            <th className="text-secondary small fw-semibold" style={{ minWidth: "120px" }}>Kalibrasi</th>
-            <th className="text-secondary small fw-semibold" style={{ minWidth: "170px" }}>Rencana Kalibrasi Berikutnya</th>
-            <th className="text-secondary small fw-semibold" style={{ minWidth: "120px" }}>Kondisi</th>
+            {renderSortableTh("Nama Alat Ukur", "nama_alat", "180px")}
+            {renderSortableTh("Merk & Spesifikasi", "merk", "220px")}
+            {renderSortableTh("Kode Nomor Alat Ukur", "kode_alat", "200px")}
+            {renderSortableTh("Kalibrasi", "tanggal_kalibrasi_terakhir", "120px")}
+            {renderSortableTh("Rencana Kalibrasi Berikutnya", "tanggal_kalibrasi_selanjutnya", "170px")}
+            {renderSortableTh("Kondisi", "kondisi", "120px")}
             <th className="text-secondary small fw-semibold" style={{ minWidth: "180px" }}>Keterangan</th>
             <th className="text-secondary small fw-semibold text-center" style={{ minWidth: "140px" }}>Aksi</th>
           </tr>
         </thead>
 
         <tbody>
-          {items.map((item, index) => (
+          {paginatedItems.map((item, index) => (
             <tr key={item.id ?? index}>
-              {/* NO */}
+              {/* NO (saat diurutkan, nomor mengikuti urutan tampil) */}
               <td className="text-secondary">
-                {item.no ?? index + 1}
+                {sort ? offset + index + 1 : item.no ?? offset + index + 1}
               </td>
 
               {/* NAMA ALAT */}
@@ -246,5 +370,72 @@ export const ColumnDefinition: React.FC<ColumnDefinitionProps> = ({
         </tbody>
       </table>
     </div>
+
+    {totalItems > 0 && (
+      <div className="d-flex flex-wrap align-items-center justify-content-between gap-2 px-3 py-3 border-top">
+        <div className="d-flex flex-wrap align-items-center gap-2 text-secondary small">
+          <span>Tampilkan</span>
+          <select
+            className="form-select form-select-sm w-auto"
+            value={pageSize}
+            onChange={(e) => setPageSize(Number(e.target.value))}
+            aria-label="Jumlah data per halaman"
+          >
+            {PAGE_SIZE_OPTIONS.map((size) => (
+              <option key={size} value={size}>
+                {size}
+              </option>
+            ))}
+          </select>
+          <span>per halaman</span>
+          <span className="ms-md-2">
+            Menampilkan {startItem}–{endItem} dari {totalItems} alatukur
+          </span>
+        </div>
+
+        <nav aria-label="Navigasi halaman">
+          <ul className="pagination pagination-sm mb-0">
+            <li className={`page-item ${currentPage === 1 ? "disabled" : ""}`}>
+              <button
+                type="button"
+                className="page-link"
+                onClick={() => setPage(currentPage - 1)}
+                disabled={currentPage === 1}
+                aria-label="Halaman sebelumnya"
+              >
+                <ChevronLeft size={14} />
+              </button>
+            </li>
+
+            {getPageNumbers(totalPages, currentPage).map((n, i) =>
+              n === "ellipsis" ? (
+                <li key={`ellipsis-${i}`} className="page-item disabled">
+                  <span className="page-link">…</span>
+                </li>
+              ) : (
+                <li key={n} className={`page-item ${n === currentPage ? "active" : ""}`}>
+                  <button type="button" className="page-link" onClick={() => setPage(n)}>
+                    {n}
+                  </button>
+                </li>
+              )
+            )}
+
+            <li className={`page-item ${currentPage === totalPages ? "disabled" : ""}`}>
+              <button
+                type="button"
+                className="page-link"
+                onClick={() => setPage(currentPage + 1)}
+                disabled={currentPage === totalPages}
+                aria-label="Halaman berikutnya"
+              >
+                <ChevronRight size={14} />
+              </button>
+            </li>
+          </ul>
+        </nav>
+      </div>
+    )}
+    </>
   );
 };
