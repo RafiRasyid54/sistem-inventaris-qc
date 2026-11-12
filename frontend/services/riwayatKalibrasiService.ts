@@ -25,6 +25,8 @@ function mapKalibrasiFromApi(
     namaAlat: item.alat_ukur?.nama_alat ?? "Alat tidak ditemukan",
     merk: item.alat_ukur?.merk ?? "-",
     tanggalKalibrasi: formatTanggal(item.tanggal_kalibrasi),
+    // Raw dipakai untuk prefill form edit (input type="date")
+    tanggalKalibrasiRaw: item.tanggal_kalibrasi,
     tanggalJatuhTempo: formatTanggal(item.tanggal_jatuh_tempo),
     tanggalJatuhTempoRaw: item.tanggal_jatuh_tempo,
     kondisi: item.kondisi,
@@ -60,11 +62,13 @@ export interface CreateKalibrasiPayload {
   fileSertifikat?: File;
 }
 
-export async function createRiwayatKalibrasi(
-  payload: CreateKalibrasiPayload
-): Promise<void> {
-  // Pakai FormData karena ada file. Jangan set header Content-Type manual,
-  // browser akan mengisi boundary multipart-nya sendiri.
+// Payload edit sama dengan payload tambah.
+// fileSertifikat kosong = sertifikat lama dipertahankan.
+export type UpdateKalibrasiPayload = CreateKalibrasiPayload;
+
+// Pakai FormData karena ada file. Jangan set header Content-Type manual,
+// browser akan mengisi boundary multipart-nya sendiri.
+function buildKalibrasiFormData(payload: CreateKalibrasiPayload): FormData {
   const fd = new FormData();
   fd.append("alat_ukur_id", payload.alatUkurId);
   fd.append("tanggal_kalibrasi", payload.tanggalKalibrasi);
@@ -81,10 +85,29 @@ export async function createRiwayatKalibrasi(
   if (payload.fileSertifikat) {
     fd.append("file_sertifikat", payload.fileSertifikat);
   }
+  return fd;
+}
 
+export async function createRiwayatKalibrasi(
+  payload: CreateKalibrasiPayload
+): Promise<void> {
   await apiFetch("/riwayat-kalibrasi", {
     method: "POST",
-    body: fd,
+    body: buildKalibrasiFormData(payload),
+  });
+}
+
+/**
+ * Perbarui satu riwayat kalibrasi.
+ * Catatan: ganti method ke "PATCH" bila backend memakai PATCH.
+ */
+export async function updateRiwayatKalibrasi(
+  id: string | number,
+  payload: UpdateKalibrasiPayload
+): Promise<void> {
+  await apiFetch(`/riwayat-kalibrasi/${id}`, {
+    method: "PUT",
+    body: buildKalibrasiFormData(payload),
   });
 }
 

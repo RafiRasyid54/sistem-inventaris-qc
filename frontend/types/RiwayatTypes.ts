@@ -69,6 +69,9 @@ export interface PeriodeFilterValue {
   sampai: string;
 }
 
+// ------------------------------------------------------------------
+// Riwayat Kalibrasi
+// ------------------------------------------------------------------
 export interface RiwayatKalibrasiApiResponse {
   id: string;
   alat_ukur_id: string;
@@ -94,6 +97,7 @@ export interface RiwayatKalibrasiType {
   namaAlat: string;
   merk: string;
   tanggalKalibrasi: string;
+  tanggalKalibrasiRaw: string | null; // dipakai untuk prefill form edit
   tanggalJatuhTempo: string;
   tanggalJatuhTempoRaw: string | null;
   kondisi: "Baik" | "RPP" | "RT";

@@ -35,6 +35,7 @@ import KalibrasiFormModal, { KalibrasiFormValues } from "./KalibrasiFormModal";
 import {
   getRiwayatKalibrasi,
   createRiwayatKalibrasi,
+  updateRiwayatKalibrasi,
   getStatusKalibrasi,
 } from "services/riwayatKalibrasiService";
 
@@ -98,6 +99,7 @@ const RiwayatKalibrasiManager = () => {
   const [statusFilter, setStatusFilter] = useState("");
 
   const [formModalOpen, setFormModalOpen] = useState(false);
+  const [editingItem, setEditingItem] = useState<RiwayatKalibrasiType | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
@@ -138,7 +140,33 @@ const RiwayatKalibrasiManager = () => {
     });
   }, [data, searchTerm, statusFilter]);
 
-  const columns = useMemo(() => getRiwayatKalibrasiColumns(), []);
+  // ---------- Form: tambah & edit ----------
+  const handleOpenForm = () => {
+    if (!canManage) return;
+    setFormError(null);
+    setEditingItem(null); // mode tambah
+    setFormModalOpen(true);
+  };
+
+  const handleOpenEdit = useCallback(
+    (item: RiwayatKalibrasiType) => {
+      if (!canManage) return;
+      setFormError(null);
+      setEditingItem(item); // mode edit
+      setFormModalOpen(true);
+    },
+    [canManage]
+  );
+
+  const handleCloseForm = () => {
+    setFormModalOpen(false);
+    setEditingItem(null);
+  };
+
+  const columns = useMemo(
+    () => getRiwayatKalibrasiColumns({ canManage, onEdit: handleOpenEdit }),
+    [canManage, handleOpenEdit]
+  );
 
   // ---------- Export PDF & Excel (memakai data yang sudah terfilter) ----------
   const buildExportRows = () =>
@@ -172,21 +200,15 @@ const RiwayatKalibrasiManager = () => {
       "riwayat-kalibrasi"
     );
 
-  const handleOpenForm = () => {
-    if (!canManage) return;
-    setFormError(null);
-    setFormModalOpen(true);
-  };
-
   const handleSubmit = async (values: KalibrasiFormValues) => {
     if (!canManage) {
-      setFormError("Role Viewer tidak memiliki akses mencatat riwayat kalibrasi.");
+      setFormError("Role Viewer tidak memiliki akses mengubah riwayat kalibrasi.");
       return;
     }
     setSubmitting(true);
     setFormError(null);
     try {
-      await createRiwayatKalibrasi({
+      const payload = {
         alatUkurId: values.alatUkurId,
         tanggalKalibrasi: values.tanggalKalibrasi,
         tanggalJatuhTempo: values.tanggalJatuhTempo || undefined,
@@ -194,9 +216,17 @@ const RiwayatKalibrasiManager = () => {
         pelaksanaKalibrasi: values.pelaksanaKalibrasi || undefined,
         keterangan: values.keterangan || undefined,
         fileSertifikat: values.fileSertifikat ?? undefined,
-      });
-      setFormModalOpen(false);
-      setSuccessMessage("Riwayat kalibrasi berhasil dicatat.");
+      };
+
+      if (editingItem) {
+        await updateRiwayatKalibrasi(editingItem.id, payload);
+        setSuccessMessage("Riwayat kalibrasi berhasil diperbarui.");
+      } else {
+        await createRiwayatKalibrasi(payload);
+        setSuccessMessage("Riwayat kalibrasi berhasil dicatat.");
+      }
+
+      handleCloseForm();
       setTimeout(() => setSuccessMessage(null), 4000);
       await loadData();
     } catch (err: any) {
@@ -398,10 +428,11 @@ const RiwayatKalibrasiManager = () => {
       {canManage && (
         <KalibrasiFormModal
           show={formModalOpen}
-          onClose={() => setFormModalOpen(false)}
+          onClose={handleCloseForm}
           onSubmit={handleSubmit}
           submitting={submitting}
           error={formError}
+          initialData={editingItem}
         />
       )}
     </div>

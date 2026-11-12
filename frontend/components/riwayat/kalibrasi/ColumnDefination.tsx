@@ -1,7 +1,7 @@
 "use client";
 import { ColumnDef } from "@tanstack/react-table";
-import { Badge } from "react-bootstrap";
-import { IconFileTypePdf } from "@tabler/icons-react";
+import { Badge, Button } from "react-bootstrap";
+import { IconEdit, IconFileTypePdf } from "@tabler/icons-react";
 import { RiwayatKalibrasiType } from "types/RiwayatTypes";
 import { getStatusKalibrasi } from "services/riwayatKalibrasiService";
 
@@ -34,8 +34,16 @@ const statusBadge = (raw: string | null) => {
   );
 };
 
-export const getRiwayatKalibrasiColumns =
-  (): ColumnDef<RiwayatKalibrasiType>[] => [
+interface RiwayatKalibrasiColumnOptions {
+  canManage: boolean;
+  onEdit: (item: RiwayatKalibrasiType) => void;
+}
+
+export const getRiwayatKalibrasiColumns = ({
+  canManage,
+  onEdit,
+}: RiwayatKalibrasiColumnOptions): ColumnDef<RiwayatKalibrasiType>[] => {
+  const columns: ColumnDef<RiwayatKalibrasiType>[] = [
     {
       accessorKey: "kodeAlat",
       header: "Kode Alat",
@@ -95,3 +103,26 @@ export const getRiwayatKalibrasiColumns =
       header: "Keterangan",
     },
   ];
+
+  // Kolom Aksi hanya untuk admin / petugas
+  if (canManage) {
+    columns.push({
+      id: "aksi",
+      header: "Aksi",
+      enableSorting: false,
+      cell: ({ row }) => (
+        <Button
+          variant="outline-primary"
+          size="sm"
+          className="d-inline-flex align-items-center gap-1"
+          onClick={() => onEdit(row.original)}
+          aria-label={`Edit kalibrasi ${row.original.kodeAlat}`}
+        >
+          <IconEdit size={14} /> Edit
+        </Button>
+      ),
+    });
+  }
+
+  return columns;
+};
