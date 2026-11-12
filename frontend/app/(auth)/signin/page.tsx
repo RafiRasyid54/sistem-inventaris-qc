@@ -326,7 +326,7 @@ const SignIn = () => {
         <div style={styles.formInner}>
           <div className="text-center mb-4">
             <Image
-              src={getAssetPath("/images/png/PLN_Logo_QC.png")}
+              src={getAssetPath("/images/png/PLN_logo_QC.png")}
               alt="PT PLN (PERSERO) PUSHARLIS UP2WIII"
               style={styles.logo}
             />

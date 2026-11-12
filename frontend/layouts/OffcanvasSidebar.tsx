@@ -28,7 +28,7 @@ const OffcanvasSidebar = () => {
           className="d-flex align-items-center gap-2 pln-brand text-decoration-none"
         >
           <Image
-            src={getAssetPath("/images/png/PLN_Logo_QC.png")}
+            src={getAssetPath("/images/png/PLN_logo_QC.png")}
             alt="PT PLN (Persero)"
             className="pln-logo"
           />
