@@ -10,13 +10,8 @@ import {
 } from "@tabler/icons-react";
 import apiFetch from "/lib/apiFetch";
 import { useBarcodeScanner } from "hooks/useBarcodeScanner";
-import { createClient } from "@supabase/supabase-js";
 import { RiwayatKalibrasiType } from "types/RiwayatTypes";
 
-// --- Inisialisasi Supabase Client ---
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 // Warna tema PLN (sama dengan RiwayatKalibrasiManager)
 const NAVY = "#06355f";
@@ -45,7 +40,7 @@ export interface KalibrasiFormValues {
   pelaksanaKalibrasi: string;
   keterangan: string;
   fileSertifikat: File | null;
-  fileSertifikatUrl?: string | null; // Tambahan untuk URL Supabase
+  fileSertifikatUrl?: string | null; // URL sertifikat yang sudah tersimpan (mode edit)
 }
 
 interface KalibrasiFormModalProps {
@@ -134,7 +129,6 @@ const KalibrasiFormModal = ({
   const [form, setForm] = useState<KalibrasiFormValues>(emptyForm());
   const [alatList, setAlatList] = useState<AlatUkurOption[]>([]);
   const [loadingAlat, setLoadingAlat] = useState(false);
-  const [isUploading, setIsUploading] = useState(false); // State untuk proses upload ke Supabase
 
   const [fileError, setFileError] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -155,7 +149,6 @@ const KalibrasiFormModal = ({
     setScanValue("");
     setScanError(null);
     setFileError(null);
-    setIsUploading(false);
     if (fileRef.current) fileRef.current.value = "";
     initialScanDone.current = false;
 
@@ -214,7 +207,7 @@ const KalibrasiFormModal = ({
   );
 
   useBarcodeScanner({
-    enabled: show && !isEdit && mode === "scan" && !submitting && !isUploading,
+    enabled: show && !isEdit && mode === "scan" && !submitting,
     onScan: processScan,
   });
 
@@ -264,50 +257,13 @@ const KalibrasiFormModal = ({
     setForm((p) => ({ ...p, fileSertifikat: null }));
   };
 
-  // Proses upload file ke Supabase terintegrasi di sini
-  const handleSubmit = async (e: React.FormEvent) => {
+  // File sertifikat ikut dikirim ke backend (disimpan privat di server) oleh komponen induk
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    let uploadedUrl = null;
-
-    if (form.fileSertifikat) {
-      setIsUploading(true);
-      try {
-        const file = form.fileSertifikat;
-        const fileExt = file.name.split(".").pop();
-        // Menghasilkan nama file unik
-        const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
-        const filePath = `sertifikat/${fileName}`;
-
-        // Pastikan nama bucket 'qc_documents' sudah sesuai dengan yang ada di Supabase Anda
-        const { error: uploadError } = await supabase.storage
-          .from("qc_documents")
-          .upload(filePath, file);
-
-        if (uploadError) throw uploadError;
-
-        // Ambil URL Publik
-        const { data } = supabase.storage
-          .from("qc_documents")
-          .getPublicUrl(filePath);
-
-        uploadedUrl = data.publicUrl;
-      } catch (err: any) {
-        console.error("Supabase Upload Error:", err);
-        setFileError("Gagal mengunggah file ke Supabase: " + err.message);
-        setIsUploading(false);
-        return; // Hentikan submission jika upload gagal
-      }
-      setIsUploading(false);
-    }
-
-    // Teruskan data dan URL Supabase ke parent component
-    onSubmit({
-      ...form,
-      fileSertifikatUrl: uploadedUrl,
-    });
+    onSubmit(form);
   };
 
-  const isProcessDisabled = submitting || isUploading;
+  const isProcessDisabled = submitting;
 
   return (
     <Modal
@@ -655,7 +611,7 @@ const KalibrasiFormModal = ({
             {isProcessDisabled ? (
               <>
                 <Spinner animation="border" size="sm" />
-                {isUploading ? "Mengunggah file..." : "Menyimpan..."}
+                Menyimpan...
               </>
             ) : (
               <>
