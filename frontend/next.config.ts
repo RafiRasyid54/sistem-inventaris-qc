@@ -1,13 +1,18 @@
 import type { NextConfig } from "next";
 import path from "path";
 
+// Kosong = aplikasi berada di root domain (mis. https://qc.workshop-up2w3.com).
+// Isi NEXT_PUBLIC_BASE_PATH hanya bila dipasang di subfolder (mis. GitHub Pages).
+const basePath = process.env.NEXT_PUBLIC_BASE_PATH || "";
+
 const nextConfig: NextConfig = {
   reactStrictMode: true,
-  // Hapus basePath dan assetPrefix karena Vercel menangani domain utama secara langsung
+  // Hasil build berupa file statis (folder out) yang dilayani nginx di server
+  output: "export",
+  basePath,
   images: {
     unoptimized: true,
   },
-  // Hapus output: "export" agar Vercel dapat memproses Next.js dengan optimal
   sassOptions: {
     includePaths: [path.join(__dirname, "node_modules")],
     silenceDeprecations: ["import", "global-builtin", "color-functions", "mixed-decls"],
