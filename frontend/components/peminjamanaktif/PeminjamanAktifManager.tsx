@@ -176,11 +176,35 @@ const PeminjamanAktifManager = () => {
   const exportTitle = `Peminjaman Aktif - ${kategoriTab === "Vendor" ? "Eksternal / Vendor" : "Internal PLN"}`;
   const exportFile = `peminjaman-aktif-${kategoriTab.toLowerCase()}`;
 
+  // Info laporan yang tampil di blok "informasi laporan" PDF/Excel
+  const exportOptions = {
+    jenisLaporan: "Peminjaman Aktif",
+    filterLabel: `Kategori ${kategoriTab === "Vendor" ? "Eksternal / Vendor" : "Internal PLN"}${
+      searchTerm ? `, pencarian "${searchTerm}"` : ""
+    }`,
+    ringkasan: `${filteredData.length} peminjaman aktif, ${filteredData.reduce(
+      (s: number, i: any) => s + (i.jumlah ?? 1),
+      0
+    )} unit`,
+  };
+
   const handleExportPDF = () =>
-    exportToPDF(buildExportRows() as unknown as Record<string, unknown>[], EXPORT_COLUMNS, exportFile, exportTitle);
+    exportToPDF(
+      buildExportRows() as unknown as Record<string, unknown>[],
+      EXPORT_COLUMNS,
+      exportFile,
+      exportTitle,
+      exportOptions
+    );
 
   const handleExportExcel = () =>
-    exportToExcel(buildExportRows() as unknown as Record<string, unknown>[], EXPORT_COLUMNS, exportFile);
+    exportToExcel(
+      buildExportRows() as unknown as Record<string, unknown>[],
+      EXPORT_COLUMNS,
+      exportFile,
+      exportTitle,
+      exportOptions
+    );
 
   return (
     <div className="peminjamanaktif-page position-relative pb-6 pln-pa">

@@ -238,10 +238,25 @@ const RiwayatPeminjamanManager = () => {
     setDetailModalOpen(true);
   };
 
+  // Info laporan yang tampil di blok "informasi laporan" PDF/Excel
+  const exportTitle = "Riwayat Peminjaman Alat Ukur";
+  const exportOptions = {
+    jenisLaporan: exportTitle,
+    filterLabel: [
+      `Kategori ${kategoriTab}`,
+      namaFilter && `Peminjam: ${namaFilter}`,
+      tanggalFilter && "Periode sesuai filter tanggal",
+      searchTerm && `Pencarian: "${searchTerm}"`,
+    ]
+      .filter(Boolean)
+      .join(", "),
+  };
+  const exportFile = getFilteredExportFileName(`Riwayat_Peminjaman_${kategoriTab}`, namaFilter);
+
   const handleExportPDF = () =>
-    exportToPDF(filteredList, EXPORT_COLUMNS, getFilteredExportFileName(`Riwayat_Peminjaman_${kategoriTab}`, namaFilter), "Riwayat Peminjaman Alat Ukur");
+    exportToPDF(filteredList, EXPORT_COLUMNS, exportFile, exportTitle, exportOptions);
   const handleExportExcel = () =>
-    exportToExcel(filteredList, EXPORT_COLUMNS, getFilteredExportFileName(`Riwayat_Peminjaman_${kategoriTab}`, namaFilter));
+    exportToExcel(filteredList, EXPORT_COLUMNS, exportFile, exportTitle, exportOptions);
 
   const columns = getRiwayatPeminjamanColumns({
     onDetail: openDetailModal,

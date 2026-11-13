@@ -185,19 +185,33 @@ const RiwayatKalibrasiManager = () => {
       };
     });
 
+  // Info laporan yang tampil di blok "informasi laporan" PDF/Excel
+  const buildExportOptions = () => {
+    const hitung = (s: string) =>
+      filteredData.filter((i) => getStatusKalibrasi(i.tanggalJatuhTempoRaw) === s).length;
+    return {
+      jenisLaporan: "Riwayat Kalibrasi Alat Ukur",
+      filterLabel: statusFilter ? STATUS_LABEL[statusFilter] : "Semua status",
+      ringkasan: `Berlaku: ${hitung("berlaku")}, Mendekati: ${hitung("mendekati")}, Lewat: ${hitung("lewat")}`,
+    };
+  };
+
   const handleExportPDF = () =>
     exportToPDF(
       buildExportRows() as unknown as Record<string, unknown>[],
       EXPORT_COLUMNS,
       "riwayat-kalibrasi",
-      "Riwayat Kalibrasi Alat Ukur"
+      "Riwayat Kalibrasi Alat Ukur",
+      buildExportOptions()
     );
 
   const handleExportExcel = () =>
     exportToExcel(
       buildExportRows() as unknown as Record<string, unknown>[],
       EXPORT_COLUMNS,
-      "riwayat-kalibrasi"
+      "riwayat-kalibrasi",
+      "Riwayat Kalibrasi Alat Ukur",
+      buildExportOptions()
     );
 
   const handleSubmit = async (values: KalibrasiFormValues) => {

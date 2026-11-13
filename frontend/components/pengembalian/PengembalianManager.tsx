@@ -357,19 +357,32 @@ const PengembalianManager = () => {
       keterangan: item.keterangan || "-",
     }));
 
+  // Info laporan yang tampil di blok "informasi laporan" PDF/Excel
+  const exportOptions = {
+    jenisLaporan: "Alat Ukur Belum Dikembalikan",
+    filterLabel: "Semua kategori",
+    ringkasan: `${new Set(items.map((i) => i.peminjamId)).size} peminjam, ${items.reduce(
+      (s, i) => s + (i.jumlah ?? 1),
+      0
+    )} unit`,
+  };
+
   const handleExportPDF = () =>
     exportToPDF(
       buildExportRows() as unknown as Record<string, unknown>[],
       EXPORT_COLUMNS,
       "alat-ukur-belum-kembali",
-      "Alat Ukur Belum Dikembalikan"
+      "Alat Ukur Belum Dikembalikan",
+      exportOptions
     );
 
   const handleExportExcel = () =>
     exportToExcel(
       buildExportRows() as unknown as Record<string, unknown>[],
       EXPORT_COLUMNS,
-      "alat-ukur-belum-kembali"
+      "alat-ukur-belum-kembali",
+      "Alat Ukur Belum Dikembalikan",
+      exportOptions
     );
 
   const step = itemsPeminjam ? 2 : 1;

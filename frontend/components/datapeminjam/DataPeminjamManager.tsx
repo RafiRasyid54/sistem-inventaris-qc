@@ -284,12 +284,20 @@ const PeminjamManager = () => {
       };
     });
 
+  // Info laporan yang tampil di blok "informasi laporan" PDF/Excel
+  const exportOptions = {
+    jenisLaporan: "Data Peminjam",
+    filterLabel: "Semua status",
+    ringkasan: `Aktif: ${jumlahAktif}, Nonaktif: ${peminjamList.length - jumlahAktif}`,
+  };
+
   const handleExportPDF = () => {
     exportToPDF(
       buildExportData() as Record<string, unknown>[],
       EXPORT_COLUMNS,
       "data-peminjam",
-      "Data Peminjam"
+      "Data Peminjam",
+      exportOptions
     );
   };
 
@@ -297,7 +305,9 @@ const PeminjamManager = () => {
     exportToExcel(
       buildExportData() as Record<string, unknown>[],
       EXPORT_COLUMNS,
-      "data-peminjam"
+      "data-peminjam",
+      "Data Peminjam",
+      exportOptions
     );
   };
 
