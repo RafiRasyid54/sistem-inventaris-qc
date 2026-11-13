@@ -11,8 +11,6 @@ export async function apiFetch<T = any>(
       ? localStorage.getItem("token")
       : null;
 
-  console.log("API URL:", `${baseUrl}${endpoint}`);
-  console.log("TOKEN:", token);
 
   const headers = new Headers(options.headers);
 
