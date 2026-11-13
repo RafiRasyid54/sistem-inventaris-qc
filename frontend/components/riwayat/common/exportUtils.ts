@@ -23,7 +23,7 @@ export interface ExportOptions {
 // sesuaikan path ini kalau nama/lokasi filenya beda.
 const LOGO_PATH = "/images/brand/Logo-PLN-polos.png";
 
-const SYSTEM_NAME = "PULSE PUSHARLIS";
+const SYSTEM_NAME = "Sistem Inventaris QC dan Kalibrasi Alat Ukur"; // Nama sistem, tampil di blok info laporan
 
 const KOP = {
   perusahaan: "PT PLN (PERSERO) PUSHARLIS",
